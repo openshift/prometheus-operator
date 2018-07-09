@@ -65,11 +65,11 @@ hack/operator-image: Dockerfile operator
 	docker build -t $(REPO):$(TAG) .
 	touch $@
 
-hack/prometheus-config-reloader-image: cmd/prometheus-config-reloader/Dockerfile prometheus-config-reloader
+hack/prometheus-config-reloader-image: Dockerfile.config-reloader prometheus-config-reloader
 # Create empty target file, for the sole purpose of recording when this target
 # was last executed via the last-modification timestamp on the file. See
 # https://www.gnu.org/software/make/manual/make.html#Empty-Targets
-	docker build -t $(REPO_PROMETHEUS_CONFIG_RELOADER):$(TAG) -f cmd/prometheus-config-reloader/Dockerfile .
+	docker build -t $(REPO_PROMETHEUS_CONFIG_RELOADER):$(TAG) -f Dockerfile.config-reloader .
 	touch $@
 
 
