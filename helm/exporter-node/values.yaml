@@ -51,6 +51,10 @@ tolerations:
 global:
   rbacEnable: true
   pspEnable: true
+  
+  # Reference to one or more secrets to be used when pulling images
+  imagePullSecrets: []
+  #  - name: "image-pull-secret"
 
 # default rules are in templates/node.rules.yaml
 # prometheusRules: {}
@@ -61,3 +65,10 @@ additionalServiceMonitorLabels: {}
 ##Custom Labels to be added to Prometheus Rules ConfigMap
 ##
 additionalRulesConfigMapLabels: {}
+
+# deploy node_exporter as a DaemonSet
+enableDaemonSet: true
+# for deployments that have node_exporter deployed outside of the cluster, list
+# their addresses here
+endpoints: []
+nodeExporterPort: 9100

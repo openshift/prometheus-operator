@@ -78,7 +78,7 @@ hack/prometheus-config-reloader-image: Dockerfile.config-reloader prometheus-con
 ##############
 
 .PHONY: generate
-generate: pkg/client/monitoring/v1/zz_generated.deepcopy.go pkg/client/monitoring/v1/openapi_generated.go kube-prometheus Documentation/*
+generate: pkg/client/monitoring/v1/zz_generated.deepcopy.go pkg/client/monitoring/v1/openapi_generated.go jsonnet/prometheus-operator/**-crd.libsonnet bundle.yaml kube-prometheus Documentation/*
 
 .PHONY: generate-in-docker
 generate-in-docker: hack/jsonnet-docker-image
@@ -104,22 +104,23 @@ jsonnet/prometheus-operator/**-crd.libsonnet: example/prometheus-operator-crd/**
 	cat example/prometheus-operator-crd/servicemonitor.crd.yaml | gojsontoyaml -yamltojson > jsonnet/prometheus-operator/servicemonitor-crd.libsonnet
 	cat example/prometheus-operator-crd/prometheusrule.crd.yaml | gojsontoyaml -yamltojson > jsonnet/prometheus-operator/prometheusrule-crd.libsonnet
 
-pkg/client/monitoring/v1/openapi_generated.go: $(OPENAPI_GEN_BINARY)
+pkg/client/monitoring/v1/openapi_generated.go: pkg/client/monitoring/v1/types.go $(OPENAPI_GEN_BINARY)
 	$(OPENAPI_GEN_BINARY) \
 	-i github.com/coreos/prometheus-operator/pkg/client/monitoring/v1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/api/core/v1 \
 	-p github.com/coreos/prometheus-operator/pkg/client/monitoring/v1 \
 	--go-header-file="$(GOPATH)/src/github.com/coreos/prometheus-operator/.header"
 
-bundle.yaml: example/rbac/prometheus-operator/*.yaml
+bundle.yaml: $(shell find example/rbac/prometheus-operator/*.yaml -type f)
 	hack/generate-bundle.sh
 
 hack/generate/vendor: $(JB_BINARY) jsonnet/prometheus-operator/**
 	cd hack/generate; $(JB_BINARY) install;
 
-example/non-rbac/prometheus-operator.yaml: hack/generate/vendor hack/generate/prometheus-operator-non-rbac.jsonnet
+example/non-rbac/prometheus-operator.yaml: hack/generate/vendor hack/generate/prometheus-operator-non-rbac.jsonnet $(shell find jsonnet -type f)
 	hack/generate/build-non-rbac-prometheus-operator.sh
 
-example/rbac/prometheus-operator/*.yaml: hack/generate/vendor hack/generate/prometheus-operator-rbac.jsonnet
+RBAC_MANIFESTS = example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml example/rbac/prometheus-operator/prometheus-operator-service-account.yaml example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
+$(RBAC_MANIFESTS): hack/generate/vendor hack/generate/prometheus-operator-rbac.jsonnet $(shell find jsonnet -type f)
 	hack/generate/build-rbac-prometheus-operator.sh
 
 jsonnet/prometheus-operator/prometheus-operator.libsonnet: VERSION
@@ -145,7 +146,7 @@ $(TO_BE_EXTENDED_DOCS): $(EMBEDMD_BINARY) $(shell find example) kube-prometheus
 ##############
 
 .PHONY: format
-format: go-fmt check-license
+format: go-fmt check-license shellcheck
 
 .PHONY: go-fmt
 go-fmt:
@@ -154,6 +155,10 @@ go-fmt:
 .PHONY: check-license
 check-license:
 	./scripts/check_license.sh
+
+.PHONY: shellcheck
+shellcheck:
+	docker run -v "${PWD}:/mnt" koalaman/shellcheck:stable $(shell find -type f -name "*.sh" -not -path "*vendor*")
 
 
 ###########
@@ -207,7 +212,7 @@ $(EMBEDMD_BINARY):
 $(JB_BINARY):
 	go get -u github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb
 
-$(PO_CRDGEN_BINARY): cmd/po-crdgen/**.go
+$(PO_CRDGEN_BINARY): cmd/po-crdgen/main.go pkg/client/monitoring/v1/openapi_generated.go
 	go install github.com/coreos/prometheus-operator/cmd/po-crdgen
 
 $(PO_DOCGEN_BINARY): cmd/po-docgen/**.go
@@ -215,12 +220,12 @@ $(PO_DOCGEN_BINARY): cmd/po-docgen/**.go
 
 $(OPENAPI_GEN_BINARY):
 	go get -u -v -d k8s.io/code-generator/cmd/openapi-gen
-	cd $(GOPATH)/src/k8s.io/code-generator; git checkout release-1.10
+	cd $(GOPATH)/src/k8s.io/code-generator; git checkout release-1.11
 	go install k8s.io/code-generator/cmd/openapi-gen
 
 $(DEEPCOPY_GEN_BINARY):
 	go get -u -v -d k8s.io/code-generator/cmd/deepcopy-gen
-	cd $(GOPATH)/src/k8s.io/code-generator; git checkout release-1.10
+	cd $(GOPATH)/src/k8s.io/code-generator; git checkout release-1.11
 	go install k8s.io/code-generator/cmd/deepcopy-gen
 
 $(GOJSONTOYAML_BINARY):
