@@ -94,8 +94,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
           '--collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$',
         ]) +
         container.withVolumeMounts([procVolumeMount, sysVolumeMount, rootVolumeMount]) +
-        container.mixin.resources.withRequests({ cpu: '102m', memory: '180Mi' }) +
-        container.mixin.resources.withLimits({ cpu: '250m', memory: '180Mi' });
+        container.mixin.resources.withRequests({ cpu: '20m', memory: '50Mi' });
 
       local ip = containerEnv.fromFieldPath('IP', 'status.podIP');
       local proxy =
@@ -114,7 +113,6 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         // it so that the scheduler can decide if the pod is schedulable.
         container.withPorts(containerPort.new(9100) + containerPort.withHostPort(9100) + containerPort.withName('https')) +
         container.mixin.resources.withRequests({ cpu: '10m', memory: '20Mi' }) +
-        container.mixin.resources.withLimits({ cpu: '20m', memory: '40Mi' }) +
         container.withEnv([ip]);
 
       local c = [nodeExporter, proxy];

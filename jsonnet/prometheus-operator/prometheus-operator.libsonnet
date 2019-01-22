@@ -128,8 +128,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
         ]) +
         container.mixin.securityContext.withAllowPrivilegeEscalation(false) +
         container.mixin.securityContext.withReadOnlyRootFilesystem(true) +
-        container.mixin.resources.withRequests({ cpu: '100m', memory: '100Mi' }) +
-        container.mixin.resources.withLimits({ cpu: '200m', memory: '200Mi' });
+        container.mixin.resources.withRequests({ cpu: '10m', memory: '50Mi' });
 
       deployment.new('prometheus-operator', 1, operatorContainer, podLabels) +
       deployment.mixin.metadata.withNamespace($._config.namespace) +
