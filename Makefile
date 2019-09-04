@@ -56,6 +56,13 @@ build: operator prometheus-config-reloader k8s-gen
 operator:
 	$(GO_BUILD_RECIPE) -o $@ cmd/operator/main.go
 
+.PHONY: operator-no-deps
+operator-no-deps:
+	GOOS=linux CGO_ENABLED=0 go build \
+	-mod=vendor \
+	-ldflags "-X $(GO_PKG)/pkg/version.Version=$(shell cat VERSION)" \
+	-o operator cmd/operator/main.go
+
 .PHONY: prometheus-config-reloader
 prometheus-config-reloader:
 	$(GO_BUILD_RECIPE) -o $@ cmd/$@/main.go
@@ -122,7 +129,7 @@ image: .hack-operator-image .hack-prometheus-config-reloader-image
 # Create empty target file, for the sole purpose of recording when this target
 # was last executed via the last-modification timestamp on the file. See
 # https://www.gnu.org/software/make/manual/make.html#Empty-Targets
-	docker build -t $(REPO_PROMETHEUS_CONFIG_RELOADER):$(TAG) -f cmd/prometheus-config-reloader/Dockerfile .
+	docker build -t $(REPO_PROMETHEUS_CONFIG_RELOADER):$(TAG) -f Dockerfile.config-reloader .
 	touch $@
 
 ##############

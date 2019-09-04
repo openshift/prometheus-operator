@@ -1,10 +1,12 @@
-FROM registry.svc.ci.openshift.org/openshift/release:golang-1.12 AS builder
+# Dockerfile used by OSBS and by prow CI.
+FROM registry.svc.ci.openshift.org/ocp/builder:golang-1.12 AS builder
 WORKDIR /go/src/github.com/coreos/prometheus-operator
 COPY . .
 ENV GO111MODULE=on
+ENV GOFLAGS="-mod=vendor"
 RUN make operator-no-deps
 
-FROM registry.svc.ci.openshift.org/openshift/origin-v4.0:base
+FROM registry.svc.ci.openshift.org/ocp/4.0:base
 COPY --from=builder /go/src/github.com/coreos/prometheus-operator/operator /usr/bin/
 # doesn't require a root user.
 USER 1001

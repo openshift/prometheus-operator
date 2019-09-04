@@ -23,6 +23,11 @@
 * [FEATURE] Add ability to use StatefulSet ordinal in external labels. (#2591)
 * [ENHANCEMENT] Use /-/healthy and /-/ready for probes in Alertmanager. (#2600)
 
+## 0.30.1 / 2019-05-31
+
+* [BUGFIX] Update Thanos to 0.4.0 to fix configmap-reloader (#2611)
+* [BUGFIX] Alertmanager: Use /-/healthy and /-/ready for probes (#2600)
+
 ## 0.30.0 / 2019-05-10
 
 Note: Both kube-prometheus (#2554) and the Helm Chart (#2416) have been removed from this repository.

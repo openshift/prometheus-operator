@@ -1,0 +1,17 @@
+# Dockerfile used by OSBS and by prow CI.
+FROM registry.svc.ci.openshift.org/ocp/builder:golang-1.12 AS builder
+WORKDIR /go/src/github.com/coreos/prometheus-operator
+COPY . .
+ENV GO111MODULE=on
+ENV GOFLAGS="-mod=vendor"
+RUN make prometheus-config-reloader
+
+FROM registry.svc.ci.openshift.org/ocp/4.0:base
+COPY --from=builder /go/src/github.com/coreos/prometheus-operator/prometheus-config-reloader /usr/bin/
+# doesn't require a root user.
+USER 1001
+ENTRYPOINT ["/usr/bin/prometheus-config-reloader"]
+LABEL io.k8s.display-name="Prometheus config reloader" \
+      io.k8s.description="This component reloads a Prometheus server in a controlled and configurable way." \
+      io.openshift.tags="prometheus" \
+      maintainer="Frederic Branczyk <fbranczy@redhat.com>"
