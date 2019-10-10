@@ -1258,15 +1258,15 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 			return errors.Wrap(err, "retrieving statefulset failed")
 		}
 
-		spec := appsv1.StatefulSetSpec{}
-		if obj != nil {
-			ss := obj.(*appsv1.StatefulSet)
-			spec = ss.Spec
-		}
-		newSSetInputHash, err := createSSetInputHash(*p, c.config, ruleConfigMapNames, spec)
-		if err != nil {
-			return err
-		}
+	spec := appsv1.StatefulSetSpec{}
+	if obj != nil {
+		ss := obj.(*appsv1.StatefulSet)
+		spec = ss.Spec
+	}
+	newSSetInputHash, err := createSSetInputHash(*p, c.config, ruleConfigMapNames, spec)
+	if err != nil {
+		return err
+	}
 
 		sset, err := makeStatefulSet(ssetName, *p, &c.config, ruleConfigMapNames, newSSetInputHash, int32(shard))
 		if err != nil {
@@ -1342,6 +1342,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	return nil
 }
 
+
 //checkPrometheusSpecDeprecation checks for deprecated fields in the prometheus spec and logs a warning if applicable
 func checkPrometheusSpecDeprecation(key string, p *monitoringv1.Prometheus, logger log.Logger) {
 	deprecationWarningf := "prometheus key=%v, field %v is deprecated, '%v' field should be used instead"
@@ -1371,10 +1372,10 @@ func checkPrometheusSpecDeprecation(key string, p *monitoringv1.Prometheus, logg
 	}
 }
 
-func createSSetInputHash(p monitoringv1.Prometheus, c operator.Config, ruleConfigMapNames []string, ss interface{}) (string, error) {
+func createSSetInputHash(p monitoringv1.Prometheus, c Config, ruleConfigMapNames []string, ss interface{}) (string, error) {
 	hash, err := hashstructure.Hash(struct {
 		P monitoringv1.Prometheus
-		C operator.Config
+		C Config
 		S interface{}
 		R []string `hash:"set"`
 	}{p, c, ss, ruleConfigMapNames},
