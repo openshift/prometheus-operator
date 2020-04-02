@@ -372,6 +372,9 @@ type StorageSpec struct {
 	// info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
 	EmptyDir *v1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
 	// A PVC spec to be used by the Prometheus StatefulSets.
+	// Note: this field requires the `apiVersion` and `kind` fields to be set
+	// to `v1` and `PersistentVolumeClaim` respectively.
+	// +kubebuilder:validation:EmbeddedResource
 	VolumeClaimTemplate v1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 }
 
