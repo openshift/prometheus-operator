@@ -625,7 +625,7 @@ StorageSpec defines the configured storage for a group Prometheus servers. If ne
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | emptyDir | EmptyDirVolumeSource to be used by the Prometheus StatefulSets. If specified, used in place of any volumeClaimTemplate. More info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir | *[v1.EmptyDirVolumeSource](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#emptydirvolumesource-v1-core) | false |
-| volumeClaimTemplate | A PVC spec to be used by the Prometheus StatefulSets. | [v1.PersistentVolumeClaim](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#persistentvolumeclaim-v1-core) | false |
+| volumeClaimTemplate | A PVC spec to be used by the Prometheus StatefulSets. Note: this field requires the `apiVersion` and `kind` fields to be set to `v1` and `PersistentVolumeClaim` respectively. | [v1.PersistentVolumeClaim](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#persistentvolumeclaim-v1-core) | false |
 
 [Back to TOC](#table-of-contents)
 

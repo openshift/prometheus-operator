@@ -3034,7 +3034,9 @@ spec:
                       x-kubernetes-int-or-string: true
                   type: object
                 volumeClaimTemplate:
-                  description: A PVC spec to be used by the Prometheus StatefulSets.
+                  description: 'A PVC spec to be used by the Prometheus StatefulSets.
+                    Note: this field requires the `apiVersion` and `kind` fields to
+                    be set to `v1` and `PersistentVolumeClaim` respectively.'
                   properties:
                     apiVersion:
                       description: 'APIVersion defines the versioned schema of this
@@ -3241,6 +3243,7 @@ spec:
                           type: string
                       type: object
                   type: object
+                  x-kubernetes-embedded-resource: true
               type: object
             tag:
               description: Tag of Alertmanager container image to be deployed. Defaults
