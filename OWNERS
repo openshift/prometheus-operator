@@ -1,15 +1,14 @@
 reviewers:
-- brancz
-- squat
-- s-urbaniak
-- metalmatze
-- paulfantom
-- LiliC
-
+  - brancz
+  - metalmatze
+  - s-urbaniak
+  - squat
+  - LiliC
+  - bwplotka
 approvers:
-- brancz
-- squat
-- s-urbaniak
-- metalmatze
-- paulfantom
-- LiliC
+  - brancz
+  - metalmatze
+  - s-urbaniak
+  - squat
+  - LiliC
+  - bwplotka

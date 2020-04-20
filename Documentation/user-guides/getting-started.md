@@ -22,7 +22,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.1
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -39,7 +39,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.1
   name: prometheus-operator
 rules:
 - apiGroups:
@@ -47,7 +47,20 @@ rules:
   resources:
   - customresourcedefinitions
   verbs:
-  - '*'
+  - create
+- apiGroups:
+  - apiextensions.k8s.io
+  resourceNames:
+  - alertmanagers.monitoring.coreos.com
+  - podmonitors.monitoring.coreos.com
+  - prometheuses.monitoring.coreos.com
+  - prometheusrules.monitoring.coreos.com
+  - servicemonitors.monitoring.coreos.com
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - get
+  - update
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -113,7 +126,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.1
   name: prometheus-operator
   namespace: default
 spec:
@@ -127,15 +140,15 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: v0.33.0
+        app.kubernetes.io/version: v0.34.1
     spec:
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --logtostderr=true
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.33.0
-        image: quay.io/coreos/prometheus-operator:v0.33.0
+        - --prometheus-config-reloader=quay.io/coreos/prometheus-config-reloader:v0.34.1
+        image: quay.io/coreos/prometheus-operator:v0.34.1
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -162,7 +175,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.1
   name: prometheus-operator
   namespace: default
 ---
@@ -172,7 +185,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: v0.33.0
+    app.kubernetes.io/version: v0.34.1
   name: prometheus-operator
   namespace: default
 spec:
@@ -320,7 +333,7 @@ For more information, see the [Prometheus Operator RBAC guide][prom-rbac].
 
 ## Include ServiceMonitors
 
-Finally, a Prometheus object defines the `serviceMonitorSelector` to specify which ServiceMonitors should be included. Above the label `team: frontend` was specified, so that's what the Prometheus object selects by.
+A Prometheus object defines the `serviceMonitorSelector` to specify which ServiceMonitors should be included. Above the label `team: frontend` was specified, so that's what the Prometheus object selects by.
 
 [embedmd]:# (../../example/user-guides/getting-started/prometheus.yaml)
 ```yaml
@@ -342,6 +355,31 @@ spec:
 > If you have RBAC authorization activated, use the RBAC aware [Prometheus manifest][prometheus-manifest] instead.
 
 This enables the frontend team to create new ServiceMonitors and Services which allow Prometheus to be dynamically reconfigured.
+
+## Include PodMonitors
+
+Finally, a Prometheus object defines the `podMonitorSelector` to specify which PodMonitors should be included. Above the label `team: frontend` was specified, so that's what the Prometheus object selects by.
+
+[embedmd]:# (../../example/user-guides/getting-started/prometheus.yaml)
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+spec:
+  serviceAccountName: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      team: frontend
+  resources:
+    requests:
+      memory: 400Mi
+  enableAdminAPI: false
+```
+
+> If you have RBAC authorization activated, use the RBAC aware [Prometheus manifest][prometheus-manifest] instead.
+
+This enables the frontend team to create new PodMonitors which allow Prometheus to be dynamically reconfigured.
 
 ## Expose the Prometheus instance
 
@@ -400,11 +438,8 @@ Further reading:
 
 * [Alerting][alerting-guide] describes using the Prometheus Operator go manage Alertmanager clusters.
 
-* [Cluster Monitoring ][cluster-monitoring] describes using the Prometheus Operator to monitor the Kubernetes cluster itself.
-
 
 [alerting-guide]: alerting.md
-[cluster-monitoring]: cluster-monitoring.md
 [design-doc]: ../design.md
 [exposing-prom]: exposing-prometheus-and-alertmanager.md
 [introducing-operators]: https://coreos.com/blog/introducing-operators.html

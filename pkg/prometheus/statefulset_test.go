@@ -186,6 +186,14 @@ func TestStatefulSetVolumeInitial(t *testing.T) {
 									SubPath:   "",
 								},
 								{
+									Name:             "tls-assets",
+									ReadOnly:         true,
+									MountPath:        "/etc/prometheus/certs",
+									SubPath:          "",
+									MountPropagation: nil,
+									SubPathExpr:      "",
+								},
+								{
 									Name:      "prometheus-volume-init-test-db",
 									ReadOnly:  false,
 									MountPath: "/prometheus",
@@ -212,6 +220,14 @@ func TestStatefulSetVolumeInitial(t *testing.T) {
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
 									SecretName: configSecretName("volume-init-test"),
+								},
+							},
+						},
+						{
+							Name: "tls-assets",
+							VolumeSource: v1.VolumeSource{
+								Secret: &v1.SecretVolumeSource{
+									SecretName: tlsAssetsSecretName("volume-init-test"),
 								},
 							},
 						},
@@ -382,12 +398,42 @@ func TestListenLocal(t *testing.T) {
 		t.Fatal("Prometheus not listening on loopback when it should.")
 	}
 
-	if sset.Spec.Template.Spec.Containers[0].ReadinessProbe != nil {
-		t.Fatal("Prometheus readiness probe expected to be empty")
+	actualReadinessProbe := sset.Spec.Template.Spec.Containers[0].ReadinessProbe
+	expectedReadinessProbe := &v1.Probe{
+		Handler: v1.Handler{
+			Exec: &v1.ExecAction{
+				Command: []string{
+					`sh`,
+					`-c`,
+					`if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/ready; elif [ -x "$(command -v wget)" ]; then wget -q http://localhost:9090/-/ready; else exit 1; fi`,
+				},
+			},
+		},
+		TimeoutSeconds:   3,
+		PeriodSeconds:    5,
+		FailureThreshold: 120,
+	}
+	if !reflect.DeepEqual(actualReadinessProbe, expectedReadinessProbe) {
+		t.Fatalf("Readiness probe doesn't match expected. \n\nExpected: %+v\n\nGot: %+v", expectedReadinessProbe, actualReadinessProbe)
 	}
 
-	if sset.Spec.Template.Spec.Containers[0].LivenessProbe != nil {
-		t.Fatal("Prometheus readiness probe expected to be empty")
+	actualLivenessProbe := sset.Spec.Template.Spec.Containers[0].LivenessProbe
+	expectedLivenessProbe := &v1.Probe{
+		Handler: v1.Handler{
+			Exec: &v1.ExecAction{
+				Command: []string{
+					`sh`,
+					`-c`,
+					`if [ -x "$(command -v curl)" ]; then curl http://localhost:9090/-/healthy; elif [ -x "$(command -v wget)" ]; then wget -q http://localhost:9090/-/healthy; else exit 1; fi`,
+				},
+			},
+		},
+		TimeoutSeconds:   3,
+		PeriodSeconds:    5,
+		FailureThreshold: 6,
+	}
+	if !reflect.DeepEqual(actualLivenessProbe, expectedLivenessProbe) {
+		t.Fatalf("Liveness probe doesn't match expected. \n\nExpected: %v\n\nGot: %v", expectedLivenessProbe, actualLivenessProbe)
 	}
 
 	if len(sset.Spec.Template.Spec.Containers[0].Ports) != 0 {
@@ -846,6 +892,33 @@ func TestWALCompression(t *testing.T) {
 				t.Fatalf("expected Prometheus args to NOT contain %v, but got %v", test.expectedArg, promArgs)
 			}
 		}
+	}
+}
+
+func TestThanosListenLocal(t *testing.T) {
+	sset, err := makeStatefulSet(monitoringv1.Prometheus{
+		Spec: monitoringv1.PrometheusSpec{
+			Thanos: &monitoringv1.ThanosSpec{
+				ListenLocal: true,
+			},
+		},
+	}, defaultTestConfig, nil, "")
+	if err != nil {
+		t.Fatalf("Unexpected error while making StatefulSet: %v", err)
+	}
+	foundGrpcFlag := false
+	foundHTTPFlag := false
+	for _, flag := range sset.Spec.Template.Spec.Containers[2].Args {
+		if flag == "--grpc-address=127.0.0.1:10901" {
+			foundGrpcFlag = true
+		}
+		if flag == "--http-address=127.0.0.1:10902" {
+			foundHTTPFlag = true
+		}
+	}
+
+	if !foundGrpcFlag || !foundHTTPFlag {
+		t.Fatal("Thanos not listening on loopback when it should.")
 	}
 }
 

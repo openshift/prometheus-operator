@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	monitoring "github.com/coreos/prometheus-operator/pkg/apis/monitoring"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringclient "github.com/coreos/prometheus-operator/pkg/client/versioned"
 	"github.com/coreos/prometheus-operator/pkg/k8sutil"
@@ -77,11 +78,9 @@ type Config struct {
 	ConfigReloaderCPU            string
 	ConfigReloaderMemory         string
 	AlertmanagerDefaultBaseImage string
-	Namespaces                   []string
-	DeniedNamespaces             []string
+	Namespaces                   prometheusoperator.Namespaces
 	Labels                       prometheusoperator.Labels
 	CrdKinds                     monitoringv1.CrdKinds
-	CrdGroup                     string
 	EnableValidation             bool
 	ManageCRDs                   bool
 	AlertManagerSelector         string
@@ -123,8 +122,6 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 			ConfigReloaderMemory:         c.ConfigReloaderMemory,
 			AlertmanagerDefaultBaseImage: c.AlertmanagerDefaultBaseImage,
 			Namespaces:                   c.Namespaces,
-			DeniedNamespaces:             c.DeniedNamespaces,
-			CrdGroup:                     c.CrdGroup,
 			CrdKinds:                     c.CrdKinds,
 			Labels:                       c.Labels,
 			EnableValidation:             c.EnableValidation,
@@ -134,7 +131,7 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 	}
 
 	o.alrtInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces, o.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.AlertmanagerAllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
 			return &cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 					options.LabelSelector = o.config.AlertManagerSelector
@@ -149,7 +146,7 @@ func New(c prometheusoperator.Config, logger log.Logger) (*Operator, error) {
 		&monitoringv1.Alertmanager{}, resyncPeriod, cache.Indexers{},
 	)
 	o.ssetInf = cache.NewSharedIndexInformer(
-		listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces, o.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
+		listwatch.MultiNamespaceListerWatcher(o.logger, o.config.Namespaces.AlertmanagerAllowList, o.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
 			return cache.NewListWatchFromClient(o.kclient.AppsV1().RESTClient(), "statefulsets", namespace, fields.Everything())
 		}),
 		&appsv1.StatefulSet{}, resyncPeriod, cache.Indexers{},
@@ -620,7 +617,7 @@ func (c *Operator) destroyAlertmanager(key string) error {
 
 func (c *Operator) createCRDs() error {
 	crds := []*extensionsobj.CustomResourceDefinition{
-		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.Alertmanager, c.config.CrdGroup, c.config.Labels.LabelsMap, c.config.EnableValidation),
+		k8sutil.NewCustomResourceDefinition(c.config.CrdKinds.Alertmanager, monitoring.GroupName, c.config.Labels.LabelsMap, c.config.EnableValidation),
 	}
 
 	crdClient := c.crdclient.ApiextensionsV1beta1().CustomResourceDefinitions()
@@ -651,7 +648,7 @@ func (c *Operator) createCRDs() error {
 	}{
 		{
 			"Alertmanager",
-			listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces, c.config.DeniedNamespaces, func(namespace string) cache.ListerWatcher {
+			listwatch.MultiNamespaceListerWatcher(c.logger, c.config.Namespaces.AlertmanagerAllowList, c.config.Namespaces.DenyList, func(namespace string) cache.ListerWatcher {
 				return &cache.ListWatch{
 					ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 						return c.mclient.MonitoringV1().Alertmanagers(namespace).List(options)
