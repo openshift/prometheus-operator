@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
@@ -137,7 +138,7 @@ type multiListerWatcher []cache.ListerWatcher
 // a single result.
 func (mlw multiListerWatcher) List(options metav1.ListOptions) (runtime.Object, error) {
 	l := metav1.List{}
-	var resourceVersions []string
+	resourceVersions := sets.NewString()
 	for _, lw := range mlw {
 		list, err := lw.List(options)
 		if err != nil {
@@ -154,11 +155,13 @@ func (mlw multiListerWatcher) List(options metav1.ListOptions) (runtime.Object, 
 		for _, item := range items {
 			l.Items = append(l.Items, runtime.RawExtension{Object: item.DeepCopyObject()})
 		}
-		resourceVersions = append(resourceVersions, metaObj.GetResourceVersion())
+		if !resourceVersions.Has(metaObj.GetResourceVersion()) {
+			resourceVersions.Insert(metaObj.GetResourceVersion())
+		}
 	}
 	// Combine the resource versions so that the composite Watch method can
 	// distribute appropriate versions to each underlying Watch func.
-	l.ListMeta.ResourceVersion = strings.Join(resourceVersions, "/")
+	l.ListMeta.ResourceVersion = strings.Join(resourceVersions.List(), "/")
 	return &l, nil
 }
 
