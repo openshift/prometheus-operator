@@ -194,7 +194,7 @@ func makeStatefulSetService(p *monitoringv1.Alertmanager, config Config) *v1.Ser
 				},
 			},
 			Selector: map[string]string{
-				"app": "alertmanager",
+				"app.kubernetes.io/name": "alertmanager",
 			},
 		},
 	}
@@ -312,9 +312,10 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	podAnnotations := map[string]string{}
 	podLabels := map[string]string{}
 	podSelectorLabels := map[string]string{
+		// TODO(paulfantom): remove `app` label after 0.50 release
 		"app":                          "alertmanager",
 		"app.kubernetes.io/name":       "alertmanager",
-		"app.kubernetes.io/version":    amVersion,
+		"app.kubernetes.io/version":    version.String(),
 		"app.kubernetes.io/managed-by": "prometheus-operator",
 		"app.kubernetes.io/instance":   a.Name,
 		"alertmanager":                 a.Name,
@@ -334,6 +335,8 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config) (*appsv1.S
 	for k, v := range podSelectorLabels {
 		podLabels[k] = v
 	}
+
+	podAnnotations["kubectl.kubernetes.io/default-container"] = "alertmanager"
 
 	var clusterPeerDomain string
 	if config.ClusterDomain != "" {

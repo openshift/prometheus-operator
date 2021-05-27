@@ -351,12 +351,15 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 			}
 		}
 	}
+	// TODO(paulfantom): remove `app` label after 0.50 release
 	podLabels["app"] = thanosRulerLabel
 	podLabels["app.kubernetes.io/name"] = thanosRulerLabel
 	podLabels["app.kubernetes.io/managed-by"] = "prometheus-operator"
 	podLabels["app.kubernetes.io/instance"] = tr.Name
 	podLabels[thanosRulerLabel] = tr.Name
 	finalLabels := config.Labels.Merge(podLabels)
+
+	podAnnotations["kubectl.kubernetes.io/default-container"] = "thanos-ruler"
 
 	storageVolName := volumeName(tr.Name)
 	if tr.Spec.Storage != nil {
@@ -480,7 +483,7 @@ func makeStatefulSetService(tr *monitoringv1.ThanosRuler, config Config) *v1.Ser
 				},
 			},
 			Selector: map[string]string{
-				"app": "thanos-ruler",
+				"app.kubernetes.io/name": thanosRulerLabel,
 			},
 		},
 	}

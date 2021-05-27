@@ -52,11 +52,25 @@ func TestStatefulSetLabelingAndAnnotations(t *testing.T) {
 		"kubectl.kubernetes.io/last-applied-configuration": "something",
 		"kubectl.kubernetes.io/something":                  "something",
 	}
+
 	// kubectl annotations must not be on the statefulset so kubectl does
 	// not manage the generated object
-	expectedAnnotations := map[string]string{
+	expectedStatefulSetAnnotations := map[string]string{
 		"prometheus-operator-input-hash": "",
 		"testannotation":                 "testannotationvalue",
+	}
+
+	expectedStatefulSetLabels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+
+	expectedPodLabels := map[string]string{
+		"alertmanager":                 "",
+		"app":                          "alertmanager",
+		"app.kubernetes.io/name":       "alertmanager",
+		"app.kubernetes.io/version":    strings.TrimPrefix(operator.DefaultAlertmanagerVersion, "v"),
+		"app.kubernetes.io/managed-by": "prometheus-operator",
+		"app.kubernetes.io/instance":   "",
 	}
 
 	sset, err := makeStatefulSet(&monitoringv1.Alertmanager{
@@ -68,14 +82,19 @@ func TestStatefulSetLabelingAndAnnotations(t *testing.T) {
 
 	require.NoError(t, err)
 
-	if !reflect.DeepEqual(labels, sset.Labels) {
-		t.Log(pretty.Compare(labels, sset.Labels))
+	if !reflect.DeepEqual(expectedStatefulSetLabels, sset.Labels) {
+		t.Log(pretty.Compare(expectedStatefulSetLabels, sset.Labels))
 		t.Fatal("Labels are not properly being propagated to the StatefulSet")
 	}
 
-	if !reflect.DeepEqual(expectedAnnotations, sset.Annotations) {
-		t.Log(pretty.Compare(expectedAnnotations, sset.Annotations))
+	if !reflect.DeepEqual(expectedStatefulSetAnnotations, sset.Annotations) {
+		t.Log(pretty.Compare(expectedStatefulSetAnnotations, sset.Annotations))
 		t.Fatal("Annotations are not properly being propagated to the StatefulSet")
+	}
+
+	if !reflect.DeepEqual(expectedPodLabels, sset.Spec.Template.ObjectMeta.Labels) {
+		t.Log(pretty.Compare(expectedPodLabels, sset.Spec.Template.ObjectMeta.Labels))
+		t.Fatal("Labels are not properly being propagated to the Pod")
 	}
 }
 
@@ -126,11 +145,11 @@ func TestPodLabelsAnnotations(t *testing.T) {
 		},
 	}, defaultTestConfig, "")
 	require.NoError(t, err)
-	if _, ok := sset.Spec.Template.ObjectMeta.Labels["testlabel"]; !ok {
-		t.Fatal("Pod labes are not properly propagated")
+	if val, ok := sset.Spec.Template.ObjectMeta.Labels["testlabel"]; !ok || val != "testvalue" {
+		t.Fatal("Pod labels are not properly propagated")
 	}
-	if !reflect.DeepEqual(annotations, sset.Spec.Template.ObjectMeta.Annotations) {
-		t.Fatal("Pod annotaitons are not properly propagated")
+	if val, ok := sset.Spec.Template.ObjectMeta.Annotations["testannotation"]; !ok || val != "testvalue" {
+		t.Fatal("Pod annotations are not properly propagated")
 	}
 }
 

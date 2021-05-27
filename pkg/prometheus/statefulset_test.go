@@ -69,7 +69,6 @@ func TestStatefulSetLabelingAndAnnotations(t *testing.T) {
 
 	expectedPodLabels := map[string]string{
 		"prometheus":                   "",
-		"app":                          "prometheus",
 		"app.kubernetes.io/name":       "prometheus",
 		"app.kubernetes.io/version":    strings.TrimPrefix(operator.DefaultPrometheusVersion, "v"),
 		"app.kubernetes.io/managed-by": "prometheus-operator",
@@ -120,11 +119,11 @@ func TestPodLabelsAnnotations(t *testing.T) {
 		},
 	}, defaultTestConfig, nil, "", 0)
 	require.NoError(t, err)
-	if _, ok := sset.Spec.Template.ObjectMeta.Labels["testlabel"]; !ok {
-		t.Fatal("Pod labes are not properly propagated")
+	if val, ok := sset.Spec.Template.ObjectMeta.Labels["testlabel"]; !ok || val != "testvalue" {
+		t.Fatal("Pod labels are not properly propagated")
 	}
-	if !reflect.DeepEqual(annotations, sset.Spec.Template.ObjectMeta.Annotations) {
-		t.Fatal("Pod annotaitons are not properly propagated")
+	if val, ok := sset.Spec.Template.ObjectMeta.Annotations["testannotation"]; !ok || val != "testvalue" {
+		t.Fatal("Pod annotations are not properly propagated")
 	}
 }
 func TestPodLabelsShouldNotBeSelectorLabels(t *testing.T) {
