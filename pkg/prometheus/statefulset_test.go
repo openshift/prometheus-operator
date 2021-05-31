@@ -69,6 +69,7 @@ func TestStatefulSetLabelingAndAnnotations(t *testing.T) {
 
 	expectedPodLabels := map[string]string{
 		"prometheus":                   "",
+		"app":                          "prometheus",
 		"app.kubernetes.io/name":       "prometheus",
 		"app.kubernetes.io/version":    strings.TrimPrefix(operator.DefaultPrometheusVersion, "v"),
 		"app.kubernetes.io/managed-by": "prometheus-operator",
@@ -1671,7 +1672,7 @@ func TestEnableFeaturesWithMultipleFeature(t *testing.T) {
 }
 
 func TestWebPageTitle(t *testing.T) {
-	var pageTitle string = "my-page-title"
+	var pageTitle = "my-page-title"
 	sset, err := makeStatefulSet("test", monitoringv1.Prometheus{
 		Spec: monitoringv1.PrometheusSpec{
 			Web: &monitoringv1.WebSpec{
