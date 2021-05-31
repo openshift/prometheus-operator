@@ -55,7 +55,7 @@ func TestStatefulSetLabelingAndAnnotations(t *testing.T) {
 
 	// kubectl annotations must not be on the statefulset so kubectl does
 	// not manage the generated object
-	expectedStatefulSetAnnotations := map[string]string{
+   	expectedStatefulSetAnnotations := map[string]string{
 		"prometheus-operator-input-hash": "",
 		"testannotation":                 "testannotationvalue",
 	}

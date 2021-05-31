@@ -46,7 +46,7 @@ github.com/go-logfmt/logfmt
 # github.com/go-openapi/analysis v0.20.0
 github.com/go-openapi/analysis
 github.com/go-openapi/analysis/internal
-# github.com/go-openapi/errors v0.19.9
+# github.com/go-openapi/errors v0.20.0
 github.com/go-openapi/errors
 # github.com/go-openapi/jsonpointer v0.19.5
 github.com/go-openapi/jsonpointer
@@ -54,7 +54,7 @@ github.com/go-openapi/jsonpointer
 github.com/go-openapi/jsonreference
 # github.com/go-openapi/loads v0.20.2
 github.com/go-openapi/loads
-# github.com/go-openapi/runtime v0.19.24
+# github.com/go-openapi/runtime v0.19.26
 github.com/go-openapi/runtime
 github.com/go-openapi/runtime/client
 github.com/go-openapi/runtime/logger
@@ -85,7 +85,7 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/golang/snappy v0.0.3-0.20201103224600-674baa8c7fc3
+# github.com/golang/snappy v0.0.3
 github.com/golang/snappy
 # github.com/google/go-cmp v0.5.5
 ## explicit
@@ -157,12 +157,12 @@ github.com/pmezard/go-difflib/difflib
 # github.com/prometheus-community/prom-label-proxy v0.2.0
 ## explicit
 github.com/prometheus-community/prom-label-proxy/injectproxy
-# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.47.1 => ./pkg/apis/monitoring
+# github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.48.0 => ./pkg/apis/monitoring
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1
 github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1
-# github.com/prometheus-operator/prometheus-operator/pkg/client v0.47.1 => ./pkg/client
+# github.com/prometheus-operator/prometheus-operator/pkg/client v0.48.0 => ./pkg/client
 ## explicit
 github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions
 github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions/internalinterfaces
@@ -178,7 +178,7 @@ github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/mo
 github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1/fake
 github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1
 github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1alpha1/fake
-# github.com/prometheus/alertmanager v0.21.1-0.20201106142418-c39b78780054
+# github.com/prometheus/alertmanager v0.21.1-0.20210422101724-8176f78a70e1
 ## explicit
 github.com/prometheus/alertmanager/api/v2/client
 github.com/prometheus/alertmanager/api/v2/client/alert
@@ -189,6 +189,7 @@ github.com/prometheus/alertmanager/api/v2/client/silence
 github.com/prometheus/alertmanager/api/v2/models
 github.com/prometheus/alertmanager/config
 github.com/prometheus/alertmanager/pkg/labels
+github.com/prometheus/alertmanager/timeinterval
 # github.com/prometheus/client_golang v1.10.0
 ## explicit
 github.com/prometheus/client_golang/prometheus
@@ -197,7 +198,7 @@ github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
 # github.com/prometheus/client_model v0.2.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.20.0
+# github.com/prometheus/common v0.21.0
 ## explicit
 github.com/prometheus/common/config
 github.com/prometheus/common/expfmt
@@ -208,7 +209,7 @@ github.com/prometheus/common/version
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
-# github.com/prometheus/prometheus v1.8.2-0.20210215121130-6f488061dfb4
+# github.com/prometheus/prometheus v1.8.2-0.20210421143221-52df5ef7a3be
 ## explicit
 github.com/prometheus/prometheus/pkg/exemplar
 github.com/prometheus/prometheus/pkg/labels
@@ -242,7 +243,7 @@ github.com/spf13/pflag
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# github.com/thanos-io/thanos v0.19.0
+# github.com/thanos-io/thanos v0.20.1
 ## explicit
 github.com/thanos-io/thanos/pkg/errutil
 github.com/thanos-io/thanos/pkg/reloader
@@ -278,7 +279,7 @@ go.uber.org/goleak/internal/stack
 # golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5
 golang.org/x/lint
 golang.org/x/lint/golint
-# golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
+# golang.org/x/net v0.0.0-20210324051636-2c4c8ecb7826
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/http/httpguts
@@ -287,13 +288,13 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
+# golang.org/x/oauth2 v0.0.0-20210323180902-22b0adad7558
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 ## explicit
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
+# golang.org/x/sys v0.0.0-20210324051608-47abb6519492
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
