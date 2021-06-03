@@ -431,15 +431,15 @@ func Main() int {
 		wg.Go(func() error {
 			t := time.NewTicker(cfg.ServerTLSConfig.ReloadInterval)
 			for {
-				select {
-				case <-t.C:
-				case <-ctx.Done():
-					return nil
-				}
 				if err := r.Watch(ctx); err != nil {
 					level.Warn(logger).Log("msg", "error reloading server TLS certificate",
 						"err", err)
 				} else {
+					return nil
+				}
+				select {
+				case <-t.C:
+				case <-ctx.Done():
 					return nil
 				}
 			}
