@@ -1256,12 +1256,27 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 			return errors.Wrap(err, "retrieving statefulset failed")
 		}
 
-		spec := appsv1.StatefulSetSpec{}
+		existingStatefulSet := &appsv1.StatefulSet{}
 		if obj != nil {
-			ss := obj.(*appsv1.StatefulSet)
-			spec = ss.Spec
+			existingStatefulSet = obj.(*appsv1.StatefulSet)
+			if existingStatefulSet.DeletionTimestamp != nil {
+				// We want to avoid entering a hot-loop of update/delete cycles here since the sts was
+				// marked for deletion in foreground, which means it may take some time before the finalizers complete and
+				// the resource disappears from the API. The deletion timestamp will have been set when the initial
+				// delete request was issued. In that case, we avoid further processing.
+				// It is important to note that this 'recreate cycle' can potentially lead to downtime.
+				// For example in cases where a selector label is deleted, new sts cannot match existing pods.
+				// We should try to avoid removing such immutable fields and entering this loop where possible.
+				level.Info(logger).Log(
+					"msg", "halting update of StatefulSet",
+					"reason", "resource has been marked for deletion",
+					"resource_name", existingStatefulSet.GetName(),
+				)
+				return nil
+			}
 		}
-		newSSetInputHash, err := createSSetInputHash(*p, c.config, ruleConfigMapNames, tlsAssets, spec)
+
+		newSSetInputHash, err := createSSetInputHash(*p, c.config, ruleConfigMapNames, tlsAssets, existingStatefulSet.Spec)
 		if err != nil {
 			return err
 		}
@@ -1281,8 +1296,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 			return nil
 		}
 
-		oldSSetInputHash := obj.(*appsv1.StatefulSet).ObjectMeta.Annotations[sSetInputHashName]
-		if newSSetInputHash == oldSSetInputHash {
+		if newSSetInputHash == existingStatefulSet.ObjectMeta.Annotations[sSetInputHashName] {
 			level.Debug(logger).Log("msg", "new statefulset generation inputs match current, skipping any actions")
 			continue
 		}
@@ -1302,6 +1316,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 			}
 
 			level.Info(logger).Log("msg", "recreating StatefulSet because the update operation wasn't possible", "reason", strings.Join(failMsg, ", "))
+
 			propagationPolicy := metav1.DeletePropagationForeground
 			if err := ssetClient.Delete(ctx, sset.GetName(), metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
 				return errors.Wrap(err, "failed to delete StatefulSet to avoid forbidden action")
