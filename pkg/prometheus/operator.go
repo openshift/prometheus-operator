@@ -24,11 +24,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/model"
+	"github.com/prometheus/prometheus/model/relabel"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1795,6 +1798,26 @@ func (c *Operator) selectServiceMonitors(ctx context.Context, p *monitoringv1.Pr
 			if err = store.AddSafeAuthorizationCredentials(ctx, sm.GetNamespace(), endpoint.Authorization, smAuthKey); err != nil {
 				break
 			}
+
+			if err = validateScrapeIntervalAndTimeout(p, endpoint.Interval, endpoint.ScrapeTimeout); err != nil {
+				break
+			}
+
+			for _, rl := range endpoint.RelabelConfigs {
+				if rl.Action != "" {
+					if err = validateRelabelConfig(*rl); err != nil {
+						break
+					}
+				}
+			}
+
+			for _, rl := range endpoint.MetricRelabelConfigs {
+				if rl.Action != "" {
+					if err = validateRelabelConfig(*rl); err != nil {
+						break
+					}
+				}
+			}
 		}
 
 		if err != nil {
@@ -1894,6 +1917,26 @@ func (c *Operator) selectPodMonitors(ctx context.Context, p *monitoringv1.Promet
 			pmAuthKey := fmt.Sprintf("podMonitor/auth/%s/%s/%d", pm.GetNamespace(), pm.GetName(), i)
 			if err = store.AddSafeAuthorizationCredentials(ctx, pm.GetNamespace(), endpoint.Authorization, pmAuthKey); err != nil {
 				break
+			}
+
+			if err = validateScrapeIntervalAndTimeout(p, endpoint.Interval, endpoint.ScrapeTimeout); err != nil {
+				break
+			}
+
+			for _, rl := range endpoint.RelabelConfigs {
+				if rl.Action != "" {
+					if err = validateRelabelConfig(*rl); err != nil {
+						break
+					}
+				}
+			}
+
+			for _, rl := range endpoint.MetricRelabelConfigs {
+				if rl.Action != "" {
+					if err = validateRelabelConfig(*rl); err != nil {
+						break
+					}
+				}
 			}
 		}
 
@@ -2010,6 +2053,24 @@ func (c *Operator) selectProbes(ctx context.Context, p *monitoringv1.Prometheus,
 			continue
 		}
 
+		if err = validateScrapeIntervalAndTimeout(p, probe.Spec.Interval, probe.Spec.ScrapeTimeout); err != nil {
+			rejectFn(probe, err)
+			continue
+		}
+
+		for _, rl := range probe.Spec.MetricRelabelConfigs {
+			if rl.Action != "" {
+				if err = validateRelabelConfig(*rl); err != nil {
+					rejectFn(probe, err)
+					continue
+				}
+			}
+		}
+		if err = validateProberURL(probe.Spec.ProberSpec.URL); err != nil {
+			err := errors.Wrapf(err, "%s url specified in proberSpec is invalid, it should be of the format `hostname` or `hostname:port`", probe.Spec.ProberSpec.URL)
+			rejectFn(probe, err)
+			continue
+		}
 		res[probeName] = probe
 	}
 
@@ -2080,4 +2141,64 @@ func validateRemoteWriteSpec(spec monitoringv1.RemoteWriteSpec) error {
 	}
 
 	return nil
+}
+
+func validateRelabelConfig(rc monitoringv1.RelabelConfig) error {
+	relabelTarget := regexp.MustCompile(`^(?:(?:[a-zA-Z_]|\$(?:\{\w+\}|\w+))+\w*)+$`)
+
+	if _, err := relabel.NewRegexp(rc.Regex); err != nil {
+		return errors.Wrapf(err, "invalid regex %s for relabel configuration", rc.Regex)
+	}
+	if rc.Modulus == 0 && rc.Action == string(relabel.HashMod) {
+		return errors.Errorf("relabel configuration for hashmod requires non-zero modulus")
+	}
+	if (rc.Action == string(relabel.Replace) || rc.Action == string(relabel.HashMod)) && rc.TargetLabel == "" {
+		return errors.Errorf("relabel configuration for %s action needs targetLabel value", rc.Action)
+	}
+	if rc.Action == string(relabel.Replace) && !relabelTarget.MatchString(rc.TargetLabel) {
+		return errors.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
+	}
+	if rc.Action == string(relabel.LabelMap) && !relabelTarget.MatchString(rc.Replacement) {
+		return errors.Errorf("%q is invalid 'replacement' for %s action", rc.Replacement, rc.Action)
+	}
+	if rc.Action == string(relabel.HashMod) && !model.LabelName(rc.TargetLabel).IsValid() {
+		return errors.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
+	}
+
+	if rc.Action == string(relabel.LabelDrop) || rc.Action == string(relabel.LabelKeep) {
+		if len(rc.SourceLabels) != 0 ||
+			rc.TargetLabel != "" ||
+			rc.Modulus != uint64(0) ||
+			rc.Separator != "" ||
+			rc.Replacement != "" {
+			return errors.Errorf("%s action requires only 'regex', and no other fields", rc.Action)
+		}
+	}
+	return nil
+}
+
+func validateProberURL(url string) error {
+	hostPort := strings.Split(url, ":")
+
+	if !govalidator.IsHost(hostPort[0]) {
+		return errors.Errorf("invalid host: %q", hostPort[0])
+	}
+
+	// handling cases with url specified as host:port
+	if len(hostPort) > 1 {
+		if !govalidator.IsPort(hostPort[1]) {
+			return errors.Errorf("invalid port: %q", hostPort[1])
+		}
+	}
+	return nil
+}
+
+func validateScrapeIntervalAndTimeout(p *monitoringv1.Prometheus, scrapeInterval, scrapeTimeout string) error {
+	if scrapeTimeout == "" {
+		return nil
+	}
+	if scrapeInterval == "" {
+		scrapeInterval = p.Spec.ScrapeInterval
+	}
+	return operator.CompareScrapeTimeoutToScrapeInterval(scrapeTimeout, scrapeInterval)
 }
