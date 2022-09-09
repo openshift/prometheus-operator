@@ -16,8 +16,8 @@ package webconfig
 
 import (
 	"context"
-	"fmt"
 	"path"
+	"strings"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
@@ -32,20 +32,23 @@ var (
 	configFile = "web-config.yaml"
 )
 
-// Config is the web configuration for a prometheus instance.
+// Config is the web configuration for prometheus and alertmanager instance.
 //
 // Config can make a secret which holds the web config contents, as well as
 // volumes and volume mounts for referencing the secret and the
 // necessary TLS credentials.
 type Config struct {
 	tlsConfig      *monitoringv1.WebTLSConfig
+	httpConfig     *monitoringv1.WebHTTPConfig
 	tlsCredentials *tlsCredentials
 	mountingDir    string
 	secretName     string
 }
 
 // New creates a new Config.
-func New(mountingDir string, secretName string, tlsConfig *monitoringv1.WebTLSConfig) (*Config, error) {
+func New(mountingDir string, secretName string, configFileFields monitoringv1.WebConfigFileFields) (*Config, error) {
+	tlsConfig := configFileFields.TLSConfig
+
 	if err := tlsConfig.Validate(); err != nil {
 		return nil, err
 	}
@@ -57,6 +60,7 @@ func New(mountingDir string, secretName string, tlsConfig *monitoringv1.WebTLSCo
 
 	return &Config{
 		tlsConfig:      tlsConfig,
+		httpConfig:     configFileFields.HTTPConfig,
 		tlsCredentials: tlsCreds,
 		mountingDir:    mountingDir,
 		secretName:     secretName,
@@ -67,7 +71,7 @@ func New(mountingDir string, secretName string, tlsConfig *monitoringv1.WebTLSCo
 // and the associated TLS credentials.
 // In addition, GetMountParameters returns a web.config.file command line option pointing
 // to the file in the volume mount.
-func (c Config) GetMountParameters() (string, []v1.Volume, []v1.VolumeMount) {
+func (c Config) GetMountParameters() (monitoringv1.Argument, []v1.Volume, []v1.VolumeMount, error) {
 	destinationPath := path.Join(c.mountingDir, configFile)
 
 	var volumes []v1.Volume
@@ -81,18 +85,21 @@ func (c Config) GetMountParameters() (string, []v1.Volume, []v1.VolumeMount) {
 	mounts = append(mounts, cfgMount)
 
 	if c.tlsCredentials != nil {
-		tlsVolumes, tlsMounts := c.tlsCredentials.getMountParameters()
+		tlsVolumes, tlsMounts, err := c.tlsCredentials.getMountParameters()
+		if err != nil {
+			return monitoringv1.Argument{}, nil, nil, err
+		}
 		volumes = append(volumes, tlsVolumes...)
 		mounts = append(mounts, tlsMounts...)
 	}
 
-	return arg, volumes, mounts
+	return arg, volumes, mounts, nil
 }
 
 // CreateOrUpdateWebConfigSecret create or update a Kubernetes secret with the data for the web config file.
 // The format of the web config file is available in the official prometheus documentation:
 // https://prometheus.io/docs/prometheus/latest/configuration/https/#https-and-authentication
-func (c *Config) CreateOrUpdateWebConfigSecret(ctx context.Context, secretClient clientv1.SecretInterface, labels map[string]string, ownerReference metav1.OwnerReference) error {
+func (c Config) CreateOrUpdateWebConfigSecret(ctx context.Context, secretClient clientv1.SecretInterface, labels map[string]string, ownerReference metav1.OwnerReference) error {
 	data, err := c.generateConfigFileContents()
 	if err != nil {
 		return err
@@ -113,9 +120,22 @@ func (c *Config) CreateOrUpdateWebConfigSecret(ctx context.Context, secretClient
 }
 
 func (c Config) generateConfigFileContents() ([]byte, error) {
+	if c.tlsConfig == nil && c.httpConfig == nil {
+		return []byte{}, nil
+	}
+
+	cfg := yaml.MapSlice{}
+
+	cfg = c.addTLSServerConfigToYaml(cfg)
+	cfg = c.addHTTPServerConfigToYaml(cfg)
+
+	return yaml.Marshal(cfg)
+}
+
+func (c Config) addTLSServerConfigToYaml(cfg yaml.MapSlice) yaml.MapSlice {
 	tls := c.tlsConfig
 	if tls == nil {
-		return []byte{}, nil
+		return cfg
 	}
 
 	tlsServerConfig := yaml.MapSlice{}
@@ -173,18 +193,66 @@ func (c Config) generateConfigFileContents() ([]byte, error) {
 		})
 	}
 
-	cfg := yaml.MapSlice{
-		{
-			Key:   "tls_server_config",
-			Value: tlsServerConfig,
-		},
-	}
-
-	return yaml.Marshal(cfg)
+	return append(cfg, yaml.MapItem{Key: "tls_server_config", Value: tlsServerConfig})
 }
 
-func (c Config) makeArg(filePath string) string {
-	return fmt.Sprintf("--web.config.file=%s", filePath)
+func (c Config) addHTTPServerConfigToYaml(cfg yaml.MapSlice) yaml.MapSlice {
+	http := c.httpConfig
+	if http == nil {
+		return cfg
+	}
+
+	httpServerConfig := yaml.MapSlice{}
+
+	if http.HTTP2 != nil {
+		httpServerConfig = append(httpServerConfig, yaml.MapItem{Key: "http2", Value: *http.HTTP2})
+	}
+
+	headers := http.Headers
+	if headers == nil {
+		return append(cfg, yaml.MapItem{Key: "http_server_config", Value: httpServerConfig})
+	}
+
+	headersConfig := yaml.MapSlice{}
+
+	if headers.ContentSecurityPolicy != "" {
+		headersConfig = append(headersConfig, yaml.MapItem{
+			Key:   "Content-Security-Policy",
+			Value: headers.ContentSecurityPolicy,
+		})
+	}
+
+	if headers.StrictTransportSecurity != "" {
+		headersConfig = append(headersConfig, yaml.MapItem{
+			Key: "Strict-Transport-Security", Value: headers.StrictTransportSecurity,
+		})
+	}
+
+	if headers.XContentTypeOptions != "" {
+		headersConfig = append(headersConfig, yaml.MapItem{
+			Key: "X-Content-Type-Options", Value: strings.ToLower(headers.XContentTypeOptions),
+		})
+	}
+
+	if headers.XFrameOptions != "" {
+		headersConfig = append(headersConfig, yaml.MapItem{
+			Key: "X-Frame-Options", Value: strings.ToLower(headers.XFrameOptions),
+		})
+	}
+
+	if headers.XXSSProtection != "" {
+		headersConfig = append(headersConfig, yaml.MapItem{
+			Key: "X-XSS-Protection", Value: headers.XXSSProtection,
+		})
+	}
+
+	httpServerConfig = append(httpServerConfig, yaml.MapItem{Key: "headers", Value: headersConfig})
+
+	return append(cfg, yaml.MapItem{Key: "http_server_config", Value: httpServerConfig})
+}
+
+func (c Config) makeArg(filePath string) monitoringv1.Argument {
+	return monitoringv1.Argument{Name: "web.config.file", Value: filePath}
 }
 
 func (c Config) makeVolume() v1.Volume {

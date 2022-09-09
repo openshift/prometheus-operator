@@ -316,7 +316,7 @@ func TestStatefulSetVolumeInitial(t *testing.T) {
 									SubPath:   "web-config.yaml",
 								},
 								{
-									Name:      "secret-test-secret1",
+									Name:      "secret-test-secret1-df14634a",
 									ReadOnly:  true,
 									MountPath: "/etc/prometheus/secrets/test-secret1",
 									SubPath:   "",
@@ -374,7 +374,7 @@ func TestStatefulSetVolumeInitial(t *testing.T) {
 							},
 						},
 						{
-							Name: "secret-test-secret1",
+							Name: "secret-test-secret1-df14634a",
 							VolumeSource: v1.VolumeSource{
 								Secret: &v1.SecretVolumeSource{
 									SecretName: "test-secret1",
@@ -433,7 +433,7 @@ func TestAdditionalConfigMap(t *testing.T) {
 
 	cmVolumeFound := false
 	for _, v := range sset.Spec.Template.Spec.Volumes {
-		if v.Name == "configmap-test-cm1" {
+		if strings.HasPrefix(v.Name, "configmap-test-cm1") {
 			cmVolumeFound = true
 		}
 	}
@@ -443,7 +443,7 @@ func TestAdditionalConfigMap(t *testing.T) {
 
 	cmMounted := false
 	for _, v := range sset.Spec.Template.Spec.Containers[0].VolumeMounts {
-		if v.Name == "configmap-test-cm1" && v.MountPath == "/etc/prometheus/configmaps/test-cm1" {
+		if strings.HasPrefix(v.Name, "configmap-test-cm1") && v.MountPath == "/etc/prometheus/configmaps/test-cm1" {
 			cmMounted = true
 		}
 	}
@@ -530,16 +530,18 @@ func TestListenTLS(t *testing.T) {
 		Spec: monitoringv1.PrometheusSpec{
 			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
 				Web: &monitoringv1.PrometheusWebSpec{
-					TLSConfig: &monitoringv1.WebTLSConfig{
-						KeySecret: v1.SecretKeySelector{
-							LocalObjectReference: v1.LocalObjectReference{
-								Name: "some-secret",
-							},
-						},
-						Cert: monitoringv1.SecretOrConfigMap{
-							ConfigMap: &v1.ConfigMapKeySelector{
+					WebConfigFileFields: monitoringv1.WebConfigFileFields{
+						TLSConfig: &monitoringv1.WebTLSConfig{
+							KeySecret: v1.SecretKeySelector{
 								LocalObjectReference: v1.LocalObjectReference{
-									Name: "some-configmap",
+									Name: "some-secret",
+								},
+							},
+							Cert: monitoringv1.SecretOrConfigMap{
+								ConfigMap: &v1.ConfigMapKeySelector{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "some-configmap",
+									},
 								},
 							},
 						},
@@ -626,9 +628,9 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					Tag:     "my-unrelated-tag",
 					Version: "v2.3.2",
 				},
+				Tag: "my-unrelated-tag",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -645,10 +647,10 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					SHA:     "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
-					Tag:     "my-unrelated-tag",
 					Version: "v2.3.2",
 				},
+				SHA: "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
+				Tag: "my-unrelated-tag",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -667,11 +669,11 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					SHA:     "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
-					Tag:     "my-unrelated-tag",
 					Version: "v2.3.2",
 					Image:   &image,
 				},
+				SHA: "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
+				Tag: "my-unrelated-tag",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -689,11 +691,11 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					SHA:     "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
-					Tag:     "my-unrelated-tag",
 					Version: "v2.3.2",
 					Image:   &image,
 				},
+				SHA: "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
+				Tag: "my-unrelated-tag",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -731,10 +733,10 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					SHA:     "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
 					Version: "v2.3.2",
 					Image:   &image,
 				},
+				SHA: "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -771,9 +773,9 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					SHA:   "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
 					Image: &image,
 				},
+				SHA: "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -791,9 +793,9 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					Tag:   "my-unrelated-tag",
 					Image: &image,
 				},
+				Tag: "my-unrelated-tag",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -811,10 +813,10 @@ func TestTagAndShaAndVersion(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					SHA:   "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
-					Tag:   "my-unrelated-tag",
 					Image: &image,
 				},
+				SHA: "7384a79f4b4991bf8269e7452390249b7c70bcdd10509c8c1c6c6e30e32fb324",
+				Tag: "my-unrelated-tag",
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -1048,9 +1050,9 @@ func TestThanosNoObjectStorage(t *testing.T) {
 		}
 	}
 
-	for _, vol := range sset.Spec.Template.Spec.Containers[2].VolumeMounts {
-		if vol.MountPath == storageDir {
-			t.Fatal("Prometheus data volume should not be mounted in the Thanos sidecar")
+	for _, addCap := range sset.Spec.Template.Spec.Containers[2].SecurityContext.Capabilities.Add {
+		if addCap == "CAP_FOWNER" {
+			t.Fatal("Thanos sidecar shouldn't have the CAP_FOWNER capability")
 		}
 	}
 }
@@ -1142,6 +1144,19 @@ func TestThanosObjectStorage(t *testing.T) {
 		}
 		if !found {
 			t.Fatal("Prometheus data volume should be mounted in the Thanos sidecar")
+		}
+	}
+
+	{
+		var found bool
+		for _, addCap := range sset.Spec.Template.Spec.Containers[2].SecurityContext.Capabilities.Add {
+			if addCap == "CAP_FOWNER" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatal("Thanos sidecar should have CAP_FOWNER capability")
 		}
 	}
 }
@@ -1831,9 +1846,9 @@ func TestWALCompression(t *testing.T) {
 		sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
 			Spec: monitoringv1.PrometheusSpec{
 				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
-					Version: test.version,
+					Version:        test.version,
+					WALCompression: test.enabled,
 				},
-				WALCompression: test.enabled,
 			},
 		}, defaultTestConfig, nil, "", 0, nil)
 		if err != nil {
@@ -2329,5 +2344,374 @@ func TestPodTemplateConfig(t *testing.T) {
 	}
 	if !reflect.DeepEqual(sset.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets) {
 		t.Fatalf("expected image pull secrets to match, want %s, got %s", imagePullSecrets, sset.Spec.Template.Spec.ImagePullSecrets)
+	}
+}
+
+func TestPrometheusAdditionalArgsNoError(t *testing.T) {
+	expectedPrometheusArgs := []string{
+		"--web.console.templates=/etc/prometheus/consoles",
+		"--web.console.libraries=/etc/prometheus/console_libraries",
+		"--storage.tsdb.retention.time=24h",
+		"--config.file=/etc/prometheus/config_out/prometheus.env.yaml",
+		"--storage.tsdb.path=/prometheus",
+		"--web.enable-lifecycle",
+		"--web.route-prefix=/",
+		"--web.config.file=/etc/prometheus/web_config/web-config.yaml",
+		"--scrape.discovery-reload-interval=30s",
+		"--storage.tsdb.no-lockfile",
+	}
+
+	labels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+	annotations := map[string]string{
+		"testannotation": "testannotationvalue",
+	}
+
+	sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				AdditionalArgs: []monitoringv1.Argument{
+					{
+						Name:  "scrape.discovery-reload-interval",
+						Value: "30s",
+					},
+					{
+						Name: "storage.tsdb.no-lockfile",
+					},
+				},
+			},
+		},
+	}, defaultTestConfig, nil, "", 0, nil)
+
+	require.NoError(t, err)
+	ssetContainerArgs := sset.Spec.Template.Spec.Containers[0].Args
+	if !reflect.DeepEqual(ssetContainerArgs, expectedPrometheusArgs) {
+		t.Fatalf("expected Prometheus container args to match, want %s, got %s", expectedPrometheusArgs, ssetContainerArgs)
+	}
+}
+
+func TestPrometheusAdditionalArgsDuplicate(t *testing.T) {
+	expectedErrorMsg := "can't set arguments which are already managed by the operator: config.file"
+
+	labels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+	annotations := map[string]string{
+		"testannotation": "testannotationvalue",
+	}
+
+	_, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				AdditionalArgs: []monitoringv1.Argument{
+					{
+						Name:  "config.file",
+						Value: "/foo/bar.yaml",
+					},
+				},
+			},
+		},
+	}, defaultTestConfig, nil, "", 0, nil)
+
+	if err == nil {
+		t.Fatal("expected error for Prometheus additionalArgs configuration")
+	}
+
+	if !strings.Contains(err.Error(), expectedErrorMsg) {
+		t.Fatalf("expected the following text to be present in the error msg: %s", expectedErrorMsg)
+	}
+}
+
+func TestPrometheusAdditionalBinaryArgsDuplicate(t *testing.T) {
+	expectedErrorMsg := "can't set arguments which are already managed by the operator: web.enable-lifecycle"
+
+	labels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+	annotations := map[string]string{
+		"testannotation": "testannotationvalue",
+	}
+
+	_, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				AdditionalArgs: []monitoringv1.Argument{
+					{
+						Name: "web.enable-lifecycle",
+					},
+				},
+			},
+		},
+	}, defaultTestConfig, nil, "", 0, nil)
+
+	if err == nil {
+		t.Fatal("expected error for Prometheus additionalArgs configuration")
+	}
+
+	if !strings.Contains(err.Error(), expectedErrorMsg) {
+		t.Fatalf("expected the following text to be present in the error msg: %s", expectedErrorMsg)
+	}
+}
+
+func TestPrometheusAdditionalNoPrefixArgsDuplicate(t *testing.T) {
+	expectedErrorMsg := "can't set arguments which are already managed by the operator: no-storage.tsdb.wal-compression"
+	walCompression := new(bool)
+	*walCompression = true
+
+	labels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+	annotations := map[string]string{
+		"testannotation": "testannotationvalue",
+	}
+
+	_, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+				WALCompression: walCompression,
+				AdditionalArgs: []monitoringv1.Argument{
+					{
+						Name: "no-storage.tsdb.wal-compression",
+					},
+				},
+			},
+		},
+	}, defaultTestConfig, nil, "", 0, nil)
+
+	if err == nil {
+		t.Fatal("expected error for Prometheus additionalArgs configuration")
+	}
+
+	if !strings.Contains(err.Error(), expectedErrorMsg) {
+		t.Fatalf("expected the following text to be present in the error msg: %s", expectedErrorMsg)
+	}
+}
+
+func TestThanosAdditionalArgsNoError(t *testing.T) {
+	expectedThanosArgs := []string{
+		"sidecar",
+		"--prometheus.url=http://localhost:9090/",
+		`--prometheus.http-client={"tls_config": {"insecure_skip_verify":true}}`,
+		"--grpc-address=:10901",
+		"--http-address=:10902",
+		"--log.level=info",
+		"--reloader.watch-interval=5m",
+	}
+
+	labels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+	annotations := map[string]string{
+		"testannotation": "testannotationvalue",
+	}
+
+	sset, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			Thanos: &monitoringv1.ThanosSpec{
+				LogLevel: "info",
+				AdditionalArgs: []monitoringv1.Argument{
+					{
+						Name:  "reloader.watch-interval",
+						Value: "5m",
+					},
+				},
+			},
+		},
+	}, defaultTestConfig, nil, "", 0, nil)
+
+	require.NoError(t, err)
+	ssetContainerArgs := sset.Spec.Template.Spec.Containers[2].Args
+	if !reflect.DeepEqual(ssetContainerArgs, expectedThanosArgs) {
+		t.Fatalf("expected Thanos container args to match, want %s, got %s", expectedThanosArgs, ssetContainerArgs)
+	}
+}
+
+func TestThanosAdditionalArgsDuplicate(t *testing.T) {
+	expectedErrorMsg := "can't set arguments which are already managed by the operator: log.level"
+
+	labels := map[string]string{
+		"testlabel": "testlabelvalue",
+	}
+	annotations := map[string]string{
+		"testannotation": "testannotationvalue",
+	}
+
+	_, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: monitoringv1.PrometheusSpec{
+			Thanos: &monitoringv1.ThanosSpec{
+				LogLevel: "info",
+				AdditionalArgs: []monitoringv1.Argument{
+					{
+						Name:  "log.level",
+						Value: "error",
+					},
+				},
+			},
+		},
+	}, defaultTestConfig, nil, "", 0, nil)
+
+	if err == nil {
+		t.Fatal("expected error for Thanos additionalArgs configuration")
+	}
+
+	if !strings.Contains(err.Error(), expectedErrorMsg) {
+		t.Fatalf("expected the following text to be present in the error msg: %s", expectedErrorMsg)
+	}
+}
+
+func TestPrometheusQuerySpec(t *testing.T) {
+	int32Ptr := func(i int32) *int32 { return &i }
+	stringPtr := func(s string) *string { return &s }
+	durationPtr := func(s string) *monitoringv1.Duration { d := monitoringv1.Duration(s); return &d }
+
+	for _, tc := range []struct {
+		name string
+
+		lookbackDelta  *string
+		maxConcurrency *int32
+		maxSamples     *int32
+		timeout        *monitoringv1.Duration
+		version        string
+
+		expected []string
+	}{
+		{
+			name:     "default",
+			expected: []string{},
+		},
+		{
+			name:           "all values provided",
+			lookbackDelta:  stringPtr("2m"),
+			maxConcurrency: int32Ptr(10),
+			maxSamples:     int32Ptr(10000),
+			timeout:        durationPtr("1m"),
+
+			expected: []string{
+				"--query.lookback-delta=2m",
+				"--query.max-concurrency=10",
+				"--query.max-samples=10000",
+				"--query.timeout=1m",
+			},
+		},
+		{
+			name:           "zero values are skipped",
+			lookbackDelta:  stringPtr("2m"),
+			maxConcurrency: int32Ptr(0),
+			maxSamples:     int32Ptr(0),
+			timeout:        durationPtr("1m"),
+
+			expected: []string{
+				"--query.lookback-delta=2m",
+				"--query.timeout=1m",
+			},
+		},
+		{
+			name:           "max samples skipped if version < 2.5",
+			lookbackDelta:  stringPtr("2m"),
+			maxConcurrency: int32Ptr(10),
+			maxSamples:     int32Ptr(10000),
+			timeout:        durationPtr("1m"),
+			version:        "v2.4.0",
+
+			expected: []string{
+				"--query.lookback-delta=2m",
+				"--query.max-concurrency=10",
+				"--query.timeout=1m",
+			},
+		},
+		{
+			name:           "max samples not skipped if version > 2.5",
+			lookbackDelta:  stringPtr("2m"),
+			maxConcurrency: int32Ptr(10),
+			maxSamples:     int32Ptr(10000),
+			timeout:        durationPtr("1m"),
+			version:        "v2.5.0",
+
+			expected: []string{
+				"--query.lookback-delta=2m",
+				"--query.max-concurrency=10",
+				"--query.max-samples=10000",
+				"--query.timeout=1m",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ss, err := makeStatefulSet(newLogger(), "test", monitoringv1.Prometheus{
+				Spec: monitoringv1.PrometheusSpec{
+					CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+						Version: tc.version,
+					},
+					Query: &monitoringv1.QuerySpec{
+						LookbackDelta:  tc.lookbackDelta,
+						MaxConcurrency: tc.maxConcurrency,
+						MaxSamples:     tc.maxSamples,
+						Timeout:        tc.timeout,
+					},
+				},
+			}, defaultTestConfig, nil, "", 0, nil)
+
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			for _, arg := range []string{
+				"--query.lookback-delta",
+				"--query.max-concurrency",
+				"--query.max-samples",
+				"--query.timeout",
+			} {
+				var containerArg string
+				for _, a := range ss.Spec.Template.Spec.Containers[0].Args {
+					if strings.HasPrefix(a, arg) {
+						containerArg = a
+						break
+					}
+				}
+
+				var expected string
+				for _, exp := range tc.expected {
+					if strings.HasPrefix(exp, arg) {
+						expected = exp
+						break
+					}
+				}
+
+				if expected == "" {
+					if containerArg != "" {
+						t.Fatalf("found %q while not expected", containerArg)
+					}
+					continue
+				}
+
+				if containerArg != expected {
+					t.Fatalf("expected %q to be found but got %q", expected, containerArg)
+				}
+			}
+		})
 	}
 }

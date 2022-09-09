@@ -320,16 +320,18 @@ func TestListenTLS(t *testing.T) {
 	sset, err := makeStatefulSet(&monitoringv1.Alertmanager{
 		Spec: monitoringv1.AlertmanagerSpec{
 			Web: &monitoringv1.AlertmanagerWebSpec{
-				TLSConfig: &monitoringv1.WebTLSConfig{
-					KeySecret: v1.SecretKeySelector{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: "some-secret",
-						},
-					},
-					Cert: monitoringv1.SecretOrConfigMap{
-						ConfigMap: &v1.ConfigMapKeySelector{
+				WebConfigFileFields: monitoringv1.WebConfigFileFields{
+					TLSConfig: &monitoringv1.WebTLSConfig{
+						KeySecret: v1.SecretKeySelector{
 							LocalObjectReference: v1.LocalObjectReference{
-								Name: "some-configmap",
+								Name: "some-secret",
+							},
+						},
+						Cert: monitoringv1.SecretOrConfigMap{
+							ConfigMap: &v1.ConfigMapKeySelector{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: "some-configmap",
+								},
 							},
 						},
 					},
@@ -567,10 +569,10 @@ func TestAdditionalSecretsMounted(t *testing.T) {
 	secret1Found = false
 	secret2Found = false
 	for _, v := range sset.Spec.Template.Spec.Containers[0].VolumeMounts {
-		if v.Name == "secret-secret1" && v.MountPath == "/etc/alertmanager/secrets/secret1" {
+		if strings.HasPrefix(v.Name, "secret-secret1-") && v.MountPath == "/etc/alertmanager/secrets/secret1" {
 			secret1Found = true
 		}
-		if v.Name == "secret-secret2" && v.MountPath == "/etc/alertmanager/secrets/secret2" {
+		if strings.HasPrefix(v.Name, "secret-secret2-") && v.MountPath == "/etc/alertmanager/secrets/secret2" {
 			secret2Found = true
 		}
 	}
@@ -720,8 +722,9 @@ func TestAdditionalConfigMap(t *testing.T) {
 
 	cmVolumeFound := false
 	for _, v := range sset.Spec.Template.Spec.Volumes {
-		if v.Name == "configmap-test-cm1" {
+		if strings.HasPrefix(v.Name, "configmap-test-cm1-") {
 			cmVolumeFound = true
+			break
 		}
 	}
 	if !cmVolumeFound {
@@ -730,8 +733,9 @@ func TestAdditionalConfigMap(t *testing.T) {
 
 	cmMounted := false
 	for _, v := range sset.Spec.Template.Spec.Containers[0].VolumeMounts {
-		if v.Name == "configmap-test-cm1" && v.MountPath == "/etc/alertmanager/configmaps/test-cm1" {
+		if strings.HasPrefix(v.Name, "configmap-test-cm1-") && v.MountPath == "/etc/alertmanager/configmaps/test-cm1" {
 			cmMounted = true
+			break
 		}
 	}
 	if !cmMounted {

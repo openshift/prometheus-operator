@@ -15,6 +15,7 @@
 package alertmanager
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
@@ -740,8 +741,9 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	am := aobj.(*monitoringv1.Alertmanager)
 	am = am.DeepCopy()
-	am.APIVersion = monitoringv1.SchemeGroupVersion.String()
-	am.Kind = monitoringv1.AlertmanagersKind
+	if err := k8sutil.AddTypeInformationToObject(am); err != nil {
+		return errors.Wrap(err, "failed to set Alertmanager type information")
+	}
 
 	if am.Spec.Paused {
 		return nil
@@ -845,19 +847,32 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 }
 
 func createSSetInputHash(a monitoringv1.Alertmanager, c Config, tlsAssets *operator.ShardedSecret, s appsv1.StatefulSetSpec) (string, error) {
+	var http2 *bool
+	if a.Spec.Web != nil && a.Spec.Web.WebConfigFileFields.HTTPConfig != nil {
+		http2 = a.Spec.Web.WebConfigFileFields.HTTPConfig.HTTP2
+	}
+
 	hash, err := hashstructure.Hash(struct {
-		A monitoringv1.Alertmanager
-		C Config
-		S appsv1.StatefulSetSpec
-		T []string `hash:"set"`
-	}{a, c, s, tlsAssets.ShardNames()},
+		AlertmanagerLabels      map[string]string
+		AlertmanagerAnnotations map[string]string
+		AlertmanagerGeneration  int64
+		AlertmanagerWebHTTP2    *bool
+		Config                  Config
+		StatefulSetSpec         appsv1.StatefulSetSpec
+		Assets                  []string `hash:"set"`
+	}{
+		AlertmanagerLabels:      a.Labels,
+		AlertmanagerAnnotations: a.Annotations,
+		AlertmanagerGeneration:  a.Generation,
+		AlertmanagerWebHTTP2:    http2,
+		Config:                  c,
+		StatefulSetSpec:         s,
+		Assets:                  tlsAssets.ShardNames(),
+	},
 		nil,
 	)
 	if err != nil {
-		return "", errors.Wrap(
-			err,
-			"failed to calculate combined hash of Alertmanager CRD and config",
-		)
+		return "", errors.Wrap(err, "failed to calculate combined hash")
 	}
 
 	return fmt.Sprintf("%d", hash), nil
@@ -959,7 +974,7 @@ func (c *Operator) provisionAlertmanagerConfiguration(ctx context.Context, am *m
 			return errors.Wrap(err, "failed to get global AlertmanagerConfig")
 		}
 
-		err = cfgBuilder.initializeFromAlertmanagerConfig(ctx, globalAmConfig)
+		err = cfgBuilder.initializeFromAlertmanagerConfig(ctx, am.Spec.AlertmanagerConfiguration.Global, globalAmConfig)
 		if err != nil {
 			return errors.Wrap(err, "failed to initialize from global AlertmangerConfig")
 		}
@@ -1023,7 +1038,12 @@ func (c *Operator) createOrUpdateGeneratedConfigSecret(ctx context.Context, am *
 	for k, v := range additionalData {
 		generatedConfigSecret.Data[k] = v
 	}
-	generatedConfigSecret.Data[alertmanagerConfigFile] = conf
+	// Compress config to avoid 1mb secret limit for a while
+	var buf bytes.Buffer
+	if err := operator.GzipConfig(&buf, conf); err != nil {
+		return errors.Wrap(err, "couldnt gzip config")
+	}
+	generatedConfigSecret.Data[alertmanagerConfigFileCompressed] = buf.Bytes()
 
 	err := k8sutil.CreateOrUpdateSecret(ctx, sClient, generatedConfigSecret)
 	if err != nil {
@@ -1655,15 +1675,15 @@ func newTLSAssetSecret(am *monitoringv1.Alertmanager, labels map[string]string) 
 func (c *Operator) createOrUpdateWebConfigSecret(ctx context.Context, a *monitoringv1.Alertmanager) error {
 	boolTrue := true
 
-	var tlsConfig *monitoringv1.WebTLSConfig
+	var fields monitoringv1.WebConfigFileFields
 	if a.Spec.Web != nil {
-		tlsConfig = a.Spec.Web.TLSConfig
+		fields = a.Spec.Web.WebConfigFileFields
 	}
 
 	webConfig, err := webconfig.New(
 		webConfigDir,
 		webConfigSecretName(a.Name),
-		tlsConfig,
+		fields,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize web config")

@@ -28,6 +28,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/proto"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -44,6 +45,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringv1beta1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1"
+	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
 	testFramework "github.com/prometheus-operator/prometheus-operator/test/framework"
 )
 
@@ -1219,8 +1221,8 @@ func testAlertmanagerConfigCRD(t *testing.T) {
 			return false, nil
 		}
 
-		if cfgSecret.Data["alertmanager.yaml"] == nil {
-			lastErr = errors.New("'alertmanager.yaml' key is missing in generated configuration secret")
+		if cfgSecret.Data["alertmanager.yaml.gz"] == nil {
+			lastErr = errors.New("'alertmanager.yaml.gz' key is missing in generated configuration secret")
 			return false, nil
 		}
 
@@ -1327,7 +1329,11 @@ mute_time_intervals:
 templates: []
 `, configNs, configNs, configNs, configNs, configNs, configNs, configNs, configNs, configNs, configNs, configNs)
 
-		if diff := cmp.Diff(string(cfgSecret.Data["alertmanager.yaml"]), expected); diff != "" {
+		uncompressed, err := operator.GunzipConfig(cfgSecret.Data["alertmanager.yaml.gz"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(uncompressed, expected); diff != "" {
 			lastErr = errors.Errorf("got(-), want(+):\n%s", diff)
 			return false, nil
 		}
@@ -1353,8 +1359,8 @@ templates: []
 			return false, nil
 		}
 
-		if cfgSecret.Data["alertmanager.yaml"] == nil {
-			lastErr = errors.New("'alertmanager.yaml' key is missing in generated configuration secret")
+		if cfgSecret.Data["alertmanager.yaml.gz"] == nil {
+			lastErr = errors.New("'alertmanager.yaml.gz' key is missing in generated configuration secret")
 			return false, nil
 		}
 		expected := `global:
@@ -1375,7 +1381,11 @@ receivers:
 templates: []
 `
 
-		if diff := cmp.Diff(string(cfgSecret.Data["alertmanager.yaml"]), expected); diff != "" {
+		uncompressed, err := operator.GunzipConfig(cfgSecret.Data["alertmanager.yaml.gz"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(uncompressed, expected); diff != "" {
 			lastErr = errors.Errorf("got(-), want(+):\n%s", diff)
 			return false, nil
 		}
@@ -1443,12 +1453,16 @@ inhibit_rules:
 			return false, nil
 		}
 
-		if cfgSecret.Data["alertmanager.yaml"] == nil {
+		if cfgSecret.Data["alertmanager.yaml.gz"] == nil {
 			lastErr = errors.New("'alertmanager.yaml' key is missing")
 			return false, nil
 		}
 
-		if diff := cmp.Diff(string(cfgSecret.Data["alertmanager.yaml"]), yamlConfig); diff != "" {
+		uncompressed, err := operator.GunzipConfig(cfgSecret.Data["alertmanager.yaml.gz"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(uncompressed, yamlConfig); diff != "" {
 			lastErr = errors.Errorf("got(-), want(+):\n%s", diff)
 			return false, nil
 		}
@@ -1478,13 +1492,79 @@ func testUserDefinedAlertmanagerConfigFromCustomResource(t *testing.T) {
 
 	alertmanager.Spec.AlertmanagerConfiguration = &monitoringv1.AlertmanagerConfiguration{
 		Name: alertmanagerConfig.Name,
+		Global: &monitoringv1.AlertmanagerGlobalConfig{
+			ResolveTimeout: "30s",
+			HTTPConfig: &monitoringv1.HTTPConfig{
+				OAuth2: &monitoringv1.OAuth2{
+					ClientID: monitoringv1.SecretOrConfigMap{
+						ConfigMap: &v1.ConfigMapKeySelector{
+							LocalObjectReference: v1.LocalObjectReference{
+								Name: "webhook-client-id",
+							},
+							Key: "test",
+						},
+					},
+					ClientSecret: v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "webhook-client-secret",
+						},
+						Key: "test",
+					},
+					TokenURL: "https://test.com",
+					Scopes:   []string{"any"},
+					EndpointParams: map[string]string{
+						"some": "value",
+					},
+				},
+				FollowRedirects: toBoolPtr(true),
+			},
+		},
 	}
 
-	if _, err := framework.CreateAlertmanagerAndWaitUntilReady(context.Background(), ns, alertmanager); err != nil {
+	cm := v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "webhook-client-id",
+			Namespace: ns,
+		},
+		Data: map[string]string{
+			"test": "clientID",
+		},
+	}
+	sec := v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "webhook-client-secret",
+			Namespace: ns,
+		},
+		Data: map[string][]byte{
+			"test": []byte("clientSecret"),
+		},
+	}
+
+	ctx := context.Background()
+	if _, err := framework.KubeClient.CoreV1().ConfigMaps(ns).Create(ctx, &cm, metav1.CreateOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := framework.KubeClient.CoreV1().Secrets(ns).Create(ctx, &sec, metav1.CreateOptions{}); err != nil {
 		t.Fatal(err)
 	}
 
-	yamlConfig := fmt.Sprintf(`route:
+	if _, err := framework.CreateAlertmanagerAndWaitUntilReady(ctx, ns, alertmanager); err != nil {
+		t.Fatal(err)
+	}
+
+	yamlConfig := fmt.Sprintf(`global:
+  resolve_timeout: 30s
+  http_config:
+    oauth2:
+      client_id: clientID
+      client_secret: clientSecret
+      scopes:
+      - any
+      token_url: https://test.com
+      endpoint_params:
+        some: value
+    follow_redirects: true
+route:
   receiver: %[1]s
   routes:
   - receiver: %[1]s
@@ -1514,12 +1594,17 @@ templates: []
 			return false, err
 		}
 
-		if cfgSecret.Data["alertmanager.yaml"] == nil {
-			lastErr = errors.New("'alertmanager.yaml' key is missing")
+		if cfgSecret.Data["alertmanager.yaml.gz"] == nil {
+			lastErr = errors.New("'alertmanager.yaml.gz' key is missing")
 			return false, nil
 		}
 
-		if diff := cmp.Diff(string(cfgSecret.Data["alertmanager.yaml"]), yamlConfig); diff != "" {
+		uncompressed, err := operator.GunzipConfig(cfgSecret.Data["alertmanager.yaml.gz"])
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(uncompressed, yamlConfig); diff != "" {
 			lastErr = errors.Errorf("got(-), want(+):\n%s", diff)
 			return false, nil
 		}
@@ -1675,10 +1760,11 @@ func testAMRollbackManualChanges(t *testing.T) {
 	}
 }
 
-func testAMWebTLS(t *testing.T) {
+func testAMWeb(t *testing.T) {
 	// Don't run Alertmanager tests in parallel. See
 	// https://github.com/prometheus/alertmanager/issues/1835 for details.
 
+	trueVal := true
 	testCtx := framework.NewTestCtx(t)
 	defer testCtx.Cleanup(t)
 	ns := framework.CreateNamespace(context.Background(), t, testCtx)
@@ -1699,19 +1785,31 @@ func testAMWebTLS(t *testing.T) {
 
 	am := framework.MakeBasicAlertmanager(name, 1)
 	am.Spec.Web = &monitoringv1.AlertmanagerWebSpec{
-		TLSConfig: &monitoringv1.WebTLSConfig{
-			KeySecret: v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: "web-tls",
-				},
-				Key: "tls.key",
-			},
-			Cert: monitoringv1.SecretOrConfigMap{
-				Secret: &v1.SecretKeySelector{
+		WebConfigFileFields: monitoringv1.WebConfigFileFields{
+			TLSConfig: &monitoringv1.WebTLSConfig{
+				KeySecret: v1.SecretKeySelector{
 					LocalObjectReference: v1.LocalObjectReference{
 						Name: "web-tls",
 					},
-					Key: "tls.crt",
+					Key: "tls.key",
+				},
+				Cert: monitoringv1.SecretOrConfigMap{
+					Secret: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "web-tls",
+						},
+						Key: "tls.crt",
+					},
+				},
+			},
+			HTTPConfig: &monitoringv1.WebHTTPConfig{
+				HTTP2: &trueVal,
+				Headers: &monitoringv1.WebHTTPHeaders{
+					ContentSecurityPolicy:   "default-src 'self'",
+					XFrameOptions:           "Deny",
+					XContentTypeOptions:     "NoSniff",
+					XXSSProtection:          "1; mode=block",
+					StrictTransportSecurity: "max-age=31536000; includeSubDomains",
 				},
 			},
 		},
@@ -1758,17 +1856,29 @@ func testAMWebTLS(t *testing.T) {
 		// This is why we use an http client which skips the TLS verification.
 		// In the test we will verify the TLS certificate manually to make sure
 		// the alertmanager instance is configured properly.
-		httpClient := http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
 			},
+		}
+		err = http2.ConfigureTransport(transport)
+		if err != nil {
+			pollErr = err
+			return false, nil
+		}
+
+		httpClient := http.Client{
+			Transport: transport,
 		}
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			pollErr = err
+			return false, nil
+		}
+
+		if resp.ProtoMajor != 2 {
+			pollErr = fmt.Errorf("expected ProtoMajor to be 2 but got %d", resp.ProtoMajor)
 			return false, nil
 		}
 
@@ -1783,11 +1893,39 @@ func testAMWebTLS(t *testing.T) {
 			return false, nil
 		}
 
+		expectedHeaders := map[string]string{
+			"Content-Security-Policy":   "default-src 'self'",
+			"X-Frame-Options":           "deny",
+			"X-Content-Type-Options":    "nosniff",
+			"X-XSS-Protection":          "1; mode=block",
+			"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+		}
+
+		for k, v := range expectedHeaders {
+			rv := resp.Header.Get(k)
+
+			if rv != v {
+				pollErr = fmt.Errorf("expected header %s value to be %s but got %s", k, v, rv)
+				return false, nil
+			}
+		}
+
+		reloadSuccessTimestamp, err := framework.GetMetricVal(context.Background(), ns, podName, "8080", "reloader_last_reload_success_timestamp_seconds")
+		if err != nil {
+			pollErr = err
+			return false, nil
+		}
+
+		if reloadSuccessTimestamp == 0 {
+			pollErr = fmt.Errorf("config reloader failed to reload once")
+			return false, nil
+		}
+
 		return true, nil
 	})
 
 	if err != nil {
-		t.Fatalf("failed to verify TLS certificate: %v: %v", err, pollErr)
+		t.Fatalf("poll function execution error: %v: %v", err, pollErr)
 	}
 }
 
@@ -1946,4 +2084,8 @@ func testAlertmanagerCRDValidation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func toBoolPtr(in bool) *bool {
+	return &in
 }

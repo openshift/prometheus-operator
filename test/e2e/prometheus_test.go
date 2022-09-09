@@ -16,7 +16,6 @@ package e2e
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -32,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/http2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -1092,7 +1092,7 @@ scrape_configs:
 `
 
 	var bufOne bytes.Buffer
-	if err := gzipConfig(&bufOne, []byte(firstConfig)); err != nil {
+	if err := operator.GzipConfig(&bufOne, []byte(firstConfig)); err != nil {
 		t.Fatal(err)
 	}
 	firstConfigCompressed := bufOne.Bytes()
@@ -1140,7 +1140,7 @@ scrape_configs:
 `
 
 	var bufTwo bytes.Buffer
-	if err := gzipConfig(&bufTwo, []byte(secondConfig)); err != nil {
+	if err := operator.GzipConfig(&bufTwo, []byte(secondConfig)); err != nil {
 		t.Fatal(err)
 	}
 	secondConfigCompressed := bufTwo.Bytes()
@@ -3620,8 +3620,9 @@ func testPromSecurePodMonitor(t *testing.T) {
 	}
 }
 
-func testPromWebTLS(t *testing.T) {
+func testPromWebWithThanosSidecar(t *testing.T) {
 	t.Parallel()
+	trueVal := true
 	testCtx := framework.NewTestCtx(t)
 	defer testCtx.Cleanup(t)
 	ns := framework.CreateNamespace(context.Background(), t, testCtx)
@@ -3638,25 +3639,42 @@ func testPromWebTLS(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	version := operator.DefaultThanosVersion
 	prom := framework.MakeBasicPrometheus(ns, "basic-prometheus", "test-group", 1)
 	prom.Spec.Web = &monitoringv1.PrometheusWebSpec{
-		TLSConfig: &monitoringv1.WebTLSConfig{
-			KeySecret: v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: "web-tls",
-				},
-				Key: "tls.key",
-			},
-			Cert: monitoringv1.SecretOrConfigMap{
-				Secret: &v1.SecretKeySelector{
+		WebConfigFileFields: monitoringv1.WebConfigFileFields{
+			TLSConfig: &monitoringv1.WebTLSConfig{
+				KeySecret: v1.SecretKeySelector{
 					LocalObjectReference: v1.LocalObjectReference{
 						Name: "web-tls",
 					},
-					Key: "tls.crt",
+					Key: "tls.key",
+				},
+				Cert: monitoringv1.SecretOrConfigMap{
+					Secret: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "web-tls",
+						},
+						Key: "tls.crt",
+					},
+				},
+			},
+			HTTPConfig: &monitoringv1.WebHTTPConfig{
+				HTTP2: &trueVal,
+				Headers: &monitoringv1.WebHTTPHeaders{
+					ContentSecurityPolicy:   "default-src 'self'",
+					XFrameOptions:           "Deny",
+					XContentTypeOptions:     "NoSniff",
+					XXSSProtection:          "1; mode=block",
+					StrictTransportSecurity: "max-age=31536000; includeSubDomains",
 				},
 			},
 		},
 	}
+	prom.Spec.Thanos = &monitoringv1.ThanosSpec{
+		Version: &version,
+	}
+
 	if _, err := framework.CreatePrometheusAndWaitUntilReady(context.Background(), ns, prom); err != nil {
 		t.Fatalf("Creating prometheus failed: %v", err)
 	}
@@ -3699,17 +3717,29 @@ func testPromWebTLS(t *testing.T) {
 		// This is why we use an http client which skips the TLS verification.
 		// In the test we will verify the TLS certificate manually to make sure
 		// the prometheus instance is configured properly.
-		httpClient := http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
 			},
+		}
+		err = http2.ConfigureTransport(transport)
+		if err != nil {
+			pollErr = err
+			return false, nil
+		}
+
+		httpClient := http.Client{
+			Transport: transport,
 		}
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			pollErr = err
+			return false, nil
+		}
+
+		if resp.ProtoMajor != 2 {
+			pollErr = fmt.Errorf("expected ProtoMajor to be 2 but got %d", resp.ProtoMajor)
 			return false, nil
 		}
 
@@ -3724,11 +3754,50 @@ func testPromWebTLS(t *testing.T) {
 			return false, nil
 		}
 
+		expectedHeaders := map[string]string{
+			"Content-Security-Policy":   "default-src 'self'",
+			"X-Frame-Options":           "deny",
+			"X-Content-Type-Options":    "nosniff",
+			"X-XSS-Protection":          "1; mode=block",
+			"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+		}
+
+		for k, v := range expectedHeaders {
+			rv := resp.Header.Get(k)
+
+			if rv != v {
+				pollErr = fmt.Errorf("expected header %s value to be %s but got %s", k, v, rv)
+				return false, nil
+			}
+		}
+
+		reloadSuccessTimestamp, err := framework.GetMetricVal(context.Background(), ns, podName, "8080", "reloader_last_reload_success_timestamp_seconds")
+		if err != nil {
+			pollErr = err
+			return false, nil
+		}
+
+		if reloadSuccessTimestamp == 0 {
+			pollErr = fmt.Errorf("config reloader failed to reload once")
+			return false, nil
+		}
+
+		thanosSidecarPrometheusUp, err := framework.GetMetricVal(context.Background(), ns, podName, "10902", "thanos_sidecar_prometheus_up")
+		if err != nil {
+			pollErr = err
+			return false, nil
+		}
+
+		if thanosSidecarPrometheusUp == 0 {
+			pollErr = fmt.Errorf("thanos sidecar failed to connect prometheus")
+			return false, nil
+		}
+
 		return true, nil
 	})
 
 	if err != nil {
-		t.Fatalf("failed to verify TLS certificate: %v: %v", err, pollErr)
+		t.Fatalf("poll function execution error: %v: %v", err, pollErr)
 	}
 }
 
@@ -3930,6 +3999,157 @@ func testPromEnforcedNamespaceLabel(t *testing.T) {
 
 			if namespaceLabel != ns {
 				t.Fatalf("expecting 'namespace' label value to be %q but got %q instead", ns, namespaceLabel)
+			}
+		})
+	}
+}
+
+// testPromNamespaceEnforcementExclusion checks that the enforcedNamespaceLabel field
+// is not enforced on objects defined in ExcludedFromEnforcement.
+func testPromNamespaceEnforcementExclusion(t *testing.T) {
+	t.Parallel()
+
+	for i, tc := range []struct {
+		relabelConfigs       []*monitoringv1.RelabelConfig
+		metricRelabelConfigs []*monitoringv1.RelabelConfig
+		expectedNamespace    string
+	}{
+		{
+			// override label using the labeldrop action.
+			relabelConfigs: []*monitoringv1.RelabelConfig{
+				{
+					Regex:  "namespace",
+					Action: "labeldrop",
+				},
+			},
+			metricRelabelConfigs: []*monitoringv1.RelabelConfig{
+				{
+					Regex:  "namespace",
+					Action: "labeldrop",
+				},
+			},
+			expectedNamespace: "",
+		},
+		{
+			// override label using the replace action.
+			relabelConfigs: []*monitoringv1.RelabelConfig{
+				{
+					TargetLabel: "namespace",
+					Replacement: "ns1",
+				},
+			},
+			metricRelabelConfigs: []*monitoringv1.RelabelConfig{
+				{
+					TargetLabel: "namespace",
+					Replacement: "ns1",
+				},
+			},
+			expectedNamespace: "ns1",
+		},
+		{
+			// override label using the labelmap action.
+			relabelConfigs: []*monitoringv1.RelabelConfig{
+				{
+					TargetLabel: "temp_namespace",
+					Replacement: "ns1",
+				},
+			},
+			metricRelabelConfigs: []*monitoringv1.RelabelConfig{
+				{
+					Action:      "labelmap",
+					Regex:       "temp_namespace",
+					Replacement: "namespace",
+				},
+				{
+					Action: "labeldrop",
+					Regex:  "temp_namespace",
+				},
+			},
+			expectedNamespace: "ns1",
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			ctx := framework.NewTestCtx(t)
+			defer ctx.Cleanup(t)
+			ns := framework.CreateNamespace(context.Background(), t, ctx)
+			framework.SetupPrometheusRBAC(context.Background(), t, ctx, ns)
+
+			prometheusName := "test"
+			group := "servicediscovery-test"
+			svc := framework.MakePrometheusService(prometheusName, group, v1.ServiceTypeClusterIP)
+
+			s := framework.MakeBasicServiceMonitor(group)
+			s.Spec.Endpoints[0].RelabelConfigs = tc.relabelConfigs
+			s.Spec.Endpoints[0].MetricRelabelConfigs = tc.metricRelabelConfigs
+			if _, err := framework.MonClientV1.ServiceMonitors(ns).Create(context.Background(), s, metav1.CreateOptions{}); err != nil {
+				t.Fatal("Creating ServiceMonitor failed: ", err)
+			}
+
+			p := framework.MakeBasicPrometheus(ns, prometheusName, group, 1)
+			p.Spec.EnforcedNamespaceLabel = "namespace"
+			p.Spec.ExcludedFromEnforcement = []monitoringv1.ObjectReference{
+				{
+					Namespace: ns,
+					Group:     "monitoring.coreos.com",
+					Resource:  monitoringv1.ServiceMonitorName,
+				},
+			}
+			_, err := framework.CreatePrometheusAndWaitUntilReady(context.Background(), ns, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if finalizerFn, err := framework.CreateServiceAndWaitUntilReady(context.Background(), ns, svc); err != nil {
+				t.Fatal(errors.Wrap(err, "creating prometheus service failed"))
+			} else {
+				ctx.AddFinalizerFn(finalizerFn)
+			}
+
+			_, err = framework.KubeClient.CoreV1().Secrets(ns).Get(context.Background(), fmt.Sprintf("prometheus-%s", prometheusName), metav1.GetOptions{})
+			if err != nil {
+				t.Fatal("Generated Secret could not be retrieved: ", err)
+			}
+
+			err = framework.WaitForDiscoveryWorking(context.Background(), ns, svc.Name, prometheusName)
+			if err != nil {
+				t.Fatal(errors.Wrap(err, "validating Prometheus target discovery failed"))
+			}
+
+			// Check that the namespace label isn't enforced.
+			var (
+				loopErr        error
+				namespaceLabel string
+			)
+
+			err = wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+				loopErr = nil
+				res, err := framework.PrometheusQuery(ns, svc.Name, "http", "prometheus_build_info")
+				if err != nil {
+					loopErr = errors.Wrap(err, "failed to query Prometheus")
+					return false, nil
+				}
+
+				if len(res) != 1 {
+					loopErr = fmt.Errorf("expecting 1 item but got %d", len(res))
+					return false, nil
+				}
+
+				for k, v := range res[0].Metric {
+					if k == "namespace" {
+						namespaceLabel = v
+						break
+					}
+				}
+
+				return true, nil
+			})
+
+			if err != nil {
+				t.Fatalf("%v: %v", err, loopErr)
+			}
+
+			if namespaceLabel != tc.expectedNamespace {
+				t.Fatalf("expecting custom 'namespace' label value %q due to exclusion. but got %q instead", tc.expectedNamespace, namespaceLabel)
 			}
 		})
 	}
@@ -4329,13 +4549,4 @@ type alertmanagerDiscovery struct {
 type prometheusAlertmanagerAPIResponse struct {
 	Status string                 `json:"status"`
 	Data   *alertmanagerDiscovery `json:"data"`
-}
-
-func gzipConfig(buf *bytes.Buffer, conf []byte) error {
-	w := gzip.NewWriter(buf)
-	defer w.Close()
-	if _, err := w.Write(conf); err != nil {
-		return err
-	}
-	return nil
 }

@@ -35,17 +35,20 @@ import (
 )
 
 const (
-	governingServiceName   = "alertmanager-operated"
-	defaultRetention       = "120h"
-	tlsAssetsDir           = "/etc/alertmanager/certs"
-	secretsDir             = "/etc/alertmanager/secrets/"
-	configmapsDir          = "/etc/alertmanager/configmaps/"
-	alertmanagerConfigDir  = "/etc/alertmanager/config"
-	webConfigDir           = "/etc/alertmanager/web_config"
-	alertmanagerConfigFile = "alertmanager.yaml"
-	alertmanagerStorageDir = "/alertmanager"
-	sSetInputHashName      = "prometheus-operator-input-hash"
-	defaultPortName        = "web"
+	governingServiceName               = "alertmanager-operated"
+	defaultRetention                   = "120h"
+	tlsAssetsDir                       = "/etc/alertmanager/certs"
+	secretsDir                         = "/etc/alertmanager/secrets/"
+	configmapsDir                      = "/etc/alertmanager/configmaps/"
+	alertmanagerConfigDir              = "/etc/alertmanager/config"
+	webConfigDir                       = "/etc/alertmanager/web_config"
+	alertmanagerConfigOutDir           = "/etc/alertmanager/config_out"
+	alertmanagerConfigFile             = "alertmanager.yaml"
+	alertmanagerConfigFileCompressed   = "alertmanager.yaml.gz"
+	alertmanagerConfigEnvsubstFilename = "alertmanager.env.yaml"
+	alertmanagerStorageDir             = "/alertmanager"
+	sSetInputHashName                  = "prometheus-operator-input-hash"
+	defaultPortName                    = "web"
 )
 
 var (
@@ -213,9 +216,6 @@ func makeStatefulSetService(p *monitoringv1.Alertmanager, config Config) *v1.Ser
 }
 
 func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSecrets []string) (*appsv1.StatefulSetSpec, error) {
-	// Before editing 'a' create deep copy, to prevent side effects. For more
-	// details see https://github.com/prometheus-operator/prometheus-operator/issues/1659
-	a = a.DeepCopy()
 	amVersion := operator.StringValOrDefault(a.Spec.Version, operator.DefaultAlertmanagerVersion)
 
 	amImagePath, err := operator.BuildImagePath(
@@ -235,7 +235,7 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 	}
 
 	amArgs := []string{
-		fmt.Sprintf("--config.file=%s", path.Join(alertmanagerConfigDir, alertmanagerConfigFile)),
+		fmt.Sprintf("--config.file=%s", path.Join(alertmanagerConfigOutDir, alertmanagerConfigEnvsubstFilename)),
 		fmt.Sprintf("--storage.path=%s", alertmanagerStorageDir),
 		fmt.Sprintf("--data.retention=%s", a.Spec.Retention),
 	}
@@ -462,6 +462,12 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 			},
 		},
 		assetsVolume,
+		{
+			Name: "config-out",
+			VolumeSource: v1.VolumeSource{
+				EmptyDir: &v1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 
 	volName := volumeName(a.Name)
@@ -477,6 +483,11 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 			MountPath: alertmanagerConfigDir,
 		},
 		{
+			Name:      "config-out",
+			ReadOnly:  true,
+			MountPath: alertmanagerConfigOutDir,
+		},
+		{
 			Name:      "tls-assets",
 			ReadOnly:  true,
 			MountPath: tlsAssetsDir,
@@ -488,18 +499,28 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 		},
 	}
 
-	reloadWatchDirs := []string{alertmanagerConfigDir}
+	watchedDirectories := []string{}
 	configReloaderVolumeMounts := []v1.VolumeMount{
 		{
 			Name:      "config-volume",
 			MountPath: alertmanagerConfigDir,
 			ReadOnly:  true,
 		},
+		{
+			Name:      "config-out",
+			MountPath: alertmanagerConfigOutDir,
+		},
 	}
 
+	rn := k8sutil.NewResourceNamerWithPrefix("secret")
 	for _, s := range a.Spec.Secrets {
+		name, err := rn.UniqueVolumeName(s)
+		if err != nil {
+			return nil, err
+		}
+
 		volumes = append(volumes, v1.Volume{
-			Name: k8sutil.SanitizeVolumeName("secret-" + s),
+			Name: name,
 			VolumeSource: v1.VolumeSource{
 				Secret: &v1.SecretVolumeSource{
 					SecretName: s,
@@ -508,18 +529,24 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 		})
 		mountPath := secretsDir + s
 		mount := v1.VolumeMount{
-			Name:      k8sutil.SanitizeVolumeName("secret-" + s),
+			Name:      name,
 			ReadOnly:  true,
 			MountPath: mountPath,
 		}
 		amVolumeMounts = append(amVolumeMounts, mount)
 		configReloaderVolumeMounts = append(configReloaderVolumeMounts, mount)
-		reloadWatchDirs = append(reloadWatchDirs, mountPath)
+		watchedDirectories = append(watchedDirectories, mountPath)
 	}
 
+	rn = k8sutil.NewResourceNamerWithPrefix("configmap")
 	for _, c := range a.Spec.ConfigMaps {
+		name, err := rn.UniqueVolumeName(c)
+		if err != nil {
+			return nil, err
+		}
+
 		volumes = append(volumes, v1.Volume{
-			Name: k8sutil.SanitizeVolumeName("configmap-" + c),
+			Name: name,
 			VolumeSource: v1.VolumeSource{
 				ConfigMap: &v1.ConfigMapVolumeSource{
 					LocalObjectReference: v1.LocalObjectReference{
@@ -530,13 +557,13 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 		})
 		mountPath := configmapsDir + c
 		mount := v1.VolumeMount{
-			Name:      k8sutil.SanitizeVolumeName("configmap-" + c),
+			Name:      name,
 			ReadOnly:  true,
 			MountPath: mountPath,
 		}
 		amVolumeMounts = append(amVolumeMounts, mount)
 		configReloaderVolumeMounts = append(configReloaderVolumeMounts, mount)
-		reloadWatchDirs = append(reloadWatchDirs, mountPath)
+		watchedDirectories = append(watchedDirectories, mountPath)
 	}
 
 	amVolumeMounts = append(amVolumeMounts, a.Spec.VolumeMounts...)
@@ -546,18 +573,21 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 	// With this we avoid redeploying alertmanager when reconfiguring between
 	// HTTP and HTTPS and vice-versa.
 	if version.GTE(semver.MustParse("0.22.0")) {
-		var webTLSConfig *monitoringv1.WebTLSConfig
+		var fields monitoringv1.WebConfigFileFields
 		if a.Spec.Web != nil {
-			webTLSConfig = a.Spec.Web.TLSConfig
+			fields = a.Spec.Web.WebConfigFileFields
 		}
 
-		webConfig, err := webconfig.New(webConfigDir, webConfigSecretName(a.Name), webTLSConfig)
+		webConfig, err := webconfig.New(webConfigDir, webConfigSecretName(a.Name), fields)
 		if err != nil {
 			return nil, err
 		}
 
-		confArg, configVol, configMount := webConfig.GetMountParameters()
-		amArgs = append(amArgs, confArg)
+		confArg, configVol, configMount, err := webConfig.GetMountParameters()
+		if err != nil {
+			return nil, err
+		}
+		amArgs = append(amArgs, fmt.Sprintf("--%s=%s", confArg.Name, confArg.Value))
 		volumes = append(volumes, configVol...)
 		amVolumeMounts = append(amVolumeMounts, configMount...)
 	}
@@ -565,9 +595,6 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 	terminationGracePeriod := int64(120)
 	finalSelectorLabels := config.Labels.Merge(podSelectorLabels)
 	finalLabels := config.Labels.Merge(podLabels)
-
-	var watchedDirectories []string
-	watchedDirectories = append(watchedDirectories, reloadWatchDirs...)
 
 	boolFalse := false
 	boolTrue := true
@@ -621,6 +648,8 @@ func makeStatefulSetSpec(a *monitoringv1.Alertmanager, config Config, tlsAssetSe
 			operator.WatchedDirectories(watchedDirectories),
 			operator.VolumeMounts(configReloaderVolumeMounts),
 			operator.Shard(-1),
+			operator.ConfigFile(path.Join(alertmanagerConfigDir, alertmanagerConfigFileCompressed)),
+			operator.ConfigEnvsubstFile(path.Join(alertmanagerConfigOutDir, alertmanagerConfigEnvsubstFilename)),
 		),
 	}
 

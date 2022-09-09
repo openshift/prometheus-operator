@@ -683,7 +683,7 @@ AlertmanagerConfiguration
 </em>
 </td>
 <td>
-<p>EXPERIMENTAL: alertmanagerConfiguration specifies the global Alertmanager configuration.
+<p>EXPERIMENTAL: alertmanagerConfiguration specifies the configuration of Alertmanager.
 If defined, it takes precedence over the <code>configSecret</code> field.
 This field may change in future releases.</p>
 </td>
@@ -1355,35 +1355,6 @@ string
 </tr>
 <tr>
 <td>
-<code>tag</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Tag of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
-Version is ignored if Tag is set.
-Deprecated: use &lsquo;image&rsquo; instead.  The image tag can be specified
-as part of the image URL.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sha</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SHA of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
-Similar to a tag, but the SHA explicitly deploys an immutable container image.
-Version and Tag are ignored if SHA is set.
-Deprecated: use &lsquo;image&rsquo; instead.  The image digest can be specified
-as part of the image URL.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>paused</code><br/>
 <em>
 bool
@@ -1406,18 +1377,6 @@ string
 combinations. Specifying the version is still necessary to ensure the
 Prometheus Operator knows what version of Prometheus is being
 configured.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>baseImage</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Base image to use for a Prometheus deployment.
-Deprecated: use &lsquo;image&rsquo; instead</p>
 </td>
 </tr>
 <tr>
@@ -1542,19 +1501,6 @@ Duration
 </tr>
 <tr>
 <td>
-<code>evaluationInterval</code><br/>
-<em>
-<a href="#monitoring.coreos.com/v1.Duration">
-Duration
-</a>
-</em>
-</td>
-<td>
-<p>Interval between consecutive evaluations. Default: <code>30s</code></p>
-</td>
-</tr>
-<tr>
-<td>
 <code>externalLabels</code><br/>
 <em>
 map[string]string
@@ -1563,22 +1509,6 @@ map[string]string
 <td>
 <p>The labels to add to any time series or alerts when communicating with
 external systems (federation, remote storage, Alertmanager).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>enableAdminAPI</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Enable access to prometheus web admin API. Defaults to the value of <code>false</code>.
-WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
-shutdown Prometheus, and more. Enabling this should be done with care and the
-user is advised to add additional authentication authorization via a proxy to
-ensure only clients authorized to perform these actions can do so.
-For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis">https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis</a></p>
 </td>
 </tr>
 <tr>
@@ -2142,6 +2072,94 @@ This is an alpha field and requires enabling StatefulSetMinReadySeconds feature 
 </tr>
 <tr>
 <td>
+<code>additionalArgs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Argument">
+[]Argument
+</a>
+</em>
+</td>
+<td>
+<p>AdditionalArgs allows setting additional arguments for the Prometheus container.
+It is intended for e.g. activating hidden flags which are not supported by
+the dedicated configuration options yet. The arguments are passed as-is to the
+Prometheus container which may cause issues if they are invalid or not supporeted
+by the given Prometheus version.
+In case of an argument conflict (e.g. an argument which is already set by the
+operator itself) or when providing an invalid argument the reconciliation will
+fail and an error will be logged.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>walCompression</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enable compression of the write-ahead log using Snappy. This flag is
+only available in versions of Prometheus &gt;= 2.11.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>excludedFromEnforcement</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ObjectReference">
+[]ObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>List of references to PodMonitor, ServiceMonitor, Probe and PrometheusRule objects
+to be excluded from enforcing a namespace label of origin.
+Applies only if enforcedNamespaceLabel set to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>baseImage</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Base image to use for a Prometheus deployment.
+Deprecated: use &lsquo;image&rsquo; instead</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tag</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Tag of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
+Version is ignored if Tag is set.
+Deprecated: use &lsquo;image&rsquo; instead.  The image tag can be specified
+as part of the image URL.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sha</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>SHA of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
+Similar to a tag, but the SHA explicitly deploys an immutable container image.
+Version and Tag are ignored if SHA is set.
+Deprecated: use &lsquo;image&rsquo; instead.  The image digest can be specified
+as part of the image URL.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>retention</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.Duration">
@@ -2181,18 +2199,6 @@ bool
 </tr>
 <tr>
 <td>
-<code>walCompression</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Enable compression of the write-ahead log using Snappy. This flag is
-only available in versions of Prometheus &gt;= 2.11.0.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>rules</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.Rules">
@@ -2202,21 +2208,6 @@ Rules
 </td>
 <td>
 <p>/&ndash;rules.*/ command-line arguments.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>excludedFromEnforcement</code><br/>
-<em>
-<a href="#monitoring.coreos.com/v1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<p>List of references to PodMonitor, ServiceMonitor, Probe and PrometheusRule objects
-to be excluded from enforcing a namespace label of origin.
-Applies only if enforcedNamespaceLabel set to true.</p>
 </td>
 </tr>
 <tr>
@@ -2411,6 +2402,35 @@ Exemplars
 <td>
 <p>Exemplars related settings that are runtime reloadable.
 It requires to enable the exemplar storage feature to be effective.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>evaluationInterval</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<p>Interval between consecutive evaluations. Default: <code>30s</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableAdminAPI</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enable access to prometheus web admin API. Defaults to the value of <code>false</code>.
+WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
+shutdown Prometheus, and more. Enabling this should be done with care and the
+user is advised to add additional authentication authorization via a proxy to
+ensure only clients authorized to perform these actions can do so.
+For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis">https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis</a></p>
 </td>
 </tr>
 </table>
@@ -2836,7 +2856,7 @@ Authorization
 (<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>)
 </p>
 <div>
-<p>AlertmanagerConfiguration defines the global Alertmanager configuration.</p>
+<p>AlertmanagerConfiguration defines the Alertmanager configuration.</p>
 </div>
 <table>
 <thead>
@@ -2854,9 +2874,23 @@ string
 </em>
 </td>
 <td>
-<p>The name of the AlertmanagerConfig resource which is used to generate the global configuration.
+<p>The name of the AlertmanagerConfig resource which is used to generate the Alertmanager configuration.
 It must be defined in the same namespace as the Alertmanager object.
 The operator will not enforce a <code>namespace</code> label for routes and inhibition rules.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>global</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">
+AlertmanagerGlobalConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the global parameters of the Alertmanager configuration.</p>
 </td>
 </tr>
 </tbody>
@@ -2996,6 +3030,53 @@ Duration
 </td>
 <td>
 <p>Timeout is a per-target Alertmanager timeout when pushing alerts.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerConfiguration">AlertmanagerConfiguration</a>)
+</p>
+<div>
+<p>AlertmanagerGlobalConfig configures parameters that are valid in all other configuration contexts.
+See <a href="https://prometheus.io/docs/alerting/latest/configuration/#configuration-file">https://prometheus.io/docs/alerting/latest/configuration/#configuration-file</a></p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>resolveTimeout</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<p>ResolveTimeout is the default value used by alertmanager if the alert does
+not include EndsAt, after this time passes it can declare the alert as resolved if it has not been updated.
+This has no impact on alerts from Prometheus, as they always include EndsAt.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.HTTPConfig">
+HTTPConfig
+</a>
+</em>
+</td>
+<td>
+<p>HTTP client configuration.</p>
 </td>
 </tr>
 </tbody>
@@ -3604,7 +3685,7 @@ AlertmanagerConfiguration
 </em>
 </td>
 <td>
-<p>EXPERIMENTAL: alertmanagerConfiguration specifies the global Alertmanager configuration.
+<p>EXPERIMENTAL: alertmanagerConfiguration specifies the configuration of Alertmanager.
 If defined, it takes precedence over the <code>configSecret</code> field.
 This field may change in future releases.</p>
 </td>
@@ -3697,7 +3778,7 @@ int32
 (<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>)
 </p>
 <div>
-<p>AlertmanagerWebSpec defines the query command line flags when starting Alertmanager.</p>
+<p>AlertmanagerWebSpec defines the web command line flags when starting Alertmanager.</p>
 </div>
 <table>
 <thead>
@@ -3717,6 +3798,20 @@ WebTLSConfig
 </em>
 </td>
 <td>
+<p>Defines the TLS parameters for HTTPS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.WebHTTPConfig">
+WebHTTPConfig
+</a>
+</em>
+</td>
+<td>
+<p>Defines HTTP parameters for web server.</p>
 </td>
 </tr>
 </tbody>
@@ -3752,6 +3847,46 @@ bool
 </em>
 </td>
 <td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.Argument">Argument
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
+</p>
+<div>
+<p>Argument as part of the AdditionalArgs list.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the argument, e.g. &ldquo;scrape.discovery-reload-interval&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Argument value, e.g. 30s. Can be empty for name-only arguments (e.g. &ndash;storage.tsdb.no-lockfile)</p>
 </td>
 </tr>
 </tbody>
@@ -3868,7 +4003,7 @@ string
 <h3 id="monitoring.coreos.com/v1.BasicAuth">BasicAuth
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.APIServerConfig">APIServerConfig</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.APIServerConfig">APIServerConfig</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
 </p>
 <div>
 <p>BasicAuth allow an endpoint to authenticate over basic authentication
@@ -4047,35 +4182,6 @@ string
 </tr>
 <tr>
 <td>
-<code>tag</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Tag of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
-Version is ignored if Tag is set.
-Deprecated: use &lsquo;image&rsquo; instead.  The image tag can be specified
-as part of the image URL.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sha</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SHA of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
-Similar to a tag, but the SHA explicitly deploys an immutable container image.
-Version and Tag are ignored if SHA is set.
-Deprecated: use &lsquo;image&rsquo; instead.  The image digest can be specified
-as part of the image URL.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>paused</code><br/>
 <em>
 bool
@@ -4098,18 +4204,6 @@ string
 combinations. Specifying the version is still necessary to ensure the
 Prometheus Operator knows what version of Prometheus is being
 configured.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>baseImage</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Base image to use for a Prometheus deployment.
-Deprecated: use &lsquo;image&rsquo; instead</p>
 </td>
 </tr>
 <tr>
@@ -4234,19 +4328,6 @@ Duration
 </tr>
 <tr>
 <td>
-<code>evaluationInterval</code><br/>
-<em>
-<a href="#monitoring.coreos.com/v1.Duration">
-Duration
-</a>
-</em>
-</td>
-<td>
-<p>Interval between consecutive evaluations. Default: <code>30s</code></p>
-</td>
-</tr>
-<tr>
-<td>
 <code>externalLabels</code><br/>
 <em>
 map[string]string
@@ -4255,22 +4336,6 @@ map[string]string
 <td>
 <p>The labels to add to any time series or alerts when communicating with
 external systems (federation, remote storage, Alertmanager).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>enableAdminAPI</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Enable access to prometheus web admin API. Defaults to the value of <code>false</code>.
-WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
-shutdown Prometheus, and more. Enabling this should be done with care and the
-user is advised to add additional authentication authorization via a proxy to
-ensure only clients authorized to perform these actions can do so.
-For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis">https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis</a></p>
 </td>
 </tr>
 <tr>
@@ -4832,12 +4897,59 @@ This is an alpha field and requires enabling StatefulSetMinReadySeconds feature 
 <p>Pods&rsquo; hostAliases configuration</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>additionalArgs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Argument">
+[]Argument
+</a>
+</em>
+</td>
+<td>
+<p>AdditionalArgs allows setting additional arguments for the Prometheus container.
+It is intended for e.g. activating hidden flags which are not supported by
+the dedicated configuration options yet. The arguments are passed as-is to the
+Prometheus container which may cause issues if they are invalid or not supporeted
+by the given Prometheus version.
+In case of an argument conflict (e.g. an argument which is already set by the
+operator itself) or when providing an invalid argument the reconciliation will
+fail and an error will be logged.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>walCompression</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enable compression of the write-ahead log using Snappy. This flag is
+only available in versions of Prometheus &gt;= 2.11.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>excludedFromEnforcement</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ObjectReference">
+[]ObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>List of references to PodMonitor, ServiceMonitor, Probe and PrometheusRule objects
+to be excluded from enforcing a namespace label of origin.
+Applies only if enforcedNamespaceLabel set to true.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.Duration">Duration
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.MetadataConfig">MetadataConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.QuerySpec">QuerySpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.MetadataConfig">MetadataConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.QuerySpec">QuerySpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
 </p>
 <div>
 <p>Duration is a valid time duration that can be parsed by Prometheus model.ParseDuration() function.
@@ -5421,6 +5533,124 @@ A value of zero or less than zero disables the storage.</p>
 Supported units: h, m, s, ms
 Examples: <code>45ms</code>, <code>30s</code>, <code>1m</code>, <code>1h20m15s</code></p>
 </div>
+<h3 id="monitoring.coreos.com/v1.HTTPConfig">HTTPConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig</a>)
+</p>
+<div>
+<p>HTTPConfig defines a client HTTP configuration.
+See <a href="https://prometheus.io/docs/alerting/latest/configuration/#http_config">https://prometheus.io/docs/alerting/latest/configuration/#http_config</a></p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>authorization</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SafeAuthorization">
+SafeAuthorization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Authorization header configuration for the client.
+This is mutually exclusive with BasicAuth and is only available starting from Alertmanager v0.22+.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>basicAuth</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.BasicAuth">
+BasicAuth
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>BasicAuth for the client.
+This is mutually exclusive with Authorization. If both are defined, BasicAuth takes precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>oauth2</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.OAuth2">
+OAuth2
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OAuth2 client credentials used to fetch a token for the targets.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>bearerTokenSecret</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+Kubernetes core/v1.SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The secret&rsquo;s key that contains the bearer token to be used by the client
+for authentication.
+The secret needs to be in the same namespace as the Alertmanager
+object and accessible by the Prometheus Operator.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tlsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SafeTLSConfig">
+SafeTLSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TLS configuration for the client.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>proxyURL</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional proxy URL.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>followRedirects</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>FollowRedirects specifies whether the client should follow HTTP 3xx redirects.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="monitoring.coreos.com/v1.HostAlias">HostAlias
 </h3>
 <p>
@@ -5560,7 +5790,7 @@ list restricting them.</p>
 <h3 id="monitoring.coreos.com/v1.OAuth2">OAuth2
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
 </p>
 <div>
 <p>OAuth2 allows an endpoint to authenticate with OAuth2.
@@ -5662,7 +5892,7 @@ string
 <h3 id="monitoring.coreos.com/v1.ObjectReference">ObjectReference
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>)
 </p>
 <div>
 <p>ObjectReference references a PodMonitor, ServiceMonitor, Probe or PrometheusRule object.</p>
@@ -7111,35 +7341,6 @@ string
 </tr>
 <tr>
 <td>
-<code>tag</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Tag of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
-Version is ignored if Tag is set.
-Deprecated: use &lsquo;image&rsquo; instead.  The image tag can be specified
-as part of the image URL.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>sha</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SHA of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
-Similar to a tag, but the SHA explicitly deploys an immutable container image.
-Version and Tag are ignored if SHA is set.
-Deprecated: use &lsquo;image&rsquo; instead.  The image digest can be specified
-as part of the image URL.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>paused</code><br/>
 <em>
 bool
@@ -7162,18 +7363,6 @@ string
 combinations. Specifying the version is still necessary to ensure the
 Prometheus Operator knows what version of Prometheus is being
 configured.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>baseImage</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Base image to use for a Prometheus deployment.
-Deprecated: use &lsquo;image&rsquo; instead</p>
 </td>
 </tr>
 <tr>
@@ -7298,19 +7487,6 @@ Duration
 </tr>
 <tr>
 <td>
-<code>evaluationInterval</code><br/>
-<em>
-<a href="#monitoring.coreos.com/v1.Duration">
-Duration
-</a>
-</em>
-</td>
-<td>
-<p>Interval between consecutive evaluations. Default: <code>30s</code></p>
-</td>
-</tr>
-<tr>
-<td>
 <code>externalLabels</code><br/>
 <em>
 map[string]string
@@ -7319,22 +7495,6 @@ map[string]string
 <td>
 <p>The labels to add to any time series or alerts when communicating with
 external systems (federation, remote storage, Alertmanager).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>enableAdminAPI</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Enable access to prometheus web admin API. Defaults to the value of <code>false</code>.
-WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
-shutdown Prometheus, and more. Enabling this should be done with care and the
-user is advised to add additional authentication authorization via a proxy to
-ensure only clients authorized to perform these actions can do so.
-For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis">https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis</a></p>
 </td>
 </tr>
 <tr>
@@ -7898,6 +8058,94 @@ This is an alpha field and requires enabling StatefulSetMinReadySeconds feature 
 </tr>
 <tr>
 <td>
+<code>additionalArgs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Argument">
+[]Argument
+</a>
+</em>
+</td>
+<td>
+<p>AdditionalArgs allows setting additional arguments for the Prometheus container.
+It is intended for e.g. activating hidden flags which are not supported by
+the dedicated configuration options yet. The arguments are passed as-is to the
+Prometheus container which may cause issues if they are invalid or not supporeted
+by the given Prometheus version.
+In case of an argument conflict (e.g. an argument which is already set by the
+operator itself) or when providing an invalid argument the reconciliation will
+fail and an error will be logged.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>walCompression</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enable compression of the write-ahead log using Snappy. This flag is
+only available in versions of Prometheus &gt;= 2.11.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>excludedFromEnforcement</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ObjectReference">
+[]ObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>List of references to PodMonitor, ServiceMonitor, Probe and PrometheusRule objects
+to be excluded from enforcing a namespace label of origin.
+Applies only if enforcedNamespaceLabel set to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>baseImage</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Base image to use for a Prometheus deployment.
+Deprecated: use &lsquo;image&rsquo; instead</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tag</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Tag of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
+Version is ignored if Tag is set.
+Deprecated: use &lsquo;image&rsquo; instead.  The image tag can be specified
+as part of the image URL.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sha</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>SHA of Prometheus container image to be deployed. Defaults to the value of <code>version</code>.
+Similar to a tag, but the SHA explicitly deploys an immutable container image.
+Version and Tag are ignored if SHA is set.
+Deprecated: use &lsquo;image&rsquo; instead.  The image digest can be specified
+as part of the image URL.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>retention</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.Duration">
@@ -7937,18 +8185,6 @@ bool
 </tr>
 <tr>
 <td>
-<code>walCompression</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Enable compression of the write-ahead log using Snappy. This flag is
-only available in versions of Prometheus &gt;= 2.11.0.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>rules</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.Rules">
@@ -7958,21 +8194,6 @@ Rules
 </td>
 <td>
 <p>/&ndash;rules.*/ command-line arguments.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>excludedFromEnforcement</code><br/>
-<em>
-<a href="#monitoring.coreos.com/v1.ObjectReference">
-[]ObjectReference
-</a>
-</em>
-</td>
-<td>
-<p>List of references to PodMonitor, ServiceMonitor, Probe and PrometheusRule objects
-to be excluded from enforcing a namespace label of origin.
-Applies only if enforcedNamespaceLabel set to true.</p>
 </td>
 </tr>
 <tr>
@@ -8169,6 +8390,35 @@ Exemplars
 It requires to enable the exemplar storage feature to be effective.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>evaluationInterval</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<p>Interval between consecutive evaluations. Default: <code>30s</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableAdminAPI</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enable access to prometheus web admin API. Defaults to the value of <code>false</code>.
+WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
+shutdown Prometheus, and more. Enabling this should be done with care and the
+user is advised to add additional authentication authorization via a proxy to
+ensure only clients authorized to perform these actions can do so.
+For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis">https://prometheus.io/docs/prometheus/latest/querying/api/#tsdb-admin-apis</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.PrometheusStatus">PrometheusStatus
@@ -8284,7 +8534,7 @@ int32
 (<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>)
 </p>
 <div>
-<p>PrometheusWebSpec defines the query command line flags when starting Prometheus.</p>
+<p>PrometheusWebSpec defines the web command line flags when starting Prometheus.</p>
 </div>
 <table>
 <thead>
@@ -8296,17 +8546,6 @@ int32
 <tbody>
 <tr>
 <td>
-<code>pageTitle</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>The prometheus web page title</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>tlsConfig</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.WebTLSConfig">
@@ -8315,6 +8554,31 @@ WebTLSConfig
 </em>
 </td>
 <td>
+<p>Defines the TLS parameters for HTTPS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.WebHTTPConfig">
+WebHTTPConfig
+</a>
+</em>
+</td>
+<td>
+<p>Defines HTTP parameters for web server.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pageTitle</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>The prometheus web page title</p>
 </td>
 </tr>
 </tbody>
@@ -9233,7 +9497,7 @@ string
 <h3 id="monitoring.coreos.com/v1.SafeAuthorization">SafeAuthorization
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.Authorization">Authorization</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.Authorization">Authorization</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
 </p>
 <div>
 <p>SafeAuthorization specifies a subset of the Authorization struct, that is
@@ -9277,7 +9541,7 @@ Kubernetes core/v1.SecretKeySelector
 <h3 id="monitoring.coreos.com/v1.SafeTLSConfig">SafeTLSConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PodMetricsEndpointTLSConfig">PodMetricsEndpointTLSConfig</a>, <a href="#monitoring.coreos.com/v1.ProbeTLSConfig">ProbeTLSConfig</a>, <a href="#monitoring.coreos.com/v1.TLSConfig">TLSConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpointTLSConfig">PodMetricsEndpointTLSConfig</a>, <a href="#monitoring.coreos.com/v1.ProbeTLSConfig">ProbeTLSConfig</a>, <a href="#monitoring.coreos.com/v1.TLSConfig">TLSConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1beta1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
 </p>
 <div>
 <p>SafeTLSConfig specifies safe TLS configuration parameters.</p>
@@ -10451,6 +10715,18 @@ Kubernetes core/v1.SecretKeySelector
 </tr>
 <tr>
 <td>
+<code>tracingConfigFile</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>TracingConfig specifies the path of the tracing configuration file.
+When used alongside with TracingConfig, TracingConfigFile takes precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>labels</code><br/>
 <em>
 map[string]string
@@ -11090,6 +11366,18 @@ Kubernetes core/v1.SecretKeySelector
 </tr>
 <tr>
 <td>
+<code>tracingConfigFile</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>TracingConfig specifies the path of the tracing configuration file.
+When used alongside with TracingConfig, TracingConfigFile takes precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>labels</code><br/>
 <em>
 map[string]string
@@ -11538,12 +11826,203 @@ Duration
 VolumeMounts specified will be appended to other VolumeMounts in the thanos-sidecar container.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>additionalArgs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Argument">
+[]Argument
+</a>
+</em>
+</td>
+<td>
+<p>AdditionalArgs allows setting additional arguments for the Thanos container.
+The arguments are passed as-is to the Thanos container which may cause issues
+if they are invalid or not supporeted the given Thanos version.
+In case of an argument conflict (e.g. an argument which is already set by the
+operator itself) or when providing an invalid argument the reconciliation will
+fail and an error will be logged.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.WebConfigFileFields">WebConfigFileFields
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerWebSpec">AlertmanagerWebSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusWebSpec">PrometheusWebSpec</a>)
+</p>
+<div>
+<p>WebConfigFileFields defines the file content for &ndash;web.config.file flag.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>tlsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.WebTLSConfig">
+WebTLSConfig
+</a>
+</em>
+</td>
+<td>
+<p>Defines the TLS parameters for HTTPS.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.WebHTTPConfig">
+WebHTTPConfig
+</a>
+</em>
+</td>
+<td>
+<p>Defines HTTP parameters for web server.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.WebHTTPConfig">WebHTTPConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.WebConfigFileFields">WebConfigFileFields</a>)
+</p>
+<div>
+<p>WebHTTPConfig defines HTTP parameters for web server.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>http2</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Enable HTTP/2 support. Note that HTTP/2 is only supported with TLS.
+When TLSConfig is not configured, HTTP/2 will be disabled.
+Whenever the value of the field changes, a rolling update will be triggered.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headers</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.WebHTTPHeaders">
+WebHTTPHeaders
+</a>
+</em>
+</td>
+<td>
+<p>List of headers that can be added to HTTP responses.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.WebHTTPHeaders">WebHTTPHeaders
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.WebHTTPConfig">WebHTTPConfig</a>)
+</p>
+<div>
+<p>WebHTTPHeaders defines the list of headers that can be added to HTTP responses.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>contentSecurityPolicy</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Set the Content-Security-Policy header to HTTP responses.
+Unset if blank.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>xFrameOptions</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Set the X-Frame-Options header to HTTP responses.
+Unset if blank. Accepted values are deny and sameorigin.
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>xContentTypeOptions</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Set the X-Content-Type-Options header to HTTP responses.
+Unset if blank. Accepted value is nosniff.
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>xXSSProtection</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Set the X-XSS-Protection header to all responses.
+Unset if blank.
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>strictTransportSecurity</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Set the Strict-Transport-Security header to HTTP responses.
+Unset if blank.
+Please make sure that you use this with care as this header might force
+browsers to load Prometheus and the other applications hosted on the same
+domain and subdomains over HTTPS.
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security</a></p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.WebTLSConfig">WebTLSConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerWebSpec">AlertmanagerWebSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusWebSpec">PrometheusWebSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.WebConfigFileFields">WebConfigFileFields</a>)
 </p>
 <div>
 <p>WebTLSConfig defines the TLS parameters for HTTPS.</p>

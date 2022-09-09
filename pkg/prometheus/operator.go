@@ -16,7 +16,6 @@ package prometheus
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"reflect"
@@ -1378,8 +1377,9 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	p := pobj.(*monitoringv1.Prometheus)
 	p = p.DeepCopy()
-	p.APIVersion = monitoringv1.SchemeGroupVersion.String()
-	p.Kind = monitoringv1.PrometheusesKind
+	if err := k8sutil.AddTypeInformationToObject(p); err != nil {
+		return errors.Wrap(err, "failed to set Prometheus type information")
+	}
 
 	logger := log.With(c.logger, "key", key)
 	if p.Spec.Paused {
@@ -1705,10 +1705,16 @@ func checkPrometheusSpecDeprecation(key string, p *monitoringv1.Prometheus, logg
 }
 
 func createSSetInputHash(p monitoringv1.Prometheus, c operator.Config, ruleConfigMapNames []string, tlsAssets *operator.ShardedSecret, ssSpec appsv1.StatefulSetSpec) (string, error) {
+	var http2 *bool
+	if p.Spec.Web != nil && p.Spec.Web.WebConfigFileFields.HTTPConfig != nil {
+		http2 = p.Spec.Web.WebConfigFileFields.HTTPConfig.HTTP2
+	}
+
 	hash, err := hashstructure.Hash(struct {
 		PrometheusLabels      map[string]string
 		PrometheusAnnotations map[string]string
 		PrometheusGeneration  int64
+		PrometheusWebHTTP2    *bool
 		Config                operator.Config
 		StatefulSetSpec       appsv1.StatefulSetSpec
 		RuleConfigMaps        []string `hash:"set"`
@@ -1717,6 +1723,7 @@ func createSSetInputHash(p monitoringv1.Prometheus, c operator.Config, ruleConfi
 		PrometheusLabels:      p.Labels,
 		PrometheusAnnotations: p.Annotations,
 		PrometheusGeneration:  p.Generation,
+		PrometheusWebHTTP2:    http2,
 		Config:                c,
 		StatefulSetSpec:       ssSpec,
 		RuleConfigMaps:        ruleConfigMapNames,
@@ -1910,15 +1917,6 @@ func (c *Operator) loadConfigFromSecret(sks *v1.SecretKeySelector, s *v1.SecretL
 	return nil, nil
 }
 
-func gzipConfig(buf *bytes.Buffer, conf []byte) error {
-	w := gzip.NewWriter(buf)
-	defer w.Close()
-	if _, err := w.Write(conf); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *monitoringv1.Prometheus, ruleConfigMapNames []string, store *assets.Store) error {
 	// If no service or pod monitor selectors are configured, the user wants to
 	// manage configuration themselves. Do create an empty Secret if it doesn't
@@ -2059,7 +2057,7 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 
 	// Compress config to avoid 1mb secret limit for a while
 	var buf bytes.Buffer
-	if err = gzipConfig(&buf, conf); err != nil {
+	if err = operator.GzipConfig(&buf, conf); err != nil {
 		return errors.Wrap(err, "couldn't gzip config")
 	}
 	s.Data[configFilename] = buf.Bytes()
@@ -2114,15 +2112,15 @@ func newTLSAssetSecret(p *monitoringv1.Prometheus, labels map[string]string) *v1
 func (c *Operator) createOrUpdateWebConfigSecret(ctx context.Context, p *monitoringv1.Prometheus) error {
 	boolTrue := true
 
-	var tlsConfig *monitoringv1.WebTLSConfig
+	var fields monitoringv1.WebConfigFileFields
 	if p.Spec.Web != nil {
-		tlsConfig = p.Spec.Web.TLSConfig
+		fields = p.Spec.Web.WebConfigFileFields
 	}
 
 	webConfig, err := webconfig.New(
 		webConfigDir,
 		webConfigSecretName(p.Name),
-		tlsConfig,
+		fields,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize web config")
@@ -2177,7 +2175,12 @@ func (c *Operator) selectServiceMonitors(ctx context.Context, p *monitoringv1.Pr
 		err := c.smonInfs.ListAllByNamespace(ns, servMonSelector, func(obj interface{}) {
 			k, ok := c.keyFunc(obj)
 			if ok {
-				serviceMonitors[k] = obj.(*monitoringv1.ServiceMonitor)
+				svcMon := obj.(*monitoringv1.ServiceMonitor).DeepCopy()
+				if err := k8sutil.AddTypeInformationToObject(svcMon); err != nil {
+					level.Error(c.logger).Log("msg", "failed to set ServiceMonitor type information", "namespace", ns, "err", err)
+					return
+				}
+				serviceMonitors[k] = svcMon
 			}
 		})
 		if err != nil {
@@ -2305,7 +2308,12 @@ func (c *Operator) selectPodMonitors(ctx context.Context, p *monitoringv1.Promet
 		err := c.pmonInfs.ListAllByNamespace(ns, podMonSelector, func(obj interface{}) {
 			k, ok := c.keyFunc(obj)
 			if ok {
-				podMonitors[k] = obj.(*monitoringv1.PodMonitor)
+				podMon := obj.(*monitoringv1.PodMonitor).DeepCopy()
+				if err := k8sutil.AddTypeInformationToObject(podMon); err != nil {
+					level.Error(c.logger).Log("msg", "failed to set PodMonitor type information", "namespace", ns, "err", err)
+					return
+				}
+				podMonitors[k] = podMon
 			}
 		})
 		if err != nil {
@@ -2424,7 +2432,12 @@ func (c *Operator) selectProbes(ctx context.Context, p *monitoringv1.Prometheus,
 	for _, ns := range namespaces {
 		err := c.probeInfs.ListAllByNamespace(ns, bMonSelector, func(obj interface{}) {
 			if k, ok := c.keyFunc(obj); ok {
-				probes[k] = obj.(*monitoringv1.Probe)
+				probe := obj.(*monitoringv1.Probe).DeepCopy()
+				if err := k8sutil.AddTypeInformationToObject(probe); err != nil {
+					level.Error(c.logger).Log("msg", "failed to set Probe type information", "namespace", ns, "err", err)
+					return
+				}
+				probes[k] = probe
 			}
 		})
 		if err != nil {
