@@ -1221,30 +1221,6 @@ func TestProvisionAlertmanagerConfiguration(t *testing.T) {
 			ok:           true,
 			expectedKeys: []string{"key1"},
 		},
-		{
-			am: &monitoringv1.Alertmanager{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "invalid cluster gossip interval",
-					Namespace: "test",
-				},
-				Spec: monitoringv1.AlertmanagerSpec{
-					ClusterGossipInterval: "30k",
-				},
-			},
-			ok: false,
-		},
-		{
-			am: &monitoringv1.Alertmanager{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "correct cluster gossip interval",
-					Namespace: "test",
-				},
-				Spec: monitoringv1.AlertmanagerSpec{
-					ClusterGossipInterval: "30s",
-				},
-			},
-			ok: true,
-		},
 	} {
 		t.Run(tc.am.Name, func(t *testing.T) {
 			c := fake.NewSimpleClientset(tc.objects...)
@@ -1253,7 +1229,7 @@ func TestProvisionAlertmanagerConfiguration(t *testing.T) {
 				kclient: c,
 				mclient: monitoringfake.NewSimpleClientset(),
 				logger:  level.NewFilter(log.NewLogfmtLogger(os.Stderr), level.AllowInfo()),
-				metrics: operator.NewMetrics("alertmanager", prometheus.NewRegistry()),
+				metrics: operator.NewMetrics(prometheus.NewRegistry()),
 			}
 
 			err := o.bootstrap(context.Background())

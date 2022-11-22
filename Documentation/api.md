@@ -4,7 +4,7 @@ description: "Prometheus operator generated API reference docs"
 draft: false
 images: []
 menu: "operator"
-weight: 210
+weight: 211
 toc: true
 ---
 > This page is automatically generated with `gen-crd-api-reference-docs`.
@@ -231,9 +231,10 @@ Alertmanager object, which contains the configuration for this Alertmanager
 instance. If empty, it defaults to <code>alertmanager-&lt;alertmanager-name&gt;</code>.</p>
 <p>The Alertmanager configuration should be available under the
 <code>alertmanager.yaml</code> key. Additional keys from the original secret are
-copied to the generated secret.</p>
+copied to the generated secret and mounted into the
+<code>/etc/alertmanager/config</code> directory in the <code>alertmanager</code> container.</p>
 <p>If either the secret or the <code>alertmanager.yaml</code> key is missing, the
-operator provisions an Alertmanager configuration with one empty
+operator provisions a minimal Alertmanager configuration with one empty
 receiver (effectively dropping alert notifications).</p>
 </td>
 </tr>
@@ -622,6 +623,20 @@ Kubernetes meta/v1.LabelSelector
 </tr>
 <tr>
 <td>
+<code>alertmanagerConfigMatcherStrategy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AlertmanagerConfigMatcherStrategy">
+AlertmanagerConfigMatcherStrategy
+</a>
+</em>
+</td>
+<td>
+<p>The AlertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects match the alerts.
+In the future more options may be added.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>alertmanagerConfigNamespaceSelector</code><br/>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
@@ -898,8 +913,8 @@ AttachMetadata
 </em>
 </td>
 <td>
-<p>Attaches node metadata to discovered targets. Only valid for role: pod.
-Only valid in Prometheus versions 2.35.0 and newer.</p>
+<p>Attaches node metadata to discovered targets.
+Requires Prometheus v2.35.0 and above.</p>
 </td>
 </tr>
 </table>
@@ -2753,6 +2768,20 @@ uint64
 Only valid in Prometheus versions 2.27.0 and newer.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>attachMetadata</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AttachMetadata">
+AttachMetadata
+</a>
+</em>
+</td>
+<td>
+<p>Attaches node metadata to discovered targets.
+Requires Prometheus v2.37.0 and above.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -3574,6 +3603,37 @@ Authorization
 </tr>
 </tbody>
 </table>
+<h3 id="monitoring.coreos.com/v1.AlertmanagerConfigMatcherStrategy">AlertmanagerConfigMatcherStrategy
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>)
+</p>
+<div>
+<p>AlertmanagerConfigMatcherStrategy defines the strategy used by AlertmanagerConfig objects to match alerts.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>If set to <code>OnNamespace</code>, the operator injects a label matcher matching the namespace of the AlertmanagerConfig object for all its routes and inhibition rules.
+<code>None</code> will not add any additional matchers other than the ones specified in the AlertmanagerConfig.
+Default is <code>OnNamespace</code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="monitoring.coreos.com/v1.AlertmanagerConfiguration">AlertmanagerConfiguration
 </h3>
 <p>
@@ -3768,6 +3828,17 @@ Duration
 </td>
 <td>
 <p>Timeout is a per-target Alertmanager timeout when pushing alerts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableHttp2</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Whether to enable HTTP2.</p>
 </td>
 </tr>
 </tbody>
@@ -3971,9 +4042,10 @@ Alertmanager object, which contains the configuration for this Alertmanager
 instance. If empty, it defaults to <code>alertmanager-&lt;alertmanager-name&gt;</code>.</p>
 <p>The Alertmanager configuration should be available under the
 <code>alertmanager.yaml</code> key. Additional keys from the original secret are
-copied to the generated secret.</p>
+copied to the generated secret and mounted into the
+<code>/etc/alertmanager/config</code> directory in the <code>alertmanager</code> container.</p>
 <p>If either the secret or the <code>alertmanager.yaml</code> key is missing, the
-operator provisions an Alertmanager configuration with one empty
+operator provisions a minimal Alertmanager configuration with one empty
 receiver (effectively dropping alert notifications).</p>
 </td>
 </tr>
@@ -4362,6 +4434,20 @@ Kubernetes meta/v1.LabelSelector
 </tr>
 <tr>
 <td>
+<code>alertmanagerConfigMatcherStrategy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AlertmanagerConfigMatcherStrategy">
+AlertmanagerConfigMatcherStrategy
+</a>
+</em>
+</td>
+<td>
+<p>The AlertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects match the alerts.
+In the future more options may be added.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>alertmanagerConfigNamespaceSelector</code><br/>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
@@ -4634,7 +4720,7 @@ string
 <h3 id="monitoring.coreos.com/v1.AttachMetadata">AttachMetadata
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PodMonitorSpec">PodMonitorSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PodMonitorSpec">PodMonitorSpec</a>, <a href="#monitoring.coreos.com/v1.ServiceMonitorSpec">ServiceMonitorSpec</a>)
 </p>
 <div>
 </div>
@@ -5704,7 +5790,7 @@ When hostNetwork is enabled, this will set dnsPolicy to ClusterFirstWithHostNet 
 <h3 id="monitoring.coreos.com/v1.Duration">Duration
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.MetadataConfig">MetadataConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.QuerySpec">QuerySpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.TSDBSpec">TSDBSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.MetadataConfig">MetadataConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.QuerySpec">QuerySpec</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.Rule">Rule</a>, <a href="#monitoring.coreos.com/v1.RuleGroup">RuleGroup</a>, <a href="#monitoring.coreos.com/v1.TSDBSpec">TSDBSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
 </p>
 <div>
 <p>Duration is a valid time duration that can be parsed by Prometheus model.ParseDuration() function.
@@ -6244,6 +6330,18 @@ bool
 </td>
 <td>
 <p>Whether to enable HTTP2.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>filterRunning</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Drop pods that are not running. (Failed, Succeeded). Enabled by default.
+More info: <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase">https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase</a></p>
 </td>
 </tr>
 </tbody>
@@ -7003,7 +7101,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the CA cert to use for the targets.</p>
+<p>Certificate authority used when verifying server certificates.</p>
 </td>
 </tr>
 <tr>
@@ -7016,7 +7114,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the client cert file for the targets.</p>
+<p>Client certificate to present when doing client-authentication.</p>
 </td>
 </tr>
 <tr>
@@ -7201,8 +7299,8 @@ AttachMetadata
 </em>
 </td>
 <td>
-<p>Attaches node metadata to discovered targets. Only valid for role: pod.
-Only valid in Prometheus versions 2.35.0 and newer.</p>
+<p>Attaches node metadata to discovered targets.
+Requires Prometheus v2.35.0 and above.</p>
 </td>
 </tr>
 </tbody>
@@ -7449,7 +7547,7 @@ Only valid in Prometheus versions 2.27.0 and newer.</p>
 (<em>Appears on:</em><a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>)
 </p>
 <div>
-<p>ProbeTLSConfig specifies TLS configuration parameters.</p>
+<p>ProbeTLSConfig specifies TLS configuration parameters for the prober.</p>
 </div>
 <table>
 <thead>
@@ -7469,7 +7567,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the CA cert to use for the targets.</p>
+<p>Certificate authority used when verifying server certificates.</p>
 </td>
 </tr>
 <tr>
@@ -7482,7 +7580,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the client cert file for the targets.</p>
+<p>Client certificate to present when doing client-authentication.</p>
 </td>
 </tr>
 <tr>
@@ -9866,6 +9964,18 @@ string
 <p>Optional ProxyURL.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>filterExternalLabels</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Whether to use the external labels as selectors for the remote read endpoint.
+Requires Prometheus v2.34.0 and above.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec
@@ -10113,6 +10223,8 @@ string
 </em>
 </td>
 <td>
+<p>Name of the time series to output to. Must be a valid metric name.
+Only one of <code>record</code> and <code>alert</code> must be set.</p>
 </td>
 </tr>
 <tr>
@@ -10123,6 +10235,8 @@ string
 </em>
 </td>
 <td>
+<p>Name of the alert. Must be a valid label value.
+Only one of <code>record</code> and <code>alert</code> must be set.</p>
 </td>
 </tr>
 <tr>
@@ -10135,16 +10249,20 @@ k8s.io/apimachinery/pkg/util/intstr.IntOrString
 </em>
 </td>
 <td>
+<p>PromQL expression to evaluate.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>for</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
 </em>
 </td>
 <td>
+<p>Alerts are considered firing once they have been returned for this long.</p>
 </td>
 </tr>
 <tr>
@@ -10155,6 +10273,7 @@ map[string]string
 </em>
 </td>
 <td>
+<p>Labels to add or overwrite.</p>
 </td>
 </tr>
 <tr>
@@ -10165,6 +10284,8 @@ map[string]string
 </em>
 </td>
 <td>
+<p>Annotations to add to each alert.
+Only valid for alerting rules.</p>
 </td>
 </tr>
 </tbody>
@@ -10175,10 +10296,7 @@ map[string]string
 (<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PrometheusRuleSpec">PrometheusRuleSpec</a>)
 </p>
 <div>
-<p>RuleGroup is a list of sequentially evaluated recording and alerting rules.
-Note: PartialResponseStrategy is only used by ThanosRuler and will
-be ignored by Prometheus instances.  Valid values for this field are &lsquo;warn&rsquo;
-or &lsquo;abort&rsquo;.  More info: <a href="https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response">https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response</a></p>
+<p>RuleGroup is a list of sequentially evaluated recording and alerting rules.</p>
 </div>
 <table>
 <thead>
@@ -10196,16 +10314,20 @@ string
 </em>
 </td>
 <td>
+<p>Name of the rule group.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>interval</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
 </em>
 </td>
 <td>
+<p>Interval determines how often rules in the group are evaluated.</p>
 </td>
 </tr>
 <tr>
@@ -10218,6 +10340,7 @@ string
 </em>
 </td>
 <td>
+<p>List of alerting and recording rules.</p>
 </td>
 </tr>
 <tr>
@@ -10228,6 +10351,9 @@ string
 </em>
 </td>
 <td>
+<p>PartialResponseStrategy is only used by ThanosRuler and will
+be ignored by Prometheus instances.
+More info: <a href="https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response">https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response</a></p>
 </td>
 </tr>
 </tbody>
@@ -10384,7 +10510,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the CA cert to use for the targets.</p>
+<p>Certificate authority used when verifying server certificates.</p>
 </td>
 </tr>
 <tr>
@@ -10397,7 +10523,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the client cert file for the targets.</p>
+<p>Client certificate to present when doing client-authentication.</p>
 </td>
 </tr>
 <tr>
@@ -10657,6 +10783,20 @@ uint64
 Only valid in Prometheus versions 2.27.0 and newer.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>attachMetadata</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AttachMetadata">
+AttachMetadata
+</a>
+</em>
+</td>
+<td>
+<p>Attaches node metadata to discovered targets.
+Requires Prometheus v2.37.0 and above.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.ShardStatus">ShardStatus
@@ -10911,7 +11051,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the CA cert to use for the targets.</p>
+<p>Certificate authority used when verifying server certificates.</p>
 </td>
 </tr>
 <tr>
@@ -10924,7 +11064,7 @@ SecretOrConfigMap
 </em>
 </td>
 <td>
-<p>Struct containing the client cert file for the targets.</p>
+<p>Client certificate to present when doing client-authentication.</p>
 </td>
 </tr>
 <tr>
