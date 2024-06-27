@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/prometheus/prometheus/model/labels"
-	"golang.org/x/exp/slices"
 )
 
 type apiResponse struct {
@@ -126,24 +125,30 @@ func (r *rule) UnmarshalJSON(b []byte) error {
 }
 
 type alertingRule struct {
-	Name        string        `json:"name"`
-	Query       string        `json:"query"`
-	Duration    float64       `json:"duration"`
-	Labels      labels.Labels `json:"labels"`
-	Annotations labels.Labels `json:"annotations"`
-	Alerts      []*alert      `json:"alerts"`
-	Health      string        `json:"health"`
-	LastError   string        `json:"lastError,omitempty"`
+	State          string        `json:"state"`
+	Name           string        `json:"name"`
+	Query          string        `json:"query"`
+	Duration       float64       `json:"duration"`
+	KeepFiringFor  float64       `json:"keepFiringFor"`
+	Labels         labels.Labels `json:"labels"`
+	Annotations    labels.Labels `json:"annotations"`
+	Alerts         []*alert      `json:"alerts"`
+	Health         string        `json:"health"`
+	LastError      string        `json:"lastError,omitempty"`
+	EvaluationTime float64       `json:"evaluationTime"`
+	LastEvaluation time.Time     `json:"lastEvaluation"`
 	// Type of an alertingRule is always "alerting".
 	Type string `json:"type"`
 }
 
 type recordingRule struct {
-	Name      string        `json:"name"`
-	Query     string        `json:"query"`
-	Labels    labels.Labels `json:"labels,omitempty"`
-	Health    string        `json:"health"`
-	LastError string        `json:"lastError,omitempty"`
+	Name           string        `json:"name"`
+	Query          string        `json:"query"`
+	Labels         labels.Labels `json:"labels,omitempty"`
+	Health         string        `json:"health"`
+	LastError      string        `json:"lastError,omitempty"`
+	EvaluationTime float64       `json:"evaluationTime"`
+	LastEvaluation time.Time     `json:"lastEvaluation"`
 	// Type of a recordingRule is always "recording".
 	Type string `json:"type"`
 }
@@ -153,11 +158,12 @@ type alertsData struct {
 }
 
 type alert struct {
-	Labels      labels.Labels `json:"labels"`
-	Annotations labels.Labels `json:"annotations"`
-	State       string        `json:"state"`
-	ActiveAt    *time.Time    `json:"activeAt,omitempty"`
-	Value       string        `json:"value"`
+	Labels          labels.Labels `json:"labels"`
+	Annotations     labels.Labels `json:"annotations"`
+	State           string        `json:"state"`
+	ActiveAt        *time.Time    `json:"activeAt,omitempty"`
+	KeepFiringSince *time.Time    `json:"keepFiringSince,omitempty"`
+	Value           string        `json:"value"`
 }
 
 // modifyAPIResponse unwraps the Prometheus API response, passes the enforced
@@ -203,14 +209,20 @@ func (r *routes) filterRules(lvalues []string, resp *apiResponse) (interface{}, 
 		return nil, fmt.Errorf("can't decode rules data: %w", err)
 	}
 
+	m, err := r.newLabelMatcher(lvalues...)
+	if err != nil {
+		return nil, err
+	}
+
 	filtered := []*ruleGroup{}
 	for _, rg := range rgs.RuleGroups {
 		var rules []rule
 		for _, rule := range rg.Rules {
-			if lval := rule.Labels().Get(r.label); lval != "" && slices.Contains(lvalues, lval) {
+			if lval := rule.Labels().Get(r.label); lval != "" && m.Matches(lval) {
 				rules = append(rules, rule)
 			}
 		}
+
 		if len(rules) > 0 {
 			rg.Rules = rules
 			filtered = append(filtered, rg)
@@ -226,9 +238,14 @@ func (r *routes) filterAlerts(lvalues []string, resp *apiResponse) (interface{},
 		return nil, fmt.Errorf("can't decode alerts data: %w", err)
 	}
 
+	m, err := r.newLabelMatcher(lvalues...)
+	if err != nil {
+		return nil, err
+	}
+
 	filtered := []*alert{}
 	for _, alert := range data.Alerts {
-		if lval := alert.Labels.Get(r.label); lval != "" && slices.Contains(lvalues, lval) {
+		if lval := alert.Labels.Get(r.label); lval != "" && m.Matches(lval) {
 			filtered = append(filtered, alert)
 		}
 	}
