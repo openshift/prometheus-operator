@@ -1494,7 +1494,9 @@ func (cb *configBuilder) convertHTTPConfigForV1(ctx context.Context, in monitori
 
 func (cb *configBuilder) convertHTTPConfig(ctx context.Context, in monitoringv1alpha1.HTTPConfig, crKey types.NamespacedName) (*httpClientConfig, error) {
 	out := &httpClientConfig{
-		ProxyURL:        in.ProxyURL,
+		proxyConfig: proxyConfig{
+			ProxyURL: in.ProxyURL,
+		},
 		FollowRedirects: in.FollowRedirects,
 	}
 
