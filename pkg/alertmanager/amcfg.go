@@ -1480,7 +1480,9 @@ func (cb *configBuilder) convertHTTPConfig(ctx context.Context, in *monitoringv1
 	}
 
 	out := &httpClientConfig{
-		ProxyURL:        in.ProxyURL,
+		proxyConfig: proxyConfig{
+			ProxyURL: in.ProxyURL,
+		},
 		FollowRedirects: in.FollowRedirects,
 	}
 
