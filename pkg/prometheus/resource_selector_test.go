@@ -488,6 +488,20 @@ func TestSelectProbes(t *testing.T) {
 			selected: true,
 		},
 		{
+			scenario: "invalid proxyurl",
+			updateSpec: func(ps *monitoringv1.ProbeSpec) {
+				ps.ProberSpec.ProxyURL = "http://xxx-${dev}.svc.cluster.local:80"
+			},
+			selected: false,
+		},
+		{
+			scenario: "valid proxyurl",
+			updateSpec: func(ps *monitoringv1.ProbeSpec) {
+				ps.ProberSpec.ProxyURL = "123-proxy.example.com"
+			},
+			selected: true,
+		},
+		{
 			scenario: "valid metric relabeling config",
 			updateSpec: func(ps *monitoringv1.ProbeSpec) {
 				ps.MetricRelabelConfigs = []*monitoringv1.RelabelConfig{
@@ -763,6 +777,24 @@ func TestSelectServiceMonitors(t *testing.T) {
 			},
 			selected: false,
 		},
+		{
+			scenario: "invalid proxyurl",
+			updateSpec: func(sm *monitoringv1.ServiceMonitorSpec) {
+				sm.Endpoints = append(sm.Endpoints, monitoringv1.Endpoint{
+					ProxyURL: ptr.To("http://xxx-${dev}.svc.cluster.local:80"),
+				})
+			},
+			selected: false,
+		},
+		{
+			scenario: "valid proxyurl",
+			updateSpec: func(sm *monitoringv1.ServiceMonitorSpec) {
+				sm.Endpoints = append(sm.Endpoints, monitoringv1.Endpoint{
+					ProxyURL: ptr.To("http://proxy.svc.cluster.local:80"),
+				})
+			},
+			selected: true,
+		},
 	} {
 		t.Run(tc.scenario, func(t *testing.T) {
 			rs := NewResourceSelector(
@@ -862,6 +894,24 @@ func TestSelectPodMonitors(t *testing.T) {
 				})
 			},
 			selected: false,
+		},
+		{
+			scenario: "invalid proxyurl",
+			updateSpec: func(pm *monitoringv1.PodMonitorSpec) {
+				pm.PodMetricsEndpoints = append(pm.PodMetricsEndpoints, monitoringv1.PodMetricsEndpoint{
+					ProxyURL: ptr.To("http://xxx-${dev}.svc.cluster.local:80"),
+				})
+			},
+			selected: false,
+		},
+		{
+			scenario: "valid proxyurl",
+			updateSpec: func(pm *monitoringv1.PodMonitorSpec) {
+				pm.PodMetricsEndpoints = append(pm.PodMetricsEndpoints, monitoringv1.PodMetricsEndpoint{
+					ProxyURL: ptr.To("http://proxy.svc.cluster.local:80"),
+				})
+			},
+			selected: true,
 		},
 	} {
 		t.Run(tc.scenario, func(t *testing.T) {
