@@ -1,5 +1,7 @@
 ## Unreleased
 
+* [BUGFIX] Fix Thanos Ruler controller to reconcile on StatefulSet updates. #xxx
+
 ## 0.77.0 / 2024-09-19
 
 > [!NOTE]
