@@ -1,9 +1,5 @@
 SHELL=/usr/bin/env bash -o pipefail
 
-# temporary fix for loop issue in go 1.21
-# TODO: remove this once bumped to go 1.22
-export GOEXPERIMENT=loopvar
-
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
 ifeq ($(GOARCH),arm)

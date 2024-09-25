@@ -19,11 +19,9 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -56,9 +54,6 @@ const (
 	controllerName = "prometheus-controller"
 )
 
-var prometheusKeyInShardStatefulSet = regexp.MustCompile("^(.+)/prometheus-(.+)-shard-[1-9][0-9]*$")
-var prometheusKeyInStatefulSet = regexp.MustCompile("^(.+)/prometheus-(.+)$")
-
 // Operator manages life cycle of Prometheus deployments and
 // monitoring configurations.
 type Operator struct {
@@ -66,13 +61,9 @@ type Operator struct {
 	mdClient metadata.Interface
 	mclient  monitoringclient.Interface
 
-	// // We're currently migrating our logging library from go-kit to slog.
-	// The go-kit logger is being removed in small PRs. For now, we are creating 2 loggers to avoid breaking changes and
-	// to have a smooth transition.
-	goKitLogger log.Logger
-	logger      *slog.Logger
-	accessor    *operator.Accessor
-	config      prompkg.Config
+	logger   *slog.Logger
+	accessor *operator.Accessor
+	config   prompkg.Config
 
 	controllerID string
 
@@ -127,8 +118,7 @@ func WithStorageClassValidation() ControllerOption {
 }
 
 // New creates a new controller.
-func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitLogger log.Logger, logger *slog.Logger, r prometheus.Registerer, opts ...ControllerOption) (*Operator, error) {
-	goKitLogger = log.With(goKitLogger, "component", controllerName)
+func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger *slog.Logger, r prometheus.Registerer, opts ...ControllerOption) (*Operator, error) {
 	logger = logger.With("component", controllerName)
 
 	client, err := kubernetes.NewForConfig(restConfig)
@@ -150,12 +140,11 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	r = prometheus.WrapRegistererWith(prometheus.Labels{"controller": "prometheus"}, r)
 
 	o := &Operator{
-		kclient:     client,
-		mdClient:    mdClient,
-		mclient:     mclient,
-		goKitLogger: goKitLogger,
-		logger:      logger,
-		accessor:    operator.NewAccessor(logger),
+		kclient:  client,
+		mdClient: mdClient,
+		mclient:  mclient,
+		logger:   logger,
+		accessor: operator.NewAccessor(logger),
 
 		config: prompkg.Config{
 			LocalHost:                  c.LocalHost,
@@ -176,15 +165,6 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	}
 
 	o.metrics.MustRegister(o.reconciliations)
-
-	o.rr = operator.NewResourceReconciler(
-		o.logger,
-		o,
-		o.metrics,
-		monitoringv1.PrometheusesKind,
-		r,
-		o.controllerID,
-	)
 
 	o.promInfs, err = informers.NewInformersForResource(
 		informers.NewMonitoringInformerFactories(
@@ -207,6 +187,16 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 		promStores = append(promStores, informer.Informer().GetStore())
 	}
 	o.metrics.MustRegister(prompkg.NewCollectorForStores(promStores...))
+
+	o.rr = operator.NewResourceReconciler(
+		o.logger,
+		o,
+		o.promInfs,
+		o.metrics,
+		monitoringv1.PrometheusesKind,
+		r,
+		o.controllerID,
+	)
 
 	o.smonInfs, err = informers.NewInformersForResource(
 		informers.NewMonitoringInformerFactories(
@@ -331,7 +321,7 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	newNamespaceInformer := func(o *Operator, allowList map[string]struct{}) (cache.SharedIndexInformer, error) {
 		lw, privileged, err := listwatch.NewNamespaceListWatchFromClient(
 			ctx,
-			o.goKitLogger,
+			o.logger,
 			c.KubernetesVersion,
 			o.kclient.CoreV1(),
 			o.kclient.AuthorizationV1().SelfSubjectAccessReviews(),
@@ -396,7 +386,7 @@ func (c *Operator) waitForCacheSync(ctx context.Context) error {
 		}
 
 		for _, inf := range infs.informersForResource.GetInformers() {
-			if !operator.WaitForNamedCacheSync(ctx, "prometheus", log.With(c.goKitLogger, "informer", infs.name), inf.Informer()) {
+			if !operator.WaitForNamedCacheSync(ctx, "prometheus", c.logger.With("informer", infs.name), inf.Informer()) {
 				return fmt.Errorf("failed to sync cache for %s informer", infs.name)
 			}
 		}
@@ -409,7 +399,7 @@ func (c *Operator) waitForCacheSync(ctx context.Context) error {
 		{"PromNamespace", c.nsPromInf},
 		{"MonNamespace", c.nsMonInf},
 	} {
-		if !operator.WaitForNamedCacheSync(ctx, "prometheus", log.With(c.goKitLogger, "informer", inf.name), inf.informer) {
+		if !operator.WaitForNamedCacheSync(ctx, "prometheus", c.logger.With("informer", inf.name), inf.informer) {
 			return fmt.Errorf("failed to sync cache for %s informer", inf.name)
 		}
 	}
@@ -425,7 +415,7 @@ func (c *Operator) addHandlers() {
 	c.ssetInfs.AddEventHandler(c.rr)
 
 	c.smonInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.ServiceMonitorsKind,
@@ -433,7 +423,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.pmonInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.PodMonitorsKind,
@@ -441,7 +431,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.probeInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.ProbesKind,
@@ -450,7 +440,7 @@ func (c *Operator) addHandlers() {
 
 	if c.sconInfs != nil {
 		c.sconInfs.AddEventHandler(operator.NewEventHandler(
-			c.goKitLogger,
+			c.logger,
 			c.accessor,
 			c.metrics,
 			monitoringv1alpha1.ScrapeConfigsKind,
@@ -459,7 +449,7 @@ func (c *Operator) addHandlers() {
 	}
 
 	c.ruleInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.PrometheusRuleKind,
@@ -467,7 +457,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.cmapInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		"ConfigMap",
@@ -475,7 +465,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.secrInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		"Secret",
@@ -667,48 +657,6 @@ func (c *Operator) enqueueForNamespace(store cache.Store, nsName string) {
 
 }
 
-// Resolve implements the operator.Syncer interface.
-func (c *Operator) Resolve(ss *appsv1.StatefulSet) metav1.Object {
-	key, ok := c.accessor.MetaNamespaceKey(ss)
-	if !ok {
-		return nil
-	}
-
-	match, promKey := statefulSetKeyToPrometheusKey(key)
-	if !match {
-		c.logger.Debug("StatefulSet key did not match a Prometheus key format", "key", key)
-		return nil
-	}
-
-	p, err := c.promInfs.Get(promKey)
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	if err != nil {
-		c.logger.Error("Prometheus lookup failed", "err", err)
-		return nil
-	}
-
-	return p.(*monitoringv1.Prometheus)
-}
-
-func statefulSetKeyToPrometheusKey(key string) (bool, string) {
-	r := prometheusKeyInStatefulSet
-	if prometheusKeyInShardStatefulSet.MatchString(key) {
-		r = prometheusKeyInShardStatefulSet
-	}
-
-	matches := r.FindAllStringSubmatch(key, 2)
-	if len(matches) != 1 {
-		return false, ""
-	}
-	if len(matches[0]) != 3 {
-		return false, ""
-	}
-	return true, matches[0][1] + "/" + matches[0][2]
-}
-
 func (c *Operator) handleMonitorNamespaceUpdate(oldo, curo interface{}) {
 	old := oldo.(*v1.Namespace)
 	cur := curo.(*v1.Namespace)
@@ -813,7 +761,11 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	assetStore := assets.NewStoreBuilder(c.kclient.CoreV1(), c.kclient.CoreV1())
 
-	cg, err := prompkg.NewConfigGenerator(c.goKitLogger, p, c.endpointSliceSupported)
+	opts := []prompkg.ConfigGeneratorOption{}
+	if c.endpointSliceSupported {
+		opts = append(opts, prompkg.WithEndpointSliceSupport())
+	}
+	cg, err := prompkg.NewConfigGenerator(c.logger, p, opts...)
 	if err != nil {
 		return err
 	}
@@ -833,7 +785,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	// Create governing service if it doesn't exist.
 	svcClient := c.kclient.CoreV1().Services(p.Namespace)
-	if err := k8sutil.CreateOrUpdateService(ctx, svcClient, makeStatefulSetService(p, c.config)); err != nil {
+	if _, err := k8sutil.CreateOrUpdateService(ctx, svcClient, makeStatefulSetService(p, c.config)); err != nil {
 		return fmt.Errorf("synchronizing governing service failed: %w", err)
 	}
 
@@ -1189,15 +1141,15 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 	}
 
 	sClient := c.kclient.CoreV1().Secrets(p.Namespace)
-	additionalScrapeConfigs, err := k8sutil.LoadSecretRef(ctx, c.goKitLogger, sClient, p.Spec.AdditionalScrapeConfigs)
+	additionalScrapeConfigs, err := k8sutil.LoadSecretRef(ctx, c.logger, sClient, p.Spec.AdditionalScrapeConfigs)
 	if err != nil {
 		return fmt.Errorf("loading additional scrape configs from Secret failed: %w", err)
 	}
-	additionalAlertRelabelConfigs, err := k8sutil.LoadSecretRef(ctx, c.goKitLogger, sClient, p.Spec.AdditionalAlertRelabelConfigs)
+	additionalAlertRelabelConfigs, err := k8sutil.LoadSecretRef(ctx, c.logger, sClient, p.Spec.AdditionalAlertRelabelConfigs)
 	if err != nil {
 		return fmt.Errorf("loading additional alert relabel configs from Secret failed: %w", err)
 	}
-	additionalAlertManagerConfigs, err := k8sutil.LoadSecretRef(ctx, c.goKitLogger, sClient, p.Spec.AdditionalAlertManagerConfigs)
+	additionalAlertManagerConfigs, err := k8sutil.LoadSecretRef(ctx, c.logger, sClient, p.Spec.AdditionalAlertManagerConfigs)
 	if err != nil {
 		return fmt.Errorf("loading additional alert manager configs from Secret failed: %w", err)
 	}

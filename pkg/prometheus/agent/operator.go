@@ -18,11 +18,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strings"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/mitchellh/hashstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -55,9 +53,6 @@ const (
 	controllerName = "prometheusagent-controller"
 )
 
-var prometheusAgentKeyInShardStatefulSet = regexp.MustCompile("^(.+)/prom-agent-(.+)-shard-[1-9][0-9]*$")
-var prometheusAgentKeyInStatefulSet = regexp.MustCompile("^(.+)/prom-agent-(.+)$")
-
 // Operator manages life cycle of Prometheus agent deployments and
 // monitoring configurations.
 type Operator struct {
@@ -66,11 +61,8 @@ type Operator struct {
 	mclient  monitoringclient.Interface
 
 	logger *slog.Logger
-	// We're currently migrating our logging library from go-kit to slog.
-	// The go-kit logger is being removed in small PRs. For now, we are creating 2 loggers to avoid breaking changes and
-	// to have a smooth transition.
-	goKitLogger log.Logger
-	accessor    *operator.Accessor
+
+	accessor *operator.Accessor
 
 	controllerID string
 
@@ -130,7 +122,7 @@ func WithStorageClassValidation() ControllerOption {
 }
 
 // New creates a new controller.
-func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitLogger log.Logger, logger *slog.Logger, r prometheus.Registerer, options ...ControllerOption) (*Operator, error) {
+func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger *slog.Logger, r prometheus.Registerer, options ...ControllerOption) (*Operator, error) {
 	logger = logger.With("component", controllerName)
 
 	client, err := kubernetes.NewForConfig(restConfig)
@@ -152,11 +144,10 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	r = prometheus.WrapRegistererWith(prometheus.Labels{"controller": "prometheus-agent"}, r)
 
 	o := &Operator{
-		kclient:     client,
-		mdClient:    mdClient,
-		mclient:     mclient,
-		logger:      logger,
-		goKitLogger: goKitLogger,
+		kclient:  client,
+		mdClient: mdClient,
+		mclient:  mclient,
+		logger:   logger,
 		config: prompkg.Config{
 			LocalHost:                  c.LocalHost,
 			ReloaderConfig:             c.ReloaderConfig,
@@ -176,15 +167,6 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	for _, opt := range options {
 		opt(o)
 	}
-
-	o.rr = operator.NewResourceReconciler(
-		o.logger,
-		o,
-		o.metrics,
-		monitoringv1alpha1.PrometheusAgentsKind,
-		r,
-		o.controllerID,
-	)
 
 	o.promInfs, err = informers.NewInformersForResource(
 		informers.NewMonitoringInformerFactories(
@@ -206,8 +188,17 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	for _, informer := range o.promInfs.GetInformers() {
 		promStores = append(promStores, informer.Informer().GetStore())
 	}
-
 	o.metrics.MustRegister(prompkg.NewCollectorForStores(promStores...))
+
+	o.rr = operator.NewResourceReconciler(
+		o.logger,
+		o,
+		o.promInfs,
+		o.metrics,
+		monitoringv1alpha1.PrometheusAgentsKind,
+		r,
+		o.controllerID,
+	)
 
 	o.smonInfs, err = informers.NewInformersForResource(
 		informers.NewMonitoringInformerFactories(
@@ -337,7 +328,7 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, goKitL
 	newNamespaceInformer := func(o *Operator, allowList map[string]struct{}) (cache.SharedIndexInformer, error) {
 		lw, privileged, err := listwatch.NewNamespaceListWatchFromClient(
 			ctx,
-			o.goKitLogger,
+			o.logger,
 			c.KubernetesVersion,
 			o.kclient.CoreV1(),
 			o.kclient.AuthorizationV1().SelfSubjectAccessReviews(),
@@ -458,7 +449,7 @@ func (c *Operator) waitForCacheSync(ctx context.Context) error {
 		}
 
 		for _, inf := range infs.informersForResource.GetInformers() {
-			if !operator.WaitForNamedCacheSync(ctx, "prometheusagent", log.With(c.goKitLogger, "informer", infs.name), inf.Informer()) {
+			if !operator.WaitForNamedCacheSync(ctx, "prometheusagent", c.logger.With("informer", infs.name), inf.Informer()) {
 				return fmt.Errorf("failed to sync cache for %s informer", infs.name)
 			}
 		}
@@ -471,7 +462,7 @@ func (c *Operator) waitForCacheSync(ctx context.Context) error {
 		{"PromNamespace", c.nsPromInf},
 		{"MonNamespace", c.nsMonInf},
 	} {
-		if !operator.WaitForNamedCacheSync(ctx, "prometheusagent", log.With(c.goKitLogger, "informer", inf.name), inf.informer) {
+		if !operator.WaitForNamedCacheSync(ctx, "prometheusagent", c.logger.With("informer", inf.name), inf.informer) {
 			return fmt.Errorf("failed to sync cache for %s informer", inf.name)
 		}
 	}
@@ -486,11 +477,12 @@ func (c *Operator) addHandlers() {
 
 	c.ssetInfs.AddEventHandler(c.rr)
 
-	// TODO: implement proper event handler for Daemonset.
-	// c.dsetInfs.AddEventHandler(c.rr)
+	if c.dsetInfs != nil {
+		c.dsetInfs.AddEventHandler(c.rr)
+	}
 
 	c.smonInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.ServiceMonitorsKind,
@@ -498,7 +490,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.pmonInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.PodMonitorsKind,
@@ -506,7 +498,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.probeInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		monitoringv1.ProbesKind,
@@ -515,7 +507,7 @@ func (c *Operator) addHandlers() {
 
 	if c.sconInfs != nil {
 		c.sconInfs.AddEventHandler(operator.NewEventHandler(
-			c.goKitLogger,
+			c.logger,
 			c.accessor,
 			c.metrics,
 			monitoringv1alpha1.ScrapeConfigsKind,
@@ -524,7 +516,7 @@ func (c *Operator) addHandlers() {
 	}
 
 	c.cmapInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		"ConfigMap",
@@ -532,7 +524,7 @@ func (c *Operator) addHandlers() {
 	))
 
 	c.secrInfs.AddEventHandler(operator.NewEventHandler(
-		c.goKitLogger,
+		c.logger,
 		c.accessor,
 		c.metrics,
 		"Secret",
@@ -547,48 +539,6 @@ func (c *Operator) addHandlers() {
 	_, _ = c.nsMonInf.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: c.handleMonitorNamespaceUpdate,
 	})
-}
-
-// Resolve implements the operator.Syncer interface.
-func (c *Operator) Resolve(ss *appsv1.StatefulSet) metav1.Object {
-	key, ok := c.accessor.MetaNamespaceKey(ss)
-	if !ok {
-		return nil
-	}
-
-	match, promKey := statefulSetKeyToPrometheusAgentKey(key)
-	if !match {
-		c.logger.Debug("StatefulSet key did not match a Prometheus Agent key format", "key", key)
-		return nil
-	}
-
-	p, err := c.promInfs.Get(promKey)
-	if apierrors.IsNotFound(err) {
-		return nil
-	}
-
-	if err != nil {
-		c.logger.Error("Prometheus lookup failed", "err", err)
-		return nil
-	}
-
-	return p.(*monitoringv1alpha1.PrometheusAgent)
-}
-
-func statefulSetKeyToPrometheusAgentKey(key string) (bool, string) {
-	r := prometheusAgentKeyInStatefulSet
-	if prometheusAgentKeyInShardStatefulSet.MatchString(key) {
-		r = prometheusAgentKeyInShardStatefulSet
-	}
-
-	matches := r.FindAllStringSubmatch(key, 2)
-	if len(matches) != 1 {
-		return false, ""
-	}
-	if len(matches[0]) != 3 {
-		return false, ""
-	}
-	return true, matches[0][1] + "/" + matches[0][2]
 }
 
 // Sync implements the operator.Syncer interface.
@@ -627,6 +577,11 @@ func (c *Operator) syncDaemonSet(ctx context.Context, key string, p *monitoringv
 
 	logger := c.logger.With("key", key)
 
+	// Check if the Agent instance is marked for deletion.
+	if c.rr.DeletionInProgress(p) {
+		return nil
+	}
+
 	if p.Spec.Paused {
 		logger.Info("the resource is paused, not reconciling")
 		return nil
@@ -634,7 +589,11 @@ func (c *Operator) syncDaemonSet(ctx context.Context, key string, p *monitoringv
 
 	logger.Info("sync prometheus")
 
-	cg, err := prompkg.NewConfigGenerator(c.goKitLogger, p, c.endpointSliceSupported)
+	opts := []prompkg.ConfigGeneratorOption{prompkg.WithDaemonSet()}
+	if c.endpointSliceSupported {
+		opts = append(opts, prompkg.WithEndpointSliceSupport())
+	}
+	cg, err := prompkg.NewConfigGenerator(c.logger, p, opts...)
 	if err != nil {
 		return err
 	}
@@ -683,6 +642,29 @@ func (c *Operator) syncDaemonSet(ctx context.Context, key string, p *monitoringv
 		return nil
 	}
 
+	err = k8sutil.UpdateDaemonSet(ctx, dsetClient, dset)
+	sErr, ok := err.(*apierrors.StatusError)
+
+	if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+		// Gather only reason for failed update
+		failMsg := make([]string, len(sErr.ErrStatus.Details.Causes))
+		for i, cause := range sErr.ErrStatus.Details.Causes {
+			failMsg[i] = cause.Message
+		}
+
+		logger.Info("recreating DaemonSet because the update operation wasn't possible", "reason", strings.Join(failMsg, ", "))
+
+		propagationPolicy := metav1.DeletePropagationForeground
+		if err := dsetClient.Delete(ctx, dset.GetName(), metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
+			return fmt.Errorf("failed to delete DaemonSet to avoid forbidden action: %w", err)
+		}
+		return nil
+	}
+
+	if err != nil {
+		return fmt.Errorf("updating DaemonSet failed: %w", err)
+	}
+
 	return nil
 }
 
@@ -709,7 +691,11 @@ func (c *Operator) syncStatefulSet(ctx context.Context, key string, p *monitorin
 		return err
 	}
 
-	cg, err := prompkg.NewConfigGenerator(c.goKitLogger, p, c.endpointSliceSupported)
+	opts := []prompkg.ConfigGeneratorOption{}
+	if c.endpointSliceSupported {
+		opts = append(opts, prompkg.WithEndpointSliceSupport())
+	}
+	cg, err := prompkg.NewConfigGenerator(c.logger, p, opts...)
 	if err != nil {
 		return err
 	}
@@ -730,7 +716,7 @@ func (c *Operator) syncStatefulSet(ctx context.Context, key string, p *monitorin
 
 	// Create governing service if it doesn't exist.
 	svcClient := c.kclient.CoreV1().Services(p.Namespace)
-	if err := k8sutil.CreateOrUpdateService(ctx, svcClient, makeStatefulSetService(p, c.config)); err != nil {
+	if _, err := k8sutil.CreateOrUpdateService(ctx, svcClient, makeStatefulSetService(p, c.config)); err != nil {
 		return fmt.Errorf("synchronizing governing service failed: %w", err)
 	}
 
@@ -898,7 +884,7 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 	}
 
 	sClient := c.kclient.CoreV1().Secrets(p.Namespace)
-	additionalScrapeConfigs, err := k8sutil.LoadSecretRef(ctx, c.goKitLogger, sClient, p.Spec.AdditionalScrapeConfigs)
+	additionalScrapeConfigs, err := k8sutil.LoadSecretRef(ctx, c.logger, sClient, p.Spec.AdditionalScrapeConfigs)
 	if err != nil {
 		return fmt.Errorf("loading additional scrape configs from Secret failed: %w", err)
 	}
@@ -909,6 +895,7 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 		pmons,
 		bmons,
 		scrapeConfigs,
+		p.Spec.TSDB,
 		store,
 		additionalScrapeConfigs,
 	)
