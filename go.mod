@@ -145,3 +145,5 @@ replace (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring => ./pkg/apis/monitoring
 	github.com/prometheus-operator/prometheus-operator/pkg/client => ./pkg/client
 )
+
+replace k8s.io/client-go => github.com/vrutkovs/client-go v0.0.0-20241029114452-7f4b7d7b258d
