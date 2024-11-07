@@ -3,8 +3,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -9963,8 +9963,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -13494,6 +13494,60 @@ spec:
                   - name
                   type: object
                 type: array
+              dnsConfig:
+                description: Defines the DNS configuration for the pods.
+                properties:
+                  nameservers:
+                    description: |-
+                      A list of DNS name server IP addresses.
+                      This will be appended to the base nameservers generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  options:
+                    description: |-
+                      A list of DNS resolver options.
+                      This will be merged with the base options generated from DNSPolicy.
+                      Resolution options given in Options
+                      will override those that appear in the base DNSPolicy.
+                    items:
+                      description: PodDNSConfigOption defines DNS resolver options
+                        of a pod.
+                      properties:
+                        name:
+                          description: Name is required and must be unique.
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value is optional.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  searches:
+                    description: |-
+                      A list of DNS search domains for host-name lookup.
+                      This will be appended to the base search paths generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                type: object
+              dnsPolicy:
+                description: Defines the DNS policy for the pods.
+                enum:
+                - ClusterFirstWithHostNet
+                - ClusterFirst
+                - Default
+                - None
+                type: string
               enableFeatures:
                 description: |-
                   Enable access to Alertmanager feature flags. By default, no features are enabled.
@@ -18544,8 +18598,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: podmonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -18676,6 +18730,23 @@ spec:
                       type: string
                     type: array
                 type: object
+              nativeHistogramBucketLimit:
+                description: |-
+                  If there are more than this many buckets in a native histogram,
+                  buckets will be merged to stay within the limit.
+                  It requires Prometheus >= v2.45.0.
+                format: int64
+                type: integer
+              nativeHistogramMinBucketFactor:
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  If the growth factor of one bucket to the next is smaller than this,
+                  buckets will be merged to increase the factor sufficiently.
+                  It requires Prometheus >= v2.50.0.
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               podMetricsEndpoints:
                 description: Defines how to scrape metrics from the selected pods.
                 items:
@@ -19606,6 +19677,11 @@ spec:
                 description: The scrape class to apply.
                 minLength: 1
                 type: string
+              scrapeClassicHistograms:
+                description: |-
+                  Whether to scrape a classic histogram that is also exposed as a native histogram.
+                  It requires Prometheus >= v2.45.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   `scrapeProtocols` defines the protocols to negotiate during a scrape. It tells clients the
@@ -19697,8 +19773,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -19994,6 +20070,23 @@ spec:
                   Example module configuring in the blackbox exporter:
                   https://github.com/prometheus/blackbox_exporter/blob/master/example.yml
                 type: string
+              nativeHistogramBucketLimit:
+                description: |-
+                  If there are more than this many buckets in a native histogram,
+                  buckets will be merged to stay within the limit.
+                  It requires Prometheus >= v2.45.0.
+                format: int64
+                type: integer
+              nativeHistogramMinBucketFactor:
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  If the growth factor of one bucket to the next is smaller than this,
+                  buckets will be merged to increase the factor sufficiently.
+                  It requires Prometheus >= v2.50.0.
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               oauth2:
                 description: OAuth2 for the URL. Only valid in Prometheus versions
                   2.27.0 and newer.
@@ -20354,6 +20447,11 @@ spec:
                 description: The scrape class to apply.
                 minLength: 1
                 type: string
+              scrapeClassicHistograms:
+                description: |-
+                  Whether to scrape a classic histogram that is also exposed as a native histogram.
+                  It requires Prometheus >= v2.45.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   `scrapeProtocols` defines the protocols to negotiate during a scrape. It tells clients the
@@ -20835,8 +20933,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: prometheusagents.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23675,6 +23773,60 @@ spec:
                   - name
                   type: object
                 type: array
+              dnsConfig:
+                description: Defines the DNS configuration for the pods.
+                properties:
+                  nameservers:
+                    description: |-
+                      A list of DNS name server IP addresses.
+                      This will be appended to the base nameservers generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  options:
+                    description: |-
+                      A list of DNS resolver options.
+                      This will be merged with the base options generated from DNSPolicy.
+                      Resolution options given in Options
+                      will override those that appear in the base DNSPolicy.
+                    items:
+                      description: PodDNSConfigOption defines DNS resolver options
+                        of a pod.
+                      properties:
+                        name:
+                          description: Name is required and must be unique.
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value is optional.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  searches:
+                    description: |-
+                      A list of DNS search domains for host-name lookup.
+                      This will be appended to the base search paths generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                type: object
+              dnsPolicy:
+                description: Defines the DNS policy for the pods.
+                enum:
+                - ClusterFirstWithHostNet
+                - ClusterFirst
+                - Default
+                - None
+                type: string
               enableFeatures:
                 description: |-
                   Enable access to Prometheus feature flags. By default, no features are enabled.
@@ -23922,7 +24074,8 @@ spec:
                   it (https://kubernetes.io/docs/concepts/configuration/overview/).
 
                   When hostNetwork is enabled, this will set the DNS policy to
-                  `ClusterFirstWithHostNet` automatically.
+                  `ClusterFirstWithHostNet` automatically (unless `.spec.DNSPolicy` is set
+                  to a different value).
                 type: boolean
               ignoreNamespaceSelectors:
                 description: |-
@@ -25504,7 +25657,7 @@ spec:
               otlp:
                 description: |-
                   Settings related to the OTLP receiver feature.
-                  It requires Prometheus >= v2.54.0.
+                  It requires Prometheus >= v2.55.0.
                 properties:
                   promoteResourceAttributes:
                     description: List of OpenTelemetry Attributes that should be promoted
@@ -26081,6 +26234,24 @@ spec:
 
                         It requires Prometheus >= v2.25.0.
                       type: object
+                    messageVersion:
+                      description: |-
+                        The Remote Write message's version to use when writing to the endpoint.
+
+                        `Version1.0` corresponds to the `prometheus.WriteRequest` protobuf message introduced in Remote Write 1.0.
+                        `Version2.0` corresponds to the `io.prometheus.write.v2.Request` protobuf message introduced in Remote Write 2.0.
+
+                        When `Version2.0` is selected, Prometheus will automatically be
+                        configured to append the metadata of scraped metrics to the WAL.
+
+                        Before setting this field, consult with your remote storage provider
+                        what message version it supports.
+
+                        It requires Prometheus >= v2.54.0.
+                      enum:
+                      - V1.0
+                      - V2.0
+                      type: string
                     metadataConfig:
                       description: MetadataConfig configures the sending of series
                         metadata to the remote storage.
@@ -26545,7 +26716,7 @@ spec:
                     sendExemplars:
                       description: |-
                         Enables sending of exemplars over remote write. Note that
-                        exemplar-storage itself must be enabled using the `spec.enableFeature`
+                        exemplar-storage itself must be enabled using the `spec.enableFeatures`
                         option for exemplars to be scraped in the first place.
 
                         It requires Prometheus >= v2.27.0.
@@ -26804,6 +26975,7 @@ spec:
                       type: object
                     url:
                       description: The URL of the endpoint to send samples to.
+                      minLength: 1
                       type: string
                     writeRelabelConfigs:
                       description: The list of remote write relabel configurations.
@@ -26896,6 +27068,20 @@ spec:
                   - url
                   type: object
                 type: array
+              remoteWriteReceiverMessageVersions:
+                description: |-
+                  List of the protobuf message versions to accept when receiving the
+                  remote writes.
+
+                  It requires Prometheus >= v2.54.0.
+                items:
+                  enum:
+                  - V1.0
+                  - V2.0
+                  type: string
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: set
               replicaExternalLabelName:
                 description: |-
                   Name of Prometheus external label used to denote the replica name.
@@ -31352,8 +31538,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: prometheuses.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -34874,6 +35060,60 @@ spec:
               disableCompaction:
                 description: When true, the Prometheus compaction is disabled.
                 type: boolean
+              dnsConfig:
+                description: Defines the DNS configuration for the pods.
+                properties:
+                  nameservers:
+                    description: |-
+                      A list of DNS name server IP addresses.
+                      This will be appended to the base nameservers generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  options:
+                    description: |-
+                      A list of DNS resolver options.
+                      This will be merged with the base options generated from DNSPolicy.
+                      Resolution options given in Options
+                      will override those that appear in the base DNSPolicy.
+                    items:
+                      description: PodDNSConfigOption defines DNS resolver options
+                        of a pod.
+                      properties:
+                        name:
+                          description: Name is required and must be unique.
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value is optional.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  searches:
+                    description: |-
+                      A list of DNS search domains for host-name lookup.
+                      This will be appended to the base search paths generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                type: object
+              dnsPolicy:
+                description: Defines the DNS policy for the pods.
+                enum:
+                - ClusterFirstWithHostNet
+                - ClusterFirst
+                - Default
+                - None
+                type: string
               enableAdminAPI:
                 description: |-
                   Enables access to the Prometheus web admin API.
@@ -35157,7 +35397,8 @@ spec:
                   it (https://kubernetes.io/docs/concepts/configuration/overview/).
 
                   When hostNetwork is enabled, this will set the DNS policy to
-                  `ClusterFirstWithHostNet` automatically.
+                  `ClusterFirstWithHostNet` automatically (unless `.spec.DNSPolicy` is set
+                  to a different value).
                 type: boolean
               ignoreNamespaceSelectors:
                 description: |-
@@ -36729,7 +36970,7 @@ spec:
               otlp:
                 description: |-
                   Settings related to the OTLP receiver feature.
-                  It requires Prometheus >= v2.54.0.
+                  It requires Prometheus >= v2.55.0.
                 properties:
                   promoteResourceAttributes:
                     description: List of OpenTelemetry Attributes that should be promoted
@@ -38101,6 +38342,24 @@ spec:
 
                         It requires Prometheus >= v2.25.0.
                       type: object
+                    messageVersion:
+                      description: |-
+                        The Remote Write message's version to use when writing to the endpoint.
+
+                        `Version1.0` corresponds to the `prometheus.WriteRequest` protobuf message introduced in Remote Write 1.0.
+                        `Version2.0` corresponds to the `io.prometheus.write.v2.Request` protobuf message introduced in Remote Write 2.0.
+
+                        When `Version2.0` is selected, Prometheus will automatically be
+                        configured to append the metadata of scraped metrics to the WAL.
+
+                        Before setting this field, consult with your remote storage provider
+                        what message version it supports.
+
+                        It requires Prometheus >= v2.54.0.
+                      enum:
+                      - V1.0
+                      - V2.0
+                      type: string
                     metadataConfig:
                       description: MetadataConfig configures the sending of series
                         metadata to the remote storage.
@@ -38565,7 +38824,7 @@ spec:
                     sendExemplars:
                       description: |-
                         Enables sending of exemplars over remote write. Note that
-                        exemplar-storage itself must be enabled using the `spec.enableFeature`
+                        exemplar-storage itself must be enabled using the `spec.enableFeatures`
                         option for exemplars to be scraped in the first place.
 
                         It requires Prometheus >= v2.27.0.
@@ -38824,6 +39083,7 @@ spec:
                       type: object
                     url:
                       description: The URL of the endpoint to send samples to.
+                      minLength: 1
                       type: string
                     writeRelabelConfigs:
                       description: The list of remote write relabel configurations.
@@ -38916,6 +39176,20 @@ spec:
                   - url
                   type: object
                 type: array
+              remoteWriteReceiverMessageVersions:
+                description: |-
+                  List of the protobuf message versions to accept when receiving the
+                  remote writes.
+
+                  It requires Prometheus >= v2.54.0.
+                items:
+                  enum:
+                  - V1.0
+                  - V2.0
+                  type: string
+                minItems: 1
+                type: array
+                x-kubernetes-list-type: set
               replicaExternalLabelName:
                 description: |-
                   Name of Prometheus external label used to denote the replica name.
@@ -39062,6 +39336,12 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              ruleQueryOffset:
+                description: |-
+                  Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
+                  It requires Prometheus >= v2.53.0.
+                pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                type: string
               ruleSelector:
                 description: |-
                   PrometheusRule objects to be selected for rule evaluation. An empty
@@ -39138,6 +39418,18 @@ spec:
                           Alertmanager.
                         type: string
                     type: object
+                type: object
+              runtime:
+                description: RuntimeConfig configures the values for the Prometheus
+                  process behavior
+                properties:
+                  goGC:
+                    description: |-
+                      The Go garbage collection target percentage. Lowering this number may increase the CPU usage.
+                      See: https://tip.golang.org/doc/gc-guide#GOGC
+                    format: int32
+                    minimum: -1
+                    type: integer
                 type: object
               sampleLimit:
                 description: |-
@@ -44030,8 +44322,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: prometheusrules.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -44101,6 +44393,14 @@ spec:
                         be ignored by Prometheus instances.
                         More info: https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response
                       pattern: ^(?i)(abort|warn)?$
+                      type: string
+                    query_offset:
+                      description: |-
+                        Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
+
+                        It requires Prometheus >= v2.53.0.
+                        It is not supported for ThanosRuler.
+                      pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                       type: string
                     rules:
                       description: List of alerting and recording rules.
@@ -44172,8 +44472,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -52821,6 +53121,23 @@ spec:
                   Prometheus uses the default value (e.g. /metrics).
                 minLength: 1
                 type: string
+              nativeHistogramBucketLimit:
+                description: |-
+                  If there are more than this many buckets in a native histogram,
+                  buckets will be merged to stay within the limit.
+                  It requires Prometheus >= v2.45.0.
+                format: int64
+                type: integer
+              nativeHistogramMinBucketFactor:
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  If the growth factor of one bucket to the next is smaller than this,
+                  buckets will be merged to increase the factor sufficiently.
+                  It requires Prometheus >= v2.50.0.
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               noProxy:
                 description: |-
                   `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
@@ -55372,6 +55689,11 @@ spec:
                 description: The scrape class to apply.
                 minLength: 1
                 type: string
+              scrapeClassicHistograms:
+                description: |-
+                  Whether to scrape a classic histogram that is also exposed as a native histogram.
+                  It requires Prometheus >= v2.45.0.
+                type: boolean
               scrapeInterval:
                 description: ScrapeInterval is the interval between consecutive scrapes.
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
@@ -55424,10 +55746,15 @@ spec:
                     targets:
                       description: List of targets for this static configuration.
                       items:
-                        description: Target represents a target for Prometheus to
-                          scrape
+                        description: |-
+                          Target represents a target for Prometheus to scrape
+                          kubebuilder:validation:MinLength:=1
                         type: string
+                      minItems: 1
                       type: array
+                      x-kubernetes-list-type: set
+                  required:
+                  - targets
                   type: object
                 type: array
               targetLimit:
@@ -55613,8 +55940,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -56678,6 +57005,23 @@ spec:
                       type: string
                     type: array
                 type: object
+              nativeHistogramBucketLimit:
+                description: |-
+                  If there are more than this many buckets in a native histogram,
+                  buckets will be merged to stay within the limit.
+                  It requires Prometheus >= v2.45.0.
+                format: int64
+                type: integer
+              nativeHistogramMinBucketFactor:
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  If the growth factor of one bucket to the next is smaller than this,
+                  buckets will be merged to increase the factor sufficiently.
+                  It requires Prometheus >= v2.50.0.
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               podTargetLabels:
                 description: |-
                   `podTargetLabels` defines the labels which are transferred from the
@@ -56695,6 +57039,11 @@ spec:
                 description: The scrape class to apply.
                 minLength: 1
                 type: string
+              scrapeClassicHistograms:
+                description: |-
+                  Whether to scrape a classic histogram that is also exposed as a native histogram.
+                  It requires Prometheus >= v2.45.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   `scrapeProtocols` defines the protocols to negotiate during a scrape. It tells clients the
@@ -56794,8 +57143,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-    operator.prometheus.io/version: 0.77.2
+    controller-gen.kubebuilder.io/version: v0.16.4
+    operator.prometheus.io/version: 0.78.1
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -59319,6 +59668,60 @@ spec:
                   - name
                   type: object
                 type: array
+              dnsConfig:
+                description: Defines the DNS configuration for the pods.
+                properties:
+                  nameservers:
+                    description: |-
+                      A list of DNS name server IP addresses.
+                      This will be appended to the base nameservers generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  options:
+                    description: |-
+                      A list of DNS resolver options.
+                      This will be merged with the base options generated from DNSPolicy.
+                      Resolution options given in Options
+                      will override those that appear in the base DNSPolicy.
+                    items:
+                      description: PodDNSConfigOption defines DNS resolver options
+                        of a pod.
+                      properties:
+                        name:
+                          description: Name is required and must be unique.
+                          minLength: 1
+                          type: string
+                        value:
+                          description: Value is optional.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  searches:
+                    description: |-
+                      A list of DNS search domains for host-name lookup.
+                      This will be appended to the base search paths generated from DNSPolicy.
+                    items:
+                      minLength: 1
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                type: object
+              dnsPolicy:
+                description: Defines the DNS policy for the pods.
+                enum:
+                - ClusterFirstWithHostNet
+                - ClusterFirst
+                - Default
+                - None
+                type: string
               enforcedNamespaceLabel:
                 description: |-
                   EnforcedNamespaceLabel enforces adding a namespace label of origin for each alert
@@ -64751,7 +65154,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.77.2
+    app.kubernetes.io/version: 0.78.1
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -64768,7 +65171,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.77.2
+    app.kubernetes.io/version: 0.78.1
   name: prometheus-operator
 rules:
 - apiGroups:
@@ -64876,7 +65279,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.77.2
+    app.kubernetes.io/version: 0.78.1
   name: prometheus-operator
   namespace: default
 spec:
@@ -64892,19 +65295,19 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: 0.77.2
+        app.kubernetes.io/version: 0.78.1
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.77.2
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.78.1
         - --kubelet-endpoints=true
         - --kubelet-endpointslice=false
         env:
         - name: GOGC
           value: "30"
-        image: quay.io/prometheus-operator/prometheus-operator:v0.77.2
+        image: quay.io/prometheus-operator/prometheus-operator:v0.78.1
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -64938,7 +65341,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.77.2
+    app.kubernetes.io/version: 0.78.1
   name: prometheus-operator
   namespace: default
 ---
@@ -64948,7 +65351,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.77.2
+    app.kubernetes.io/version: 0.78.1
   name: prometheus-operator
   namespace: default
 spec:

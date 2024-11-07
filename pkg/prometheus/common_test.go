@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -87,12 +88,74 @@ func TestStartupProbeTimeoutSeconds(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		startupPeriodSeconds, startupFailureThreshold := GetStatupProbePeriodSecondsAndFailureThreshold(monitoringv1.CommonPrometheusFields{
-			MaximumStartupDurationSeconds: test.maximumStartupDurationSeconds,
-		})
+		startupPeriodSeconds, startupFailureThreshold := getStatupProbePeriodSecondsAndFailureThreshold(test.maximumStartupDurationSeconds)
 
 		require.Equal(t, test.expectedStartupPeriodSeconds, startupPeriodSeconds)
 		require.Equal(t, test.expectedStartupFailureThreshold, startupFailureThreshold)
 		require.Equal(t, test.expectedMaxStartupDuration, startupPeriodSeconds*startupFailureThreshold)
+	}
+}
+
+func TestBuildCommonPrometheusArgsWithRemoteWriteMessageV2(t *testing.T) {
+	for _, tc := range []struct {
+		version        string
+		messageVersion *monitoringv1.RemoteWriteMessageVersion
+
+		expectedPresent bool
+	}{
+		{
+			version: "v2.53.0",
+		},
+		{
+			version:        "v2.53.0",
+			messageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion2_0),
+		},
+		{
+			version: "v2.54.0",
+		},
+		{
+			version:        "v2.54.0",
+			messageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion1_0),
+		},
+		{
+			version:         "v2.54.0",
+			messageVersion:  ptr.To(monitoringv1.RemoteWriteMessageVersion2_0),
+			expectedPresent: true,
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			p := &monitoringv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
+				Spec: monitoringv1.PrometheusSpec{
+					CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+						Version: tc.version,
+						RemoteWrite: []monitoringv1.RemoteWriteSpec{
+							{
+								URL:            "http://example.com",
+								MessageVersion: tc.messageVersion,
+							},
+						},
+					},
+				},
+			}
+
+			cg, err := NewConfigGenerator(NewLogger(), p)
+			require.NoError(t, err)
+
+			args := cg.BuildCommonPrometheusArgs()
+
+			var found bool
+			for _, arg := range args {
+				if arg.Name == "enable-feature" && arg.Value == "metadata-wal-records" {
+					found = true
+					break
+				}
+			}
+
+			require.Equal(t, tc.expectedPresent, found)
+		})
 	}
 }

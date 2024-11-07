@@ -470,6 +470,34 @@ This defaults to the default PodSecurityContext.</p>
 </tr>
 <tr>
 <td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>serviceAccountName</code><br/>
 <em>
 string
@@ -1011,6 +1039,47 @@ uint64
 </tr>
 <tr>
 <td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -1372,6 +1441,47 @@ uint64
 <em>(Optional)</em>
 <p>Per-scrape limit on length of labels value that will be accepted for a sample.
 Only valid in Prometheus versions 2.27.0 and newer.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
 </td>
 </tr>
 <tr>
@@ -1881,6 +1991,22 @@ For more information see <a href="https://prometheus.io/docs/prometheus/latest/q
 </tr>
 <tr>
 <td>
+<code>remoteWriteReceiverMessageVersions</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteMessageVersion">
+[]RemoteWriteMessageVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of the protobuf message versions to accept when receiving the
+remote writes.</p>
+<p>It requires Prometheus &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>enableFeatures</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.EnableFeature">
@@ -2145,7 +2271,7 @@ OTLPConfig
 <td>
 <em>(Optional)</em>
 <p>Settings related to the OTLP receiver feature.
-It requires Prometheus &gt;= v2.54.0.</p>
+It requires Prometheus &gt;= v2.55.0.</p>
 </td>
 </tr>
 <tr>
@@ -2161,6 +2287,34 @@ Kubernetes core/v1.PodSecurityContext
 <em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -2623,7 +2777,8 @@ bool
 <p>Make sure to understand the security implications if you want to enable
 it (<a href="https://kubernetes.io/docs/concepts/configuration/overview/">https://kubernetes.io/docs/concepts/configuration/overview/</a>).</p>
 <p>When hostNetwork is enabled, this will set the DNS policy to
-<code>ClusterFirstWithHostNet</code> automatically.</p>
+<code>ClusterFirstWithHostNet</code> automatically (unless <code>.spec.DNSPolicy</code> is set
+to a different value).</p>
 </td>
 </tr>
 <tr>
@@ -2837,6 +2992,20 @@ TSDBSpec
 <em>(Optional)</em>
 <p>Defines the runtime reloadable configuration of the timeseries database(TSDB).
 It requires Prometheus &gt;= v2.39.0 or PrometheusAgent &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtime</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RuntimeConfig">
+RuntimeConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeConfig configures the values for the Prometheus process behavior</p>
 </td>
 </tr>
 <tr>
@@ -3136,6 +3305,21 @@ Duration
 <td>
 <p>Interval between rule evaluations.
 Default: &ldquo;30s&rdquo;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ruleQueryOffset</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
+It requires Prometheus &gt;= v2.53.0.</p>
 </td>
 </tr>
 <tr>
@@ -3487,6 +3671,47 @@ uint64
 </tr>
 <tr>
 <td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -3778,6 +4003,34 @@ Kubernetes core/v1.PodSecurityContext
 <td>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -5320,6 +5573,34 @@ This defaults to the default PodSecurityContext.</p>
 </tr>
 <tr>
 <td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>serviceAccountName</code><br/>
 <em>
 string
@@ -6631,6 +6912,22 @@ For more information see <a href="https://prometheus.io/docs/prometheus/latest/q
 </tr>
 <tr>
 <td>
+<code>remoteWriteReceiverMessageVersions</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteMessageVersion">
+[]RemoteWriteMessageVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of the protobuf message versions to accept when receiving the
+remote writes.</p>
+<p>It requires Prometheus &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>enableFeatures</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.EnableFeature">
@@ -6895,7 +7192,7 @@ OTLPConfig
 <td>
 <em>(Optional)</em>
 <p>Settings related to the OTLP receiver feature.
-It requires Prometheus &gt;= v2.54.0.</p>
+It requires Prometheus &gt;= v2.55.0.</p>
 </td>
 </tr>
 <tr>
@@ -6911,6 +7208,34 @@ Kubernetes core/v1.PodSecurityContext
 <em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -7373,7 +7698,8 @@ bool
 <p>Make sure to understand the security implications if you want to enable
 it (<a href="https://kubernetes.io/docs/concepts/configuration/overview/">https://kubernetes.io/docs/concepts/configuration/overview/</a>).</p>
 <p>When hostNetwork is enabled, this will set the DNS policy to
-<code>ClusterFirstWithHostNet</code> automatically.</p>
+<code>ClusterFirstWithHostNet</code> automatically (unless <code>.spec.DNSPolicy</code> is set
+to a different value).</p>
 </td>
 </tr>
 <tr>
@@ -7942,6 +8268,42 @@ be ignored. A null or empty list means only match against labelSelector.</p>
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.DNSPolicy">DNSPolicy
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>)
+</p>
+<div>
+<p>DNSPolicy specifies the DNS policy for the pod.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;ClusterFirst&#34;</p></td>
+<td><p>DNSClusterFirst indicates that the pod should use cluster DNS
+first unless hostNetwork is true, if it is available, then
+fall back on the default (as determined by kubelet) DNS settings.</p>
+</td>
+</tr><tr><td><p>&#34;ClusterFirstWithHostNet&#34;</p></td>
+<td><p>DNSClusterFirstWithHostNet indicates that the pod should use cluster DNS
+first, if it is available, then fall back on the default
+(as determined by kubelet) DNS settings.</p>
+</td>
+</tr><tr><td><p>&#34;Default&#34;</p></td>
+<td><p>DNSDefault indicates that the pod should use the default (as
+determined by kubelet) DNS settings.</p>
+</td>
+</tr><tr><td><p>&#34;None&#34;</p></td>
+<td><p>DNSNone indicates that the pod should use empty DNS settings. DNS
+parameters such as nameservers and search paths should be defined via
+DNSConfig.</p>
+</td>
+</tr></tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.Duration">Duration
 (<code>string</code> alias)</h3>
@@ -9120,6 +9482,65 @@ list restricting them.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="monitoring.coreos.com/v1.NativeHistogramConfig">NativeHistogramConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PodMonitorSpec">PodMonitorSpec</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.ServiceMonitorSpec">ServiceMonitorSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>)
+</p>
+<div>
+<p>NativeHistogramConfig extends the native histogram configuration settings.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="monitoring.coreos.com/v1.NonEmptyDuration">NonEmptyDuration
 (<code>string</code> alias)</h3>
 <p>
@@ -9398,6 +9819,105 @@ string
 <td>
 <em>(Optional)</em>
 <p>Name of the referent. When not set, all resources in the namespace are matched.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.PodDNSConfig">PodDNSConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>)
+</p>
+<div>
+<p>PodDNSConfig defines the DNS parameters of a pod in addition to
+those generated from DNSPolicy.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>nameservers</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>A list of DNS name server IP addresses.
+This will be appended to the base nameservers generated from DNSPolicy.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>searches</code><br/>
+<em>
+[]string
+</em>
+</td>
+<td>
+<p>A list of DNS search domains for host-name lookup.
+This will be appended to the base search paths generated from DNSPolicy.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>options</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfigOption">
+[]PodDNSConfigOption
+</a>
+</em>
+</td>
+<td>
+<p>A list of DNS resolver options.
+This will be merged with the base options generated from DNSPolicy.
+Resolution options given in Options
+will override those that appear in the base DNSPolicy.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.PodDNSConfigOption">PodDNSConfigOption
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PodDNSConfig">PodDNSConfig</a>)
+</p>
+<div>
+<p>PodDNSConfigOption defines DNS resolver options of a pod.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is required and must be unique.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value is optional.</p>
 </td>
 </tr>
 </tbody>
@@ -9890,6 +10410,47 @@ uint64
 </tr>
 <tr>
 <td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -10202,6 +10763,47 @@ uint64
 <em>(Optional)</em>
 <p>Per-scrape limit on length of labels value that will be accepted for a sample.
 Only valid in Prometheus versions 2.27.0 and newer.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
 </td>
 </tr>
 <tr>
@@ -10997,6 +11599,22 @@ For more information see <a href="https://prometheus.io/docs/prometheus/latest/q
 </tr>
 <tr>
 <td>
+<code>remoteWriteReceiverMessageVersions</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteMessageVersion">
+[]RemoteWriteMessageVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of the protobuf message versions to accept when receiving the
+remote writes.</p>
+<p>It requires Prometheus &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>enableFeatures</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.EnableFeature">
@@ -11261,7 +11879,7 @@ OTLPConfig
 <td>
 <em>(Optional)</em>
 <p>Settings related to the OTLP receiver feature.
-It requires Prometheus &gt;= v2.54.0.</p>
+It requires Prometheus &gt;= v2.55.0.</p>
 </td>
 </tr>
 <tr>
@@ -11277,6 +11895,34 @@ Kubernetes core/v1.PodSecurityContext
 <em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -11739,7 +12385,8 @@ bool
 <p>Make sure to understand the security implications if you want to enable
 it (<a href="https://kubernetes.io/docs/concepts/configuration/overview/">https://kubernetes.io/docs/concepts/configuration/overview/</a>).</p>
 <p>When hostNetwork is enabled, this will set the DNS policy to
-<code>ClusterFirstWithHostNet</code> automatically.</p>
+<code>ClusterFirstWithHostNet</code> automatically (unless <code>.spec.DNSPolicy</code> is set
+to a different value).</p>
 </td>
 </tr>
 <tr>
@@ -11953,6 +12600,20 @@ TSDBSpec
 <em>(Optional)</em>
 <p>Defines the runtime reloadable configuration of the timeseries database(TSDB).
 It requires Prometheus &gt;= v2.39.0 or PrometheusAgent &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtime</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RuntimeConfig">
+RuntimeConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeConfig configures the values for the Prometheus process behavior</p>
 </td>
 </tr>
 <tr>
@@ -12252,6 +12913,21 @@ Duration
 <td>
 <p>Interval between rule evaluations.
 Default: &ldquo;30s&rdquo;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ruleQueryOffset</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
+It requires Prometheus &gt;= v2.53.0.</p>
 </td>
 </tr>
 <tr>
@@ -13074,6 +13750,7 @@ Duration
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Timeout for requests to the remote read endpoint.</p>
 </td>
 </tr>
@@ -13273,6 +13950,28 @@ bool
 </tr>
 </tbody>
 </table>
+<h3 id="monitoring.coreos.com/v1.RemoteWriteMessageVersion">RemoteWriteMessageVersion
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;V1.0&#34;</p></td>
+<td><p>Remote Write message&rsquo;s version 1.0.</p>
+</td>
+</tr><tr><td><p>&#34;V2.0&#34;</p></td>
+<td><p>Remote Write message&rsquo;s version 2.0.</p>
+</td>
+</tr></tbody>
+</table>
 <h3 id="monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec
 </h3>
 <p>
@@ -13309,9 +14008,31 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>The name of the remote write queue, it must be unique if specified. The
 name is used in metrics and logging in order to differentiate queues.</p>
 <p>It requires Prometheus &gt;= v2.15.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>messageVersion</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteMessageVersion">
+RemoteWriteMessageVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The Remote Write message&rsquo;s version to use when writing to the endpoint.</p>
+<p><code>Version1.0</code> corresponds to the <code>prometheus.WriteRequest</code> protobuf message introduced in Remote Write 1.0.
+<code>Version2.0</code> corresponds to the <code>io.prometheus.write.v2.Request</code> protobuf message introduced in Remote Write 2.0.</p>
+<p>When <code>Version2.0</code> is selected, Prometheus will automatically be
+configured to append the metadata of scraped metrics to the WAL.</p>
+<p>Before setting this field, consult with your remote storage provider
+what message version it supports.</p>
+<p>It requires Prometheus &gt;= v2.54.0.</p>
 </td>
 </tr>
 <tr>
@@ -13324,7 +14045,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Enables sending of exemplars over remote write. Note that
-exemplar-storage itself must be enabled using the <code>spec.enableFeature</code>
+exemplar-storage itself must be enabled using the <code>spec.enableFeatures</code>
 option for exemplars to be scraped in the first place.</p>
 <p>It requires Prometheus &gt;= v2.27.0.</p>
 </td>
@@ -13353,6 +14074,7 @@ Duration
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Timeout for requests to the remote write endpoint.</p>
 </td>
 </tr>
@@ -13763,6 +14485,22 @@ Duration
 </tr>
 <tr>
 <td>
+<code>query_offset</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.</p>
+<p>It requires Prometheus &gt;= v2.53.0.
+It is not supported for ThanosRuler.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>rules</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.Rule">
@@ -13885,6 +14623,37 @@ string
 <td>
 <p>Minimum amount of time to wait before resending an alert to
 Alertmanager.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.RuntimeConfig">RuntimeConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>)
+</p>
+<div>
+<p>RuntimeConfig configures the values for the process behavior.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>goGC</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The Go garbage collection target percentage. Lowering this number may increase the CPU usage.
+See: <a href="https://tip.golang.org/doc/gc-guide#GOGC">https://tip.golang.org/doc/gc-guide#GOGC</a></p>
 </td>
 </tr>
 </tbody>
@@ -14421,6 +15190,47 @@ uint64
 </tr>
 <tr>
 <td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -14908,6 +15718,7 @@ Duration
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Configures how old an out-of-order/out-of-bounds sample can be with
 respect to the TSDB max time.</p>
 <p>An out-of-order/out-of-bounds sample is ingested into the TSDB as long as
@@ -15105,6 +15916,34 @@ Kubernetes core/v1.PodSecurityContext
 <td>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -17294,6 +18133,22 @@ For more information see <a href="https://prometheus.io/docs/prometheus/latest/q
 </tr>
 <tr>
 <td>
+<code>remoteWriteReceiverMessageVersions</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteMessageVersion">
+[]RemoteWriteMessageVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of the protobuf message versions to accept when receiving the
+remote writes.</p>
+<p>It requires Prometheus &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>enableFeatures</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.EnableFeature">
@@ -17558,7 +18413,7 @@ OTLPConfig
 <td>
 <em>(Optional)</em>
 <p>Settings related to the OTLP receiver feature.
-It requires Prometheus &gt;= v2.54.0.</p>
+It requires Prometheus &gt;= v2.55.0.</p>
 </td>
 </tr>
 <tr>
@@ -17574,6 +18429,34 @@ Kubernetes core/v1.PodSecurityContext
 <em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -18036,7 +18919,8 @@ bool
 <p>Make sure to understand the security implications if you want to enable
 it (<a href="https://kubernetes.io/docs/concepts/configuration/overview/">https://kubernetes.io/docs/concepts/configuration/overview/</a>).</p>
 <p>When hostNetwork is enabled, this will set the DNS policy to
-<code>ClusterFirstWithHostNet</code> automatically.</p>
+<code>ClusterFirstWithHostNet</code> automatically (unless <code>.spec.DNSPolicy</code> is set
+to a different value).</p>
 </td>
 </tr>
 <tr>
@@ -18936,6 +19820,47 @@ uint64
 <em>(Optional)</em>
 <p>Per-scrape limit on length of labels value that will be accepted for a sample.
 Only valid in Prometheus versions 2.27.0 and newer.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
 </td>
 </tr>
 <tr>
@@ -25019,6 +25944,22 @@ For more information see <a href="https://prometheus.io/docs/prometheus/latest/q
 </tr>
 <tr>
 <td>
+<code>remoteWriteReceiverMessageVersions</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteMessageVersion">
+[]RemoteWriteMessageVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>List of the protobuf message versions to accept when receiving the
+remote writes.</p>
+<p>It requires Prometheus &gt;= v2.54.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>enableFeatures</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.EnableFeature">
@@ -25283,7 +26224,7 @@ OTLPConfig
 <td>
 <em>(Optional)</em>
 <p>Settings related to the OTLP receiver feature.
-It requires Prometheus &gt;= v2.54.0.</p>
+It requires Prometheus &gt;= v2.55.0.</p>
 </td>
 </tr>
 <tr>
@@ -25299,6 +26240,34 @@ Kubernetes core/v1.PodSecurityContext
 <em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.DNSPolicy">
+DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS policy for the pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.PodDNSConfig">
+PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the DNS configuration for the pods.</p>
 </td>
 </tr>
 <tr>
@@ -25761,7 +26730,8 @@ bool
 <p>Make sure to understand the security implications if you want to enable
 it (<a href="https://kubernetes.io/docs/concepts/configuration/overview/">https://kubernetes.io/docs/concepts/configuration/overview/</a>).</p>
 <p>When hostNetwork is enabled, this will set the DNS policy to
-<code>ClusterFirstWithHostNet</code> automatically.</p>
+<code>ClusterFirstWithHostNet</code> automatically (unless <code>.spec.DNSPolicy</code> is set
+to a different value).</p>
 </td>
 </tr>
 <tr>
@@ -27842,6 +28812,47 @@ Only valid in Prometheus versions 2.27.0 and newer.</p>
 </tr>
 <tr>
 <td>
+<code>scrapeClassicHistograms</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to scrape a classic histogram that is also exposed as a native histogram.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramBucketLimit</code><br/>
+<em>
+uint64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If there are more than this many buckets in a native histogram,
+buckets will be merged to stay within the limit.
+It requires Prometheus &gt;= v2.45.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nativeHistogramMinBucketFactor</code><br/>
+<em>
+k8s.io/apimachinery/pkg/api/resource.Quantity
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the growth factor of one bucket to the next is smaller than this,
+buckets will be merged to increase the factor sufficiently.
+It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -28457,7 +29468,6 @@ See <a href="https://prometheus.io/docs/prometheus/latest/configuration/configur
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>List of targets for this static configuration.</p>
 </td>
 </tr>
@@ -28465,7 +29475,7 @@ See <a href="https://prometheus.io/docs/prometheus/latest/configuration/configur
 <td>
 <code>labels</code><br/>
 <em>
-map[github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1.LabelName]string
+map[string]string
 </em>
 </td>
 <td>
@@ -28481,7 +29491,8 @@ map[github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1.La
 (<em>Appears on:</em><a href="#monitoring.coreos.com/v1alpha1.StaticConfig">StaticConfig</a>)
 </p>
 <div>
-<p>Target represents a target for Prometheus to scrape</p>
+<p>Target represents a target for Prometheus to scrape
+kubebuilder:validation:MinLength:=1</p>
 </div>
 <h3 id="monitoring.coreos.com/v1alpha1.TelegramConfig">TelegramConfig
 </h3>

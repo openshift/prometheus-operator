@@ -28,6 +28,7 @@ const (
 )
 
 // Target represents a target for Prometheus to scrape
+// kubebuilder:validation:MinLength:=1
 type Target string
 
 // SDFile represents a file used for service discovery
@@ -309,6 +310,8 @@ type ScrapeConfigSpec struct {
 	// Only valid in Prometheus versions 2.27.0 and newer.
 	// +optional
 	LabelValueLengthLimit *uint64 `json:"labelValueLengthLimit,omitempty"`
+
+	v1.NativeHistogramConfig `json:",inline"`
 	// Per-scrape limit on the number of targets dropped by relabeling
 	// that will be kept in memory. 0 means no limit.
 	//
@@ -334,12 +337,14 @@ type ScrapeConfigSpec struct {
 // +k8s:openapi-gen=true
 type StaticConfig struct {
 	// List of targets for this static configuration.
-	// +optional
-	Targets []Target `json:"targets,omitempty"`
+	// +kubebuilder:validation:MinItems:=1
+	// +listType=set
+	// +required
+	Targets []Target `json:"targets"`
 	// Labels assigned to all metrics scraped from the targets.
 	// +mapType:=atomic
 	// +optional
-	Labels map[v1.LabelName]string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // FileSDConfig defines a Prometheus file service discovery configuration
