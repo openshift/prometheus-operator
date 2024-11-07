@@ -27,6 +27,7 @@ import (
 // with apply.
 type PrometheusSpecApplyConfiguration struct {
 	CommonPrometheusFieldsApplyConfiguration `json:",inline"`
+	Runtime                                  *RuntimeConfigApplyConfiguration                `json:"runtime,omitempty"`
 	BaseImage                                *string                                         `json:"baseImage,omitempty"`
 	Tag                                      *string                                         `json:"tag,omitempty"`
 	SHA                                      *string                                         `json:"sha,omitempty"`
@@ -47,6 +48,7 @@ type PrometheusSpecApplyConfiguration struct {
 	AllowOverlappingBlocks                   *bool                                           `json:"allowOverlappingBlocks,omitempty"`
 	Exemplars                                *ExemplarsApplyConfiguration                    `json:"exemplars,omitempty"`
 	EvaluationInterval                       *monitoringv1.Duration                          `json:"evaluationInterval,omitempty"`
+	RuleQueryOffset                          *monitoringv1.Duration                          `json:"ruleQueryOffset,omitempty"`
 	EnableAdminAPI                           *bool                                           `json:"enableAdminAPI,omitempty"`
 }
 
@@ -266,6 +268,16 @@ func (b *PrometheusSpecApplyConfiguration) WithEnableRemoteWriteReceiver(value b
 	return b
 }
 
+// WithRemoteWriteReceiverMessageVersions adds the given value to the RemoteWriteReceiverMessageVersions field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the RemoteWriteReceiverMessageVersions field.
+func (b *PrometheusSpecApplyConfiguration) WithRemoteWriteReceiverMessageVersions(values ...monitoringv1.RemoteWriteMessageVersion) *PrometheusSpecApplyConfiguration {
+	for i := range values {
+		b.RemoteWriteReceiverMessageVersions = append(b.RemoteWriteReceiverMessageVersions, values[i])
+	}
+	return b
+}
+
 // WithEnableFeatures adds the given value to the EnableFeatures field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the EnableFeatures field.
@@ -451,6 +463,22 @@ func (b *PrometheusSpecApplyConfiguration) WithOTLP(value *OTLPConfigApplyConfig
 // If called multiple times, the SecurityContext field is set to the value of the last call.
 func (b *PrometheusSpecApplyConfiguration) WithSecurityContext(value corev1.PodSecurityContext) *PrometheusSpecApplyConfiguration {
 	b.SecurityContext = &value
+	return b
+}
+
+// WithDNSPolicy sets the DNSPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DNSPolicy field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithDNSPolicy(value monitoringv1.DNSPolicy) *PrometheusSpecApplyConfiguration {
+	b.DNSPolicy = &value
+	return b
+}
+
+// WithDNSConfig sets the DNSConfig field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DNSConfig field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithDNSConfig(value *PodDNSConfigApplyConfiguration) *PrometheusSpecApplyConfiguration {
+	b.DNSConfig = value
 	return b
 }
 
@@ -792,6 +820,14 @@ func (b *PrometheusSpecApplyConfiguration) WithTSDB(value *TSDBSpecApplyConfigur
 	return b
 }
 
+// WithRuntime sets the Runtime field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Runtime field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithRuntime(value *RuntimeConfigApplyConfiguration) *PrometheusSpecApplyConfiguration {
+	b.Runtime = value
+	return b
+}
+
 // WithBaseImage sets the BaseImage field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the BaseImage field is set to the value of the last call.
@@ -959,6 +995,14 @@ func (b *PrometheusSpecApplyConfiguration) WithExemplars(value *ExemplarsApplyCo
 // If called multiple times, the EvaluationInterval field is set to the value of the last call.
 func (b *PrometheusSpecApplyConfiguration) WithEvaluationInterval(value monitoringv1.Duration) *PrometheusSpecApplyConfiguration {
 	b.EvaluationInterval = &value
+	return b
+}
+
+// WithRuleQueryOffset sets the RuleQueryOffset field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RuleQueryOffset field is set to the value of the last call.
+func (b *PrometheusSpecApplyConfiguration) WithRuleQueryOffset(value monitoringv1.Duration) *PrometheusSpecApplyConfiguration {
+	b.RuleQueryOffset = &value
 	return b
 }
 

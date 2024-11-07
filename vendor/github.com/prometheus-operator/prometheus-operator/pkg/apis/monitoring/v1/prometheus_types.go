@@ -41,6 +41,15 @@ const (
 // +kubebuilder:validation:Enum=PrometheusProto;OpenMetricsText0.0.1;OpenMetricsText1.0.0;PrometheusText0.0.4
 type ScrapeProtocol string
 
+// RuntimeConfig configures the values for the process behavior.
+type RuntimeConfig struct {
+	// The Go garbage collection target percentage. Lowering this number may increase the CPU usage.
+	// See: https://tip.golang.org/doc/gc-guide#GOGC
+	// +optional
+	// +kubebuilder:validation:Minimum=-1
+	GoGC *int32 `json:"goGC,omitempty"`
+}
+
 // PrometheusInterface is used by Prometheus and PrometheusAgent to share common methods, e.g. config generation.
 // +k8s:deepcopy-gen=false
 type PrometheusInterface interface {
@@ -298,6 +307,16 @@ type CommonPrometheusFields struct {
 	// It requires Prometheus >= v2.33.0.
 	EnableRemoteWriteReceiver bool `json:"enableRemoteWriteReceiver,omitempty"`
 
+	// List of the protobuf message versions to accept when receiving the
+	// remote writes.
+	//
+	// It requires Prometheus >= v2.54.0.
+	//
+	// +kubebuilder:validation:MinItems=1
+	// +listType:=set
+	// +optional
+	RemoteWriteReceiverMessageVersions []RemoteWriteMessageVersion `json:"remoteWriteReceiverMessageVersions,omitempty"`
+
 	// Enable access to Prometheus feature flags. By default, no features are enabled.
 	//
 	// Enabling features which are disabled by default is entirely outside the
@@ -392,7 +411,7 @@ type CommonPrometheusFields struct {
 	RemoteWrite []RemoteWriteSpec `json:"remoteWrite,omitempty"`
 
 	// Settings related to the OTLP receiver feature.
-	// It requires Prometheus >= v2.54.0.
+	// It requires Prometheus >= v2.55.0.
 	//
 	// +optional
 	OTLP *OTLPConfig `json:"otlp,omitempty"`
@@ -402,6 +421,14 @@ type CommonPrometheusFields struct {
 	// +optional
 	SecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
 
+	// Defines the DNS policy for the pods.
+	//
+	// +optional
+	DNSPolicy *DNSPolicy `json:"dnsPolicy,omitempty"`
+	// Defines the DNS configuration for the pods.
+	//
+	// +optional
+	DNSConfig *PodDNSConfig `json:"dnsConfig,omitempty"`
 	// When true, the Prometheus server listens on the loopback address
 	// instead of the Pod IP's address.
 	ListenLocal bool `json:"listenLocal,omitempty"`
@@ -683,7 +710,8 @@ type CommonPrometheusFields struct {
 	// it (https://kubernetes.io/docs/concepts/configuration/overview/).
 	//
 	// When hostNetwork is enabled, this will set the DNS policy to
-	// `ClusterFirstWithHostNet` automatically.
+	// `ClusterFirstWithHostNet` automatically (unless `.spec.DNSPolicy` is set
+	// to a different value).
 	HostNetwork bool `json:"hostNetwork,omitempty"`
 
 	// PodTargetLabels are appended to the `spec.podTargetLabels` field of all
@@ -891,6 +919,10 @@ func (l *PrometheusList) DeepCopyObject() runtime.Object {
 type PrometheusSpec struct {
 	CommonPrometheusFields `json:",inline"`
 
+	// RuntimeConfig configures the values for the Prometheus process behavior
+	// +optional
+	Runtime *RuntimeConfig `json:"runtime,omitempty"`
+
 	// Deprecated: use 'spec.image' instead.
 	BaseImage string `json:"baseImage,omitempty"`
 	// Deprecated: use 'spec.image' instead. The image's tag can be specified as part of the image name.
@@ -1004,6 +1036,11 @@ type PrometheusSpec struct {
 	// Default: "30s"
 	// +kubebuilder:default:="30s"
 	EvaluationInterval Duration `json:"evaluationInterval,omitempty"`
+
+	// Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
+	// It requires Prometheus >= v2.53.0.
+	// +optional
+	RuleQueryOffset *Duration `json:"ruleQueryOffset,omitempty"`
 
 	// Enables access to the Prometheus web admin API.
 	//
@@ -1311,6 +1348,8 @@ type ThanosSpec struct {
 // +k8s:openapi-gen=true
 type RemoteWriteSpec struct {
 	// The URL of the endpoint to send samples to.
+	// +kubebuilder:validation:MinLength=1
+	// +required
 	URL string `json:"url"`
 
 	// The name of the remote write queue, it must be unique if specified. The
@@ -1318,10 +1357,27 @@ type RemoteWriteSpec struct {
 	//
 	// It requires Prometheus >= v2.15.0.
 	//
-	Name string `json:"name,omitempty"`
+	//+optional
+	Name *string `json:"name,omitempty"`
+
+	// The Remote Write message's version to use when writing to the endpoint.
+	//
+	// `Version1.0` corresponds to the `prometheus.WriteRequest` protobuf message introduced in Remote Write 1.0.
+	// `Version2.0` corresponds to the `io.prometheus.write.v2.Request` protobuf message introduced in Remote Write 2.0.
+	//
+	// When `Version2.0` is selected, Prometheus will automatically be
+	// configured to append the metadata of scraped metrics to the WAL.
+	//
+	// Before setting this field, consult with your remote storage provider
+	// what message version it supports.
+	//
+	// It requires Prometheus >= v2.54.0.
+	//
+	// +optional
+	MessageVersion *RemoteWriteMessageVersion `json:"messageVersion,omitempty"`
 
 	// Enables sending of exemplars over remote write. Note that
-	// exemplar-storage itself must be enabled using the `spec.enableFeature`
+	// exemplar-storage itself must be enabled using the `spec.enableFeatures`
 	// option for exemplars to be scraped in the first place.
 	//
 	// It requires Prometheus >= v2.27.0.
@@ -1338,7 +1394,8 @@ type RemoteWriteSpec struct {
 	SendNativeHistograms *bool `json:"sendNativeHistograms,omitempty"`
 
 	// Timeout for requests to the remote write endpoint.
-	RemoteTimeout Duration `json:"remoteTimeout,omitempty"`
+	// +optional
+	RemoteTimeout *Duration `json:"remoteTimeout,omitempty"`
 
 	// Custom HTTP headers to be sent along with each remote write request.
 	// Be aware that headers that are set by Prometheus itself can't be overwritten.
@@ -1359,16 +1416,19 @@ type RemoteWriteSpec struct {
 	// Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
 	// +optional
 	OAuth2 *OAuth2 `json:"oauth2,omitempty"`
+
 	// BasicAuth configuration for the URL.
 	//
 	// Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
 	//
 	// +optional
 	BasicAuth *BasicAuth `json:"basicAuth,omitempty"`
+
 	// File from which to read bearer token for the URL.
 	//
 	// Deprecated: this will be removed in a future release. Prefer using `authorization`.
 	BearerTokenFile string `json:"bearerTokenFile,omitempty"`
+
 	// Authorization section for the URL.
 	//
 	// It requires Prometheus >= v2.26.0.
@@ -1377,6 +1437,7 @@ type RemoteWriteSpec struct {
 	//
 	// +optional
 	Authorization *Authorization `json:"authorization,omitempty"`
+
 	// Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 	//
 	// It requires Prometheus >= v2.26.0.
@@ -1428,6 +1489,16 @@ type RemoteWriteSpec struct {
 	// +optional
 	EnableHttp2 *bool `json:"enableHTTP2,omitempty"`
 }
+
+// +kubebuilder:validation:Enum=V1.0;V2.0
+type RemoteWriteMessageVersion string
+
+const (
+	// Remote Write message's version 1.0.
+	RemoteWriteMessageVersion1_0 = RemoteWriteMessageVersion("V1.0")
+	// Remote Write message's version 2.0.
+	RemoteWriteMessageVersion2_0 = RemoteWriteMessageVersion("V2.0")
+)
 
 // QueueConfig allows the tuning of remote write's queue_config parameters.
 // This object is referenced in the RemoteWriteSpec object.
@@ -1566,7 +1637,8 @@ type RemoteReadSpec struct {
 	RequiredMatchers map[string]string `json:"requiredMatchers,omitempty"`
 
 	// Timeout for requests to the remote read endpoint.
-	RemoteTimeout Duration `json:"remoteTimeout,omitempty"`
+	// +optional
+	RemoteTimeout *Duration `json:"remoteTimeout,omitempty"`
 
 	// Custom HTTP headers to be sent along with each remote read request.
 	// Be aware that headers that are set by Prometheus itself can't be overwritten.
@@ -1884,7 +1956,8 @@ type TSDBSpec struct {
 	// in a breaking way.
 	//
 	// It requires Prometheus >= v2.39.0 or PrometheusAgent >= v2.54.0.
-	OutOfOrderTimeWindow Duration `json:"outOfOrderTimeWindow,omitempty"`
+	// +optional
+	OutOfOrderTimeWindow *Duration `json:"outOfOrderTimeWindow,omitempty"`
 }
 
 type Exemplars struct {
