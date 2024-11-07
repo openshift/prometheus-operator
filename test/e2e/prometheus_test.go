@@ -686,6 +686,28 @@ func testPromRemoteWriteWithTLS(t *testing.T) {
 			},
 			success: true,
 		},
+		{
+			// Prometheus Remote Write v2.0.
+			name: "remote-write-v2.0",
+			rwConfig: testFramework.PromRemoteWriteTestConfig{
+				ClientKey: testFramework.Key{
+					Filename:   "client.key",
+					SecretName: "client-tls-key-cert-ca",
+				},
+				ClientCert: testFramework.Cert{
+					Filename:     "client.crt",
+					ResourceName: "client-tls-key-cert-ca",
+					ResourceType: testFramework.SECRET,
+				},
+				CA: testFramework.Cert{
+					Filename:     "ca.crt",
+					ResourceName: "client-tls-key-cert-ca",
+					ResourceType: testFramework.SECRET,
+				},
+				RemoteWriteMessageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion2_0),
+			},
+			success: true,
+		},
 	} {
 		tc := tc
 
@@ -1553,11 +1575,15 @@ func testPromRulesExceedingConfigMapLimit(t *testing.T) {
 	}
 
 	defer func() {
-		if t.Failed() {
-			if err := framework.PrintPodLogs(context.Background(), ns, "prometheus-"+p.Name+"-0"); err != nil {
-				t.Fatal(err)
-			}
+		if !t.Failed() {
+			return
 		}
+
+		b := &bytes.Buffer{}
+		if err := framework.WritePodLogs(context.Background(), b, ns, "prometheus-"+p.Name+"-0", testFramework.LogOptions{}); err != nil {
+			t.Logf("failed to get logs: %v", err)
+		}
+		t.Log(b.String())
 	}()
 
 	pSVC := framework.MakePrometheusService(p.Name, "not-relevant", v1.ServiceTypeClusterIP)
@@ -4639,6 +4665,49 @@ func testPrometheusCRDValidation(t *testing.T) {
 			},
 			expectedError: true,
 		},
+		{
+			name: "valid-dns-policy-and-config",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					Resources: v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceMemory: resource.MustParse("400Mi"),
+						},
+					},
+					DNSPolicy: ptr.To(monitoringv1.DNSPolicy("ClusterFirst")),
+					DNSConfig: &monitoringv1.PodDNSConfig{
+						Nameservers: []string{"8.8.8.8"},
+						Options: []monitoringv1.PodDNSConfigOption{
+							{
+								Name:  "ndots",
+								Value: ptr.To("5"),
+							},
+						},
+					},
+				},
+			},
+			expectedError: false,
+		},
+		{
+			name: "invalid-dns-policy",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					Resources: v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceMemory: resource.MustParse("400Mi"),
+						},
+					},
+					DNSPolicy: ptr.To(monitoringv1.DNSPolicy("InvalidPolicy")),
+				},
+			},
+			expectedError: true,
+		},
 		//
 		// Alertmanagers-Endpoints tests
 		{
@@ -4721,6 +4790,85 @@ func testPrometheusCRDValidation(t *testing.T) {
 							BearerTokenFile: "/file",
 							APIVersion:      "v1",
 						},
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "valid-remote-write-message-version",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					RemoteWrite: []monitoringv1.RemoteWriteSpec{
+						{
+							URL:            "http://example.com",
+							MessageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion2_0),
+						},
+					},
+				},
+			},
+			expectedError: false,
+		},
+		{
+			name: "invalid-remote-write-message-version",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					RemoteWrite: []monitoringv1.RemoteWriteSpec{
+						{
+							URL:            "http://example.com",
+							MessageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion("xx")),
+						},
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "invalid-empty-remote-write-url",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					RemoteWrite: []monitoringv1.RemoteWriteSpec{
+						{
+							URL: "",
+						},
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "valid-remote-write-receiver-message-versions",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					RemoteWriteReceiverMessageVersions: []monitoringv1.RemoteWriteMessageVersion{
+						monitoringv1.RemoteWriteMessageVersion2_0,
+					},
+				},
+			},
+			expectedError: false,
+		},
+		{
+			name: "invalid-remote-write-receiver-message-versions",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+					RemoteWriteReceiverMessageVersions: []monitoringv1.RemoteWriteMessageVersion{
+						monitoringv1.RemoteWriteMessageVersion2_0,
+						monitoringv1.RemoteWriteMessageVersion("xx"),
 					},
 				},
 			},

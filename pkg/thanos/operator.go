@@ -34,7 +34,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/ptr"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/assets"
@@ -401,7 +400,8 @@ func (o *Operator) handleNamespaceUpdate(oldo, curo interface{}) {
 
 		sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, tr.Spec.RuleNamespaceSelector)
 		if err != nil {
-			o.logger.Error("",
+			o.logger.Error(
+				"failed to detect label selection change",
 				"err", err,
 				"name", tr.Name,
 				"namespace", tr.Namespace,
@@ -520,11 +520,7 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 
 	operator.SanitizeSTS(sset)
 
-	// TODO(simonpasquier): remove the test on owner references after v0.78
-	// release.  Before v0.77.0, the Thanos ruler controller forgot to set the
-	// `controller` field to true which prevented the resource reconciler to
-	// trigger reconciliations as expected.
-	if newSSetInputHash == existingStatefulSet.ObjectMeta.Annotations[operator.InputHashAnnotationName] && noControllerOwner(existingStatefulSet.OwnerReferences) {
+	if newSSetInputHash == existingStatefulSet.ObjectMeta.Annotations[operator.InputHashAnnotationName] {
 		logger.Debug("new statefulset generation inputs match current, skipping any actions", "hash", newSSetInputHash)
 		return nil
 	}
@@ -556,16 +552,6 @@ func (o *Operator) sync(ctx context.Context, key string) error {
 	}
 
 	return nil
-}
-
-func noControllerOwner(ors []metav1.OwnerReference) bool {
-	for _, or := range ors {
-		if ptr.Deref(or.Controller, false) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // getThanosRulerFromKey returns a copy of the ThanosRuler object identified by key.

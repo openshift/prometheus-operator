@@ -17,8 +17,6 @@ package prometheusagent
 import (
 	"fmt"
 
-	"github.com/blang/semver/v4"
-	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,8 +37,8 @@ const (
 
 func makeStatefulSet(
 	name string,
-	p monitoringv1.PrometheusInterface,
-	config *prompkg.Config,
+	p *monitoringv1alpha1.PrometheusAgent,
+	config prompkg.Config,
 	cg *prompkg.ConfigGenerator,
 	inputHash string,
 	shard int32,
@@ -133,42 +131,28 @@ func makeStatefulSet(
 		statefulset.Spec.PersistentVolumeClaimRetentionPolicy = cpf.PersistentVolumeClaimRetentionPolicy
 	}
 
-	if cpf.HostNetwork {
-		statefulset.Spec.Template.Spec.DNSPolicy = v1.DNSClusterFirstWithHostNet
-	}
-
 	return statefulset, nil
 }
 
 func makeStatefulSetSpec(
-	p monitoringv1.PrometheusInterface,
-	c *prompkg.Config,
+	p *monitoringv1alpha1.PrometheusAgent,
+	c prompkg.Config,
 	cg *prompkg.ConfigGenerator,
 	shard int32,
 	tlsSecrets *operator.ShardedSecret,
 ) (*appsv1.StatefulSetSpec, error) {
 	cpf := p.GetCommonPrometheusFields()
 
-	promVersion := operator.StringValOrDefault(cpf.Version, operator.DefaultPrometheusVersion)
-	version, err := semver.ParseTolerant(promVersion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse Prometheus version: %w", err)
-	}
-
 	pImagePath, err := operator.BuildImagePathForAgent(
 		ptr.Deref(cpf.Image, ""),
 		c.PrometheusDefaultBaseImage,
-		promVersion,
+		"v"+cg.Version().String(),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if version.Major == 2 && !slices.Contains(cpf.EnableFeatures, "agent") {
-		cpf.EnableFeatures = append(cpf.EnableFeatures, "agent")
-	}
-
-	promArgs := buildAgentArgs(cpf, cg)
+	promArgs := buildAgentArgs(cg, cpf.WALCompression)
 
 	volumes, promVolumeMounts, err := prompkg.BuildCommonVolumes(p, tlsSecrets, true)
 	if err != nil {
@@ -204,9 +188,9 @@ func makeStatefulSetSpec(
 		webConfigGenerator.Warn("web.config.file")
 	}
 
-	startupProbe, readinessProbe, livenessProbe := prompkg.MakeProbes(cpf, webConfigGenerator)
+	startupProbe, readinessProbe, livenessProbe := cg.BuildProbes()
 
-	podAnnotations, podLabels := prompkg.BuildPodMetadata(cpf, cg)
+	podAnnotations, podLabels := cg.BuildPodMetadata()
 	// In cases where an existing selector label is modified, or a new one is added, new sts cannot match existing pods.
 	// We should try to avoid removing such immutable fields whenever possible since doing
 	// so forces us to enter the 'recreate cycle' and can potentially lead to downtime.
@@ -288,6 +272,30 @@ func makeStatefulSetSpec(
 		return nil, fmt.Errorf("failed to merge containers spec: %w", err)
 	}
 
+	spec := v1.PodSpec{
+		ShareProcessNamespace:         prompkg.ShareProcessNamespace(p),
+		Containers:                    containers,
+		InitContainers:                initContainers,
+		SecurityContext:               cpf.SecurityContext,
+		ServiceAccountName:            cpf.ServiceAccountName,
+		AutomountServiceAccountToken:  ptr.To(ptr.Deref(cpf.AutomountServiceAccountToken, true)),
+		NodeSelector:                  cpf.NodeSelector,
+		PriorityClassName:             cpf.PriorityClassName,
+		TerminationGracePeriodSeconds: ptr.To(int64(600)),
+		Volumes:                       volumes,
+		Tolerations:                   cpf.Tolerations,
+		Affinity:                      cpf.Affinity,
+		TopologySpreadConstraints:     prompkg.MakeK8sTopologySpreadConstraint(finalSelectorLabels, cpf.TopologySpreadConstraints),
+		HostAliases:                   operator.MakeHostAliases(cpf.HostAliases),
+		HostNetwork:                   cpf.HostNetwork,
+	}
+
+	if cpf.HostNetwork {
+		spec.DNSPolicy = v1.DNSClusterFirstWithHostNet
+	}
+	k8sutil.UpdateDNSPolicy(&spec, cpf.DNSPolicy)
+	k8sutil.UpdateDNSConfig(&spec, cpf.DNSConfig)
+
 	// PodManagementPolicy is set to Parallel to mitigate issues in kubernetes: https://github.com/kubernetes/kubernetes/issues/60164
 	// This is also mentioned as one of limitations of StatefulSets: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
 	return &appsv1.StatefulSetSpec{
@@ -306,25 +314,7 @@ func makeStatefulSetSpec(
 				Labels:      finalLabels,
 				Annotations: podAnnotations,
 			},
-			Spec: v1.PodSpec{
-				ShareProcessNamespace:        prompkg.ShareProcessNamespace(p),
-				Containers:                   containers,
-				InitContainers:               initContainers,
-				SecurityContext:              cpf.SecurityContext,
-				ServiceAccountName:           cpf.ServiceAccountName,
-				AutomountServiceAccountToken: ptr.To(ptr.Deref(cpf.AutomountServiceAccountToken, true)),
-				NodeSelector:                 cpf.NodeSelector,
-				PriorityClassName:            cpf.PriorityClassName,
-				// Prometheus may take quite long to shut down to checkpoint existing data.
-				// Allow up to 10 minutes for clean termination.
-				TerminationGracePeriodSeconds: ptr.To(int64(600)),
-				Volumes:                       volumes,
-				Tolerations:                   cpf.Tolerations,
-				Affinity:                      cpf.Affinity,
-				TopologySpreadConstraints:     prompkg.MakeK8sTopologySpreadConstraint(finalSelectorLabels, cpf.TopologySpreadConstraints),
-				HostAliases:                   operator.MakeHostAliases(cpf.HostAliases),
-				HostNetwork:                   cpf.HostNetwork,
-			},
+			Spec: spec,
 		},
 	}, nil
 }
@@ -364,12 +354,14 @@ func makeStatefulSetService(p *monitoringv1alpha1.PrometheusAgent, config prompk
 	return svc
 }
 
-// appendAgentArgs appends arguments that are only valid for the Prometheus agent.
-func appendAgentArgs(
-	promArgs []monitoringv1.Argument,
-	cg *prompkg.ConfigGenerator,
-	walCompression *bool) []monitoringv1.Argument {
-	if cg.GetPrometheusVersion().Major == 3 {
+// buildAgentArgs returns the CLI arguments that are only valid for the Prometheus agent.
+func buildAgentArgs(cg *prompkg.ConfigGenerator, walCompression *bool) []monitoringv1.Argument {
+	promArgs := cg.BuildCommonPrometheusArgs()
+
+	switch cg.Version().Major {
+	case 2:
+		promArgs = append(promArgs, monitoringv1.Argument{Name: "enable-feature", Value: "agent"})
+	case 3:
 		promArgs = append(promArgs, monitoringv1.Argument{Name: "agent"})
 	}
 
@@ -384,5 +376,6 @@ func appendAgentArgs(
 		}
 		promArgs = cg.AppendCommandlineArgument(promArgs, arg)
 	}
+
 	return promArgs
 }

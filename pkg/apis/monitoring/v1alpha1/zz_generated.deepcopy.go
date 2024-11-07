@@ -2573,6 +2573,7 @@ func (in *ScrapeConfigSpec) DeepCopyInto(out *ScrapeConfigSpec) {
 		*out = new(uint64)
 		**out = **in
 	}
+	in.NativeHistogramConfig.DeepCopyInto(&out.NativeHistogramConfig)
 	if in.KeepDroppedTargets != nil {
 		in, out := &in.KeepDroppedTargets, &out.KeepDroppedTargets
 		*out = new(uint64)
@@ -2717,7 +2718,7 @@ func (in *StaticConfig) DeepCopyInto(out *StaticConfig) {
 	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
-		*out = make(map[monitoringv1.LabelName]string, len(*in))
+		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}

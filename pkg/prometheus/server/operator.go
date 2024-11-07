@@ -687,7 +687,7 @@ func (c *Operator) handleMonitorNamespaceUpdate(oldo, curo interface{}) {
 			sync, err := k8sutil.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
 			if err != nil {
 				c.logger.Error(
-					"",
+					"failed to detect label selection change",
 					"err", err,
 					"name", p.Name,
 					"namespace", p.Namespace,
@@ -783,6 +783,10 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 		return fmt.Errorf("synchronizing web config secret failed: %w", err)
 	}
 
+	if err := c.createOrUpdateThanosConfigSecret(ctx, p); err != nil {
+		return fmt.Errorf("failed to reconcile Thanos config secret: %w", err)
+	}
+
 	// Create governing service if it doesn't exist.
 	svcClient := c.kclient.CoreV1().Services(p.Namespace)
 	if _, err := k8sutil.CreateOrUpdateService(ctx, svcClient, makeStatefulSetService(p, c.config)); err != nil {
@@ -826,19 +830,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 		sset, err := makeStatefulSet(
 			ssetName,
 			p,
-			//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
-			p.Spec.BaseImage, p.Spec.Tag, p.Spec.SHA,
-			p.Spec.Retention,
-			p.Spec.RetentionSize,
-			p.Spec.Rules,
-			p.Spec.Query,
-			//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
-			p.Spec.AllowOverlappingBlocks,
-			p.Spec.EnableAdminAPI,
-			p.Spec.QueryLogFile,
-			p.Spec.Thanos,
-			p.Spec.DisableCompaction,
-			&c.config,
+			c.config,
 			cg,
 			ruleConfigMapNames,
 			newSSetInputHash,
@@ -913,9 +905,8 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 			return
 		}
 
-		propagationPolicy := metav1.DeletePropagationForeground
-		if err := ssetClient.Delete(ctx, s.GetName(), metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
-			c.logger.Error("", "err", err, "name", s.GetName(), "namespace", s.GetNamespace())
+		if err := ssetClient.Delete(ctx, s.GetName(), metav1.DeleteOptions{PropagationPolicy: ptr.To(metav1.DeletePropagationForeground)}); err != nil {
+			c.logger.Error("failed to delete StatefulSet object", "err", err, "name", s.GetName(), "namespace", s.GetNamespace())
 		}
 	})
 	if err != nil {
@@ -1156,13 +1147,7 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, p *mon
 
 	// Update secret based on the most recent configuration.
 	conf, err := cg.GenerateServerConfiguration(
-		p.Spec.EvaluationInterval,
-		p.Spec.QueryLogFile,
-		p.Spec.RuleSelector,
-		p.Spec.Exemplars,
-		p.Spec.TSDB,
-		p.Spec.Alerting,
-		p.Spec.RemoteRead,
+		p,
 		smons,
 		pmons,
 		bmons,
@@ -1215,6 +1200,22 @@ func (c *Operator) createOrUpdateWebConfigSecret(ctx context.Context, p *monitor
 	}
 
 	return nil
+}
+
+func (c *Operator) createOrUpdateThanosConfigSecret(ctx context.Context, p *monitoringv1.Prometheus) error {
+	secret, err := buildPrometheusHTTPClientConfigSecret(p)
+	if err != nil {
+		return fmt.Errorf("failed to build Thanos HTTP client config secret: :%w", err)
+	}
+
+	operator.UpdateObject(
+		secret,
+		operator.WithLabels(c.config.Labels),
+		operator.WithAnnotations(c.config.Annotations),
+		operator.WithManagingOwner(p),
+	)
+
+	return k8sutil.CreateOrUpdateSecret(ctx, c.kclient.CoreV1().Secrets(secret.Namespace), secret)
 }
 
 func makeSelectorLabels(name string) map[string]string {

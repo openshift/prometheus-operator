@@ -17,9 +17,11 @@ package v1
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -105,18 +107,42 @@ type ProxyConfig struct {
 }
 
 // Validate semantically validates the given ProxyConfig.
-func (c *ProxyConfig) Validate() error {
-	if c == nil {
+func (pc *ProxyConfig) Validate() error {
+	if pc == nil {
 		return nil
 	}
 
-	for _, v := range c.ProxyConnectHeader {
+	if reflect.ValueOf(pc).IsZero() {
+		return nil
+	}
+
+	proxyFromEnvironmentDefined := pc.ProxyFromEnvironment != nil && *pc.ProxyFromEnvironment
+	proxyURLDefined := pc.ProxyURL != nil && *pc.ProxyURL != ""
+	noProxyDefined := pc.NoProxy != nil && *pc.NoProxy != ""
+
+	if len(pc.ProxyConnectHeader) > 0 && (!proxyFromEnvironmentDefined && !proxyURLDefined) {
+		return fmt.Errorf("if proxyConnectHeader is configured, proxyUrl or proxyFromEnvironment must also be configured")
+	}
+
+	if proxyFromEnvironmentDefined && proxyURLDefined {
+		return fmt.Errorf("if proxyFromEnvironment is configured, proxyUrl must not be configured")
+	}
+
+	if proxyFromEnvironmentDefined && noProxyDefined {
+		return fmt.Errorf("if proxyFromEnvironment is configured, noProxy must not be configured")
+	}
+
+	if !proxyURLDefined && noProxyDefined {
+		return fmt.Errorf("if noProxy is configured, proxyUrl must also be configured")
+	}
+
+	for k, v := range pc.ProxyConnectHeader {
 		if len(v) == 0 {
-			return errors.New("ProxyConnectHeader selectors must not be empty")
+			return fmt.Errorf("proxyConnetHeader[%s]: selector must not be empty", k)
 		}
-		for _, k := range v {
-			if k == (v1.SecretKeySelector{}) {
-				return errors.New("ProxyConnectHeader selector must be defined")
+		for i, sel := range v {
+			if sel == (v1.SecretKeySelector{}) {
+				return fmt.Errorf("proxyConnectHeader[%s][%d]: selector must be defined", k, i)
 			}
 		}
 	}
@@ -880,3 +906,27 @@ const (
 	RoleEndpointSlice = "endpointslice"
 	RoleIngress       = "ingress"
 )
+
+// NativeHistogramConfig extends the native histogram configuration settings.
+// +k8s:openapi-gen=true
+type NativeHistogramConfig struct {
+	// Whether to scrape a classic histogram that is also exposed as a native histogram.
+	// It requires Prometheus >= v2.45.0.
+	//
+	// +optional
+	ScrapeClassicHistograms *bool `json:"scrapeClassicHistograms,omitempty"`
+
+	// If there are more than this many buckets in a native histogram,
+	// buckets will be merged to stay within the limit.
+	// It requires Prometheus >= v2.45.0.
+	//
+	// +optional
+	NativeHistogramBucketLimit *uint64 `json:"nativeHistogramBucketLimit,omitempty"`
+
+	// If the growth factor of one bucket to the next is smaller than this,
+	// buckets will be merged to increase the factor sufficiently.
+	// It requires Prometheus >= v2.50.0.
+	//
+	// +optional
+	NativeHistogramMinBucketFactor *resource.Quantity `json:"nativeHistogramMinBucketFactor,omitempty"`
+}
