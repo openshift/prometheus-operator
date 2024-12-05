@@ -49,8 +49,10 @@ type CommonPrometheusFieldsApplyConfiguration struct {
 	ScrapeInterval                       *monitoringv1.Duration                                  `json:"scrapeInterval,omitempty"`
 	ScrapeTimeout                        *monitoringv1.Duration                                  `json:"scrapeTimeout,omitempty"`
 	ScrapeProtocols                      []monitoringv1.ScrapeProtocol                           `json:"scrapeProtocols,omitempty"`
+	ScrapeFallbackProtocol               *monitoringv1.ScrapeProtocol                            `json:"scrapeFallbackProtocol,omitempty"`
 	ExternalLabels                       map[string]string                                       `json:"externalLabels,omitempty"`
 	EnableRemoteWriteReceiver            *bool                                                   `json:"enableRemoteWriteReceiver,omitempty"`
+	EnableOTLPReceiver                   *bool                                                   `json:"enableOTLPReceiver,omitempty"`
 	RemoteWriteReceiverMessageVersions   []monitoringv1.RemoteWriteMessageVersion                `json:"remoteWriteReceiverMessageVersions,omitempty"`
 	EnableFeatures                       []monitoringv1.EnableFeature                            `json:"enableFeatures,omitempty"`
 	ExternalURL                          *string                                                 `json:"externalUrl,omitempty"`
@@ -93,6 +95,7 @@ type CommonPrometheusFieldsApplyConfiguration struct {
 	EnforcedLabelValueLengthLimit        *uint64                                                 `json:"enforcedLabelValueLengthLimit,omitempty"`
 	EnforcedKeepDroppedTargets           *uint64                                                 `json:"enforcedKeepDroppedTargets,omitempty"`
 	EnforcedBodySizeLimit                *monitoringv1.ByteSize                                  `json:"enforcedBodySizeLimit,omitempty"`
+	NameValidationScheme                 *monitoringv1.NameValidationSchemeOptions               `json:"nameValidationScheme,omitempty"`
 	MinReadySeconds                      *uint32                                                 `json:"minReadySeconds,omitempty"`
 	HostAliases                          []HostAliasApplyConfiguration                           `json:"hostAliases,omitempty"`
 	AdditionalArgs                       []ArgumentApplyConfiguration                            `json:"additionalArgs,omitempty"`
@@ -113,6 +116,7 @@ type CommonPrometheusFieldsApplyConfiguration struct {
 	ScrapeClasses                        []ScrapeClassApplyConfiguration                         `json:"scrapeClasses,omitempty"`
 	ServiceDiscoveryRole                 *monitoringv1.ServiceDiscoveryRole                      `json:"serviceDiscoveryRole,omitempty"`
 	TSDB                                 *TSDBSpecApplyConfiguration                             `json:"tsdb,omitempty"`
+	Runtime                              *RuntimeConfigApplyConfiguration                        `json:"runtime,omitempty"`
 }
 
 // CommonPrometheusFieldsApplyConfiguration constructs a declarative configuration of the CommonPrometheusFields type for use with
@@ -309,6 +313,14 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithScrapeProtocols(values ..
 	return b
 }
 
+// WithScrapeFallbackProtocol sets the ScrapeFallbackProtocol field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScrapeFallbackProtocol field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithScrapeFallbackProtocol(value monitoringv1.ScrapeProtocol) *CommonPrometheusFieldsApplyConfiguration {
+	b.ScrapeFallbackProtocol = &value
+	return b
+}
+
 // WithExternalLabels puts the entries into the ExternalLabels field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the ExternalLabels field,
@@ -328,6 +340,14 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithExternalLabels(entries ma
 // If called multiple times, the EnableRemoteWriteReceiver field is set to the value of the last call.
 func (b *CommonPrometheusFieldsApplyConfiguration) WithEnableRemoteWriteReceiver(value bool) *CommonPrometheusFieldsApplyConfiguration {
 	b.EnableRemoteWriteReceiver = &value
+	return b
+}
+
+// WithEnableOTLPReceiver sets the EnableOTLPReceiver field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnableOTLPReceiver field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithEnableOTLPReceiver(value bool) *CommonPrometheusFieldsApplyConfiguration {
+	b.EnableOTLPReceiver = &value
 	return b
 }
 
@@ -701,6 +721,14 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithEnforcedBodySizeLimit(val
 	return b
 }
 
+// WithNameValidationScheme sets the NameValidationScheme field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NameValidationScheme field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithNameValidationScheme(value monitoringv1.NameValidationSchemeOptions) *CommonPrometheusFieldsApplyConfiguration {
+	b.NameValidationScheme = &value
+	return b
+}
+
 // WithMinReadySeconds sets the MinReadySeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MinReadySeconds field is set to the value of the last call.
@@ -880,5 +908,13 @@ func (b *CommonPrometheusFieldsApplyConfiguration) WithServiceDiscoveryRole(valu
 // If called multiple times, the TSDB field is set to the value of the last call.
 func (b *CommonPrometheusFieldsApplyConfiguration) WithTSDB(value *TSDBSpecApplyConfiguration) *CommonPrometheusFieldsApplyConfiguration {
 	b.TSDB = value
+	return b
+}
+
+// WithRuntime sets the Runtime field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Runtime field is set to the value of the last call.
+func (b *CommonPrometheusFieldsApplyConfiguration) WithRuntime(value *RuntimeConfigApplyConfiguration) *CommonPrometheusFieldsApplyConfiguration {
+	b.Runtime = value
 	return b
 }

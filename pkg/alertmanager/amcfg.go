@@ -97,7 +97,7 @@ func checkAlertmanagerConfigRootRoute(rootRoute *route) error {
 	return nil
 }
 
-func (c alertmanagerConfig) String() string {
+func (c *alertmanagerConfig) String() string {
 	b, err := yaml.Marshal(c)
 	if err != nil {
 		return fmt.Sprintf("<error creating config string: %s>", err)
@@ -1211,6 +1211,10 @@ func (cb *configBuilder) convertTelegramConfig(ctx context.Context, in monitorin
 	}
 	out.HTTPConfig = httpConfig
 
+	if in.MessageThreadID != nil {
+		out.MessageThreadID = int(*in.MessageThreadID)
+	}
+
 	if in.BotToken != nil {
 		botToken, err := cb.store.GetSecretKey(ctx, crKey.Namespace, *in.BotToken)
 		if err != nil {
@@ -2266,6 +2270,12 @@ func (tc *telegramConfig) sanitize(amVersion semver.Version, logger *slog.Logger
 		msg := "'bot_token' and 'bot_token_file' are mutually exclusive for telegram receiver config - 'bot_token' has taken precedence"
 		logger.Warn(msg)
 		tc.BotTokenFile = ""
+	}
+
+	if tc.MessageThreadID != 0 && lessThanV0_26 {
+		msg := "'message_thread_id' supported in Alertmanager >= 0.26.0 only - dropping field from provided config"
+		logger.Warn(msg, "current_version", amVersion.String())
+		tc.MessageThreadID = 0
 	}
 
 	return tc.HTTPConfig.sanitize(amVersion, logger)
