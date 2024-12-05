@@ -55,12 +55,14 @@ type ScrapeConfigSpecApplyConfiguration struct {
 	ScrapeInterval                             *monitoringv1.Duration                   `json:"scrapeInterval,omitempty"`
 	ScrapeTimeout                              *monitoringv1.Duration                   `json:"scrapeTimeout,omitempty"`
 	ScrapeProtocols                            []monitoringv1.ScrapeProtocol            `json:"scrapeProtocols,omitempty"`
+	ScrapeFallbackProtocol                     *monitoringv1.ScrapeProtocol             `json:"scrapeFallbackProtocol,omitempty"`
 	HonorTimestamps                            *bool                                    `json:"honorTimestamps,omitempty"`
 	TrackTimestampsStaleness                   *bool                                    `json:"trackTimestampsStaleness,omitempty"`
 	HonorLabels                                *bool                                    `json:"honorLabels,omitempty"`
 	Params                                     map[string][]string                      `json:"params,omitempty"`
 	Scheme                                     *string                                  `json:"scheme,omitempty"`
 	EnableCompression                          *bool                                    `json:"enableCompression,omitempty"`
+	EnableHTTP2                                *bool                                    `json:"enableHTTP2,omitempty"`
 	BasicAuth                                  *v1.BasicAuthApplyConfiguration          `json:"basicAuth,omitempty"`
 	Authorization                              *v1.SafeAuthorizationApplyConfiguration  `json:"authorization,omitempty"`
 	OAuth2                                     *v1.OAuth2ApplyConfiguration             `json:"oauth2,omitempty"`
@@ -437,6 +439,14 @@ func (b *ScrapeConfigSpecApplyConfiguration) WithScrapeProtocols(values ...monit
 	return b
 }
 
+// WithScrapeFallbackProtocol sets the ScrapeFallbackProtocol field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScrapeFallbackProtocol field is set to the value of the last call.
+func (b *ScrapeConfigSpecApplyConfiguration) WithScrapeFallbackProtocol(value monitoringv1.ScrapeProtocol) *ScrapeConfigSpecApplyConfiguration {
+	b.ScrapeFallbackProtocol = &value
+	return b
+}
+
 // WithHonorTimestamps sets the HonorTimestamps field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the HonorTimestamps field is set to the value of the last call.
@@ -488,6 +498,14 @@ func (b *ScrapeConfigSpecApplyConfiguration) WithScheme(value string) *ScrapeCon
 // If called multiple times, the EnableCompression field is set to the value of the last call.
 func (b *ScrapeConfigSpecApplyConfiguration) WithEnableCompression(value bool) *ScrapeConfigSpecApplyConfiguration {
 	b.EnableCompression = &value
+	return b
+}
+
+// WithEnableHTTP2 sets the EnableHTTP2 field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnableHTTP2 field is set to the value of the last call.
+func (b *ScrapeConfigSpecApplyConfiguration) WithEnableHTTP2(value bool) *ScrapeConfigSpecApplyConfiguration {
+	b.EnableHTTP2 = &value
 	return b
 }
 
