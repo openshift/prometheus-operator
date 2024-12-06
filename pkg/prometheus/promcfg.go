@@ -52,6 +52,8 @@ const (
 
 	defaultPrometheusExternalLabelName = "prometheus"
 	defaultReplicaExternalLabelName    = "prometheus_replica"
+
+	hashLabelNameForSharding = "__tmp_hash"
 )
 
 var invalidLabelCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
@@ -365,14 +367,33 @@ func (cg *ConfigGenerator) AddTrackTimestampsStaleness(cfg yaml.MapSlice, trackT
 	return cg.WithMinimumVersion("2.48.0").AppendMapItem(cfg, "track_timestamps_staleness", *trackTimestampsStaleness)
 }
 
-// AddScrapeProtocols adds the scrape_protocols field into scrape configurations.
-// For backwards compatibility with Prometheus <2.49.0 we don't set scrape_protocols.
-func (cg *ConfigGenerator) AddScrapeProtocols(cfg yaml.MapSlice, scrapeProtocols []monitoringv1.ScrapeProtocol) yaml.MapSlice {
+// addScrapeProtocols adds the scrape_protocols field into the configuration.
+func (cg *ConfigGenerator) addScrapeProtocols(cfg yaml.MapSlice, scrapeProtocols []monitoringv1.ScrapeProtocol) yaml.MapSlice {
 	if len(scrapeProtocols) == 0 {
 		return cfg
 	}
 
-	return cg.WithMinimumVersion("2.49.0").AppendMapItem(cfg, "scrape_protocols", scrapeProtocols)
+	sps := make([]string, 0, len(scrapeProtocols))
+	for _, sp := range scrapeProtocols {
+		// PrometheusText1.0.0 requires Prometheus v3.0.0 at least.
+		if sp == monitoringv1.PrometheusText1_0_0 && !cg.WithMinimumVersion("3.0.0-rc.0").IsCompatible() {
+			cg.Warn(fmt.Sprintf("scrapeProtocol=%s", monitoringv1.PrometheusText1_0_0))
+			continue
+		}
+
+		sps = append(sps, string(sp))
+	}
+
+	return cg.WithMinimumVersion("2.49.0").AppendMapItem(cfg, "scrape_protocols", sps)
+}
+
+// addScrapeFallbackProtocol adds the fallback_scrape_protocol field into the configuration.
+func (cg *ConfigGenerator) addScrapeFallbackProtocol(cfg yaml.MapSlice, scrapeFallbackProtocol *monitoringv1.ScrapeProtocol) yaml.MapSlice {
+	if scrapeFallbackProtocol == nil {
+		return cfg
+	}
+
+	return cg.WithMinimumVersion("3.0.0-rc.0").AppendMapItem(cfg, "fallback_scrape_protocol", scrapeFallbackProtocol)
 }
 
 // AddHonorLabels adds the honor_labels field into scrape configurations.
@@ -400,7 +421,12 @@ func (cg *ConfigGenerator) addNativeHistogramConfig(cfg yaml.MapSlice, nhc monit
 	}
 
 	if nhc.ScrapeClassicHistograms != nil {
-		cfg = cg.WithMinimumVersion("2.45.0").AppendMapItem(cfg, "scrape_classic_histograms", nhc.ScrapeClassicHistograms)
+		switch cg.version.Major {
+		case 3:
+			cfg = cg.AppendMapItem(cfg, "always_scrape_classic_histograms", nhc.ScrapeClassicHistograms)
+		default:
+			cfg = cg.WithMinimumVersion("2.45.0").AppendMapItem(cfg, "scrape_classic_histograms", nhc.ScrapeClassicHistograms)
+		}
 	}
 
 	return cfg
@@ -772,20 +798,18 @@ func (cg *ConfigGenerator) GenerateServerConfiguration(
 		}
 	}
 
-	// Global config
 	cfg := yaml.MapSlice{}
-	globalItems := yaml.MapSlice{}
-	globalItems = cg.appendEvaluationInterval(globalItems, p.Spec.EvaluationInterval)
-	globalItems = cg.appendScrapeIntervals(globalItems)
-	globalItems = cg.appendScrapeProtocols(globalItems)
-	globalItems = cg.appendRuleQueryOffset(globalItems, p.Spec.RuleQueryOffset)
-	globalItems = cg.appendExternalLabels(globalItems)
-	globalItems = cg.appendQueryLogFile(globalItems, p.Spec.QueryLogFile)
-	globalItems = cg.appendScrapeLimits(globalItems)
-	cfg = append(cfg, yaml.MapItem{Key: "global", Value: globalItems})
+
+	// Global config
+	globalCfg := cg.buildGlobalConfig()
+	globalCfg = cg.appendEvaluationInterval(globalCfg, p.Spec.EvaluationInterval)
+	globalCfg = cg.appendRuleQueryOffset(globalCfg, p.Spec.RuleQueryOffset)
+	globalCfg = cg.appendQueryLogFile(globalCfg, p.Spec.QueryLogFile)
+	cfg = append(cfg, yaml.MapItem{Key: "global", Value: globalCfg})
 
 	// Runtime config
-	cfg = cg.appendRuntime(cfg, p.Spec.Runtime)
+	cfg = cg.appendRuntime(cfg)
+
 	// Rule Files config
 	cfg = cg.appendRuleFiles(cfg, ruleConfigMapNames, p.Spec.RuleSelector)
 
@@ -993,6 +1017,15 @@ func (cg *ConfigGenerator) BuildCommonPrometheusArgs() []monitoringv1.Argument {
 	for _, rw := range cpf.RemoteWrite {
 		if ptr.Deref(rw.MessageVersion, monitoringv1.RemoteWriteMessageVersion1_0) == monitoringv1.RemoteWriteMessageVersion2_0 {
 			promArgs = cg.WithMinimumVersion("2.54.0").AppendCommandlineArgument(promArgs, monitoringv1.Argument{Name: "enable-feature", Value: "metadata-wal-records"})
+		}
+	}
+
+	// Turn on the OTLP receiver endpoint automatically if/when the OTLP config isn't empty.
+	if (cpf.EnableOTLPReceiver != nil && *cpf.EnableOTLPReceiver) || (cpf.EnableOTLPReceiver == nil && cpf.OTLP != nil) {
+		if cg.version.Major >= 3 {
+			promArgs = cg.AppendCommandlineArgument(promArgs, monitoringv1.Argument{Name: "web.enable-otlp-receiver"})
+		} else {
+			promArgs = cg.WithMinimumVersion("2.47.0").AppendCommandlineArgument(promArgs, monitoringv1.Argument{Name: "enable-feature", Value: "otlp-write-receiver"})
 		}
 	}
 
@@ -1247,14 +1280,20 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 	}
 
 	// Filter targets based on correct port for the endpoint.
-	if ep.Port != "" {
+	if ptr.Deref(ep.Port, "") != "" {
 		relabelings = append(relabelings, yaml.MapSlice{
 			{Key: "action", Value: "keep"},
 			{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_name"}},
-			{Key: "regex", Value: ep.Port},
+			{Key: "regex", Value: *ep.Port},
+		})
+	} else if ptr.Deref(ep.PortNumber, 0) != 0 {
+		relabelings = append(relabelings, yaml.MapSlice{
+			{Key: "action", Value: "keep"},
+			{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_number"}},
+			{Key: "regex", Value: *ep.PortNumber},
 		})
 	} else if ep.TargetPort != nil { //nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
-		cg.logger.Warn("'targetPort' is deprecated, use 'port' instead.")
+		cg.logger.Warn("'targetPort' is deprecated, use 'port' or 'portNumber' instead.")
 		//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 		if ep.TargetPort.StrVal != "" {
 			relabelings = append(relabelings, yaml.MapSlice{
@@ -1266,7 +1305,7 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 			relabelings = append(relabelings, yaml.MapSlice{
 				{Key: "action", Value: "keep"},
 				{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_number"}},
-				{Key: "regex", Value: ep.TargetPort.String()},
+				{Key: "regex", Value: ep.TargetPort.IntValue()},
 			})
 		}
 	}
@@ -1317,10 +1356,10 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 		})
 	}
 
-	if ep.Port != "" {
+	if ptr.Deref(ep.Port, "") != "" {
 		relabelings = append(relabelings, yaml.MapSlice{
 			{Key: "target_label", Value: "endpoint"},
-			{Key: "replacement", Value: ep.Port},
+			{Key: "replacement", Value: *ep.Port},
 		})
 	} else if ep.TargetPort != nil && ep.TargetPort.String() != "" { //nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
 		relabelings = append(relabelings, yaml.MapSlice{
@@ -1337,7 +1376,7 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 
 	// DaemonSet mode doesn't support sharding.
 	if !cg.daemonSet {
-		relabelings = generateAddressShardingRelabelingRules(relabelings, shards)
+		relabelings = appendShardingRelabelingWithAddress(relabelings, shards)
 	}
 
 	cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
@@ -1349,7 +1388,8 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 	cfg = cg.AddLimitsToYAML(cfg, labelValueLengthLimitKey, m.Spec.LabelValueLengthLimit, cpf.EnforcedLabelValueLengthLimit)
 	cfg = cg.AddLimitsToYAML(cfg, keepDroppedTargetsKey, m.Spec.KeepDroppedTargets, cpf.EnforcedKeepDroppedTargets)
 	cfg = cg.addNativeHistogramConfig(cfg, m.Spec.NativeHistogramConfig)
-	cfg = cg.AddScrapeProtocols(cfg, m.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeProtocols(cfg, m.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeFallbackProtocol(cfg, m.Spec.ScrapeFallbackProtocol)
 
 	if bodySizeLimit := getLowerByteSize(m.Spec.BodySizeLimit, &cpf); !isByteSizeEmpty(bodySizeLimit) {
 		cfg = cg.WithMinimumVersion("2.28.0").AppendMapItem(cfg, "body_size_limit", bodySizeLimit)
@@ -1417,7 +1457,8 @@ func (cg *ConfigGenerator) generateProbeConfig(
 	cfg = cg.AddLimitsToYAML(cfg, labelValueLengthLimitKey, m.Spec.LabelValueLengthLimit, cpf.EnforcedLabelValueLengthLimit)
 	cfg = cg.AddLimitsToYAML(cfg, keepDroppedTargetsKey, m.Spec.KeepDroppedTargets, cpf.EnforcedKeepDroppedTargets)
 	cfg = cg.addNativeHistogramConfig(cfg, m.Spec.NativeHistogramConfig)
-	cfg = cg.AddScrapeProtocols(cfg, m.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeProtocols(cfg, m.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeFallbackProtocol(cfg, m.Spec.ScrapeFallbackProtocol)
 
 	if cpf.EnforcedBodySizeLimit != "" {
 		cfg = cg.WithMinimumVersion("2.28.0").AppendMapItem(cfg, "body_size_limit", cpf.EnforcedBodySizeLimit)
@@ -1579,7 +1620,7 @@ func (cg *ConfigGenerator) generateProbeConfig(
 		relabelings = append(relabelings, generateRelabelConfig(labeler.GetRelabelingConfigs(m.TypeMeta, m.ObjectMeta, m.Spec.Targets.Ingress.RelabelConfigs))...)
 	}
 
-	relabelings = generateAddressShardingRelabelingRulesForProbes(relabelings, shards)
+	relabelings = appendShardingRelabelingForProbes(relabelings, shards)
 	cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
 
 	cfg = cg.addTLStoYaml(cfg, s, mergeSafeTLSConfigWithScrapeClass(m.Spec.TLSConfig, scrapeClass))
@@ -1750,7 +1791,7 @@ func (cg *ConfigGenerator) generateServiceMonitorConfig(
 			relabelings = append(relabelings, yaml.MapSlice{
 				{Key: "action", Value: "keep"},
 				{Key: "source_labels", Value: []string{"__meta_kubernetes_pod_container_port_number"}},
-				{Key: "regex", Value: ep.TargetPort.String()},
+				{Key: "regex", Value: ep.TargetPort.IntValue()},
 			})
 		}
 	}
@@ -1856,7 +1897,7 @@ func (cg *ConfigGenerator) generateServiceMonitorConfig(
 	labeler := namespacelabeler.New(cpf.EnforcedNamespaceLabel, cpf.ExcludedFromEnforcement, false)
 	relabelings = append(relabelings, generateRelabelConfig(labeler.GetRelabelingConfigs(m.TypeMeta, m.ObjectMeta, ep.RelabelConfigs))...)
 
-	relabelings = generateAddressShardingRelabelingRules(relabelings, shards)
+	relabelings = appendShardingRelabelingWithAddress(relabelings, shards)
 	cfg = append(cfg, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
 
 	cfg = cg.AddLimitsToYAML(cfg, sampleLimitKey, m.Spec.SampleLimit, cpf.EnforcedSampleLimit)
@@ -1866,7 +1907,8 @@ func (cg *ConfigGenerator) generateServiceMonitorConfig(
 	cfg = cg.AddLimitsToYAML(cfg, labelValueLengthLimitKey, m.Spec.LabelValueLengthLimit, cpf.EnforcedLabelValueLengthLimit)
 	cfg = cg.AddLimitsToYAML(cfg, keepDroppedTargetsKey, m.Spec.KeepDroppedTargets, cpf.EnforcedKeepDroppedTargets)
 	cfg = cg.addNativeHistogramConfig(cfg, m.Spec.NativeHistogramConfig)
-	cfg = cg.AddScrapeProtocols(cfg, m.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeProtocols(cfg, m.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeFallbackProtocol(cfg, m.Spec.ScrapeFallbackProtocol)
 
 	if bodySizeLimit := getLowerByteSize(m.Spec.BodySizeLimit, &cpf); !isByteSizeEmpty(bodySizeLimit) {
 		cfg = cg.WithMinimumVersion("2.28.0").AppendMapItem(cfg, "body_size_limit", bodySizeLimit)
@@ -1911,11 +1953,15 @@ func (cg *ConfigGenerator) getLimit(user *uint64, enforced *uint64) *uint64 {
 	return enforced
 }
 
-func generateAddressShardingRelabelingRules(relabelings []yaml.MapSlice, shards int32) []yaml.MapSlice {
-	return generateAddressShardingRelabelingRulesWithSourceLabel(relabelings, shards, "__address__")
+func appendShardingRelabelingWithAddress(relabelings []yaml.MapSlice, shards int32) []yaml.MapSlice {
+	return appendShardingRelabelingWithLabel(relabelings, shards, "__address__")
 }
 
-func (cg *ConfigGenerator) generateAddressShardingRelabelingRulesIfMissing(relabelings []yaml.MapSlice, shards int32) []yaml.MapSlice {
+func appendShardingRelabelingForProbes(relabelings []yaml.MapSlice, shards int32) []yaml.MapSlice {
+	return appendShardingRelabelingWithLabel(relabelings, shards, "__param_target")
+}
+
+func (cg *ConfigGenerator) appendShardingRelabelingWithAddressIfMissing(relabelings []yaml.MapSlice, shards int32) []yaml.MapSlice {
 	for i, relabeling := range relabelings {
 		for _, relabelItem := range relabeling {
 			if relabelItem.Key == "action" && relabelItem.Value == "hashmod" {
@@ -1924,24 +1970,29 @@ func (cg *ConfigGenerator) generateAddressShardingRelabelingRulesIfMissing(relab
 			}
 		}
 	}
-	return generateAddressShardingRelabelingRules(relabelings, shards)
+	return appendShardingRelabelingWithAddress(relabelings, shards)
 }
 
-func generateAddressShardingRelabelingRulesForProbes(relabelings []yaml.MapSlice, shards int32) []yaml.MapSlice {
-	return generateAddressShardingRelabelingRulesWithSourceLabel(relabelings, shards, "__param_target")
-}
-
-func generateAddressShardingRelabelingRulesWithSourceLabel(relabelings []yaml.MapSlice, shards int32, shardLabel string) []yaml.MapSlice {
-	return append(relabelings, yaml.MapSlice{
-		{Key: "source_labels", Value: []string{shardLabel}},
-		{Key: "target_label", Value: "__tmp_hash"},
-		{Key: "modulus", Value: shards},
-		{Key: "action", Value: "hashmod"},
-	}, yaml.MapSlice{
-		{Key: "source_labels", Value: []string{"__tmp_hash"}},
-		{Key: "regex", Value: fmt.Sprintf("$(%s)", operator.ShardEnvVar)},
-		{Key: "action", Value: "keep"},
-	})
+func appendShardingRelabelingWithLabel(relabelings []yaml.MapSlice, shards int32, shardLabel string) []yaml.MapSlice {
+	return append(relabelings,
+		// Store the "shardLabel" value into the __tmp_hash label unless the
+		// latter is already set.
+		yaml.MapSlice{
+			{Key: "source_labels", Value: []string{shardLabel, hashLabelNameForSharding}},
+			{Key: "target_label", Value: hashLabelNameForSharding},
+			{Key: "regex", Value: "(.+);"},
+			{Key: "replacement", Value: "$1"},
+			{Key: "action", Value: "replace"},
+		}, yaml.MapSlice{
+			{Key: "source_labels", Value: []string{hashLabelNameForSharding}},
+			{Key: "target_label", Value: hashLabelNameForSharding},
+			{Key: "modulus", Value: shards},
+			{Key: "action", Value: "hashmod"},
+		}, yaml.MapSlice{
+			{Key: "source_labels", Value: []string{hashLabelNameForSharding}},
+			{Key: "regex", Value: fmt.Sprintf("$(%s)", operator.ShardEnvVar)},
+			{Key: "action", Value: "keep"},
+		})
 }
 
 func generateRelabelConfig(rc []monitoringv1.RelabelConfig) []yaml.MapSlice {
@@ -2136,8 +2187,17 @@ func (cg *ConfigGenerator) generateAlertmanagerConfig(alerting *monitoringv1.Ale
 
 		cfg = cg.WithMinimumVersion("2.48.0").addSigv4ToYaml(cfg, fmt.Sprintf("alertmanager/auth/%d", i), store, am.Sigv4)
 
-		if am.APIVersion == "v1" || am.APIVersion == "v2" {
-			cfg = cg.WithMinimumVersion("2.11.0").AppendMapItem(cfg, "api_version", am.APIVersion)
+		apiVersionCg := cg.WithMinimumVersion("2.11.0")
+		if am.APIVersion != nil {
+			switch monitoringv1.AlertmanagerAPIVersion(strings.ToUpper(string(*am.APIVersion))) {
+			// API v1 isn't supported anymore by Prometheus v3.
+			case monitoringv1.AlertmanagerAPIVersion1:
+				if cg.version.Major <= 2 {
+					cfg = apiVersionCg.AppendMapItem(cfg, "api_version", strings.ToLower(string(*am.APIVersion)))
+				}
+			case monitoringv1.AlertmanagerAPIVersion2:
+				cfg = apiVersionCg.AppendMapItem(cfg, "api_version", strings.ToLower(string(*am.APIVersion)))
+			}
 		}
 
 		var relabelings []yaml.MapSlice
@@ -2220,15 +2280,14 @@ func (cg *ConfigGenerator) generateAdditionalScrapeConfigs(
 				relabelings = append(relabelings, relabeling)
 			}
 		}
-		// DaemonSet mode doesn't support sharding.
-		if !cg.daemonSet {
-			relabelings = cg.generateAddressShardingRelabelingRulesIfMissing(relabelings, shards)
-		}
+
+		relabelings = cg.appendShardingRelabelingWithAddressIfMissing(relabelings, shards)
 
 		addlScrapeConfig = append(addlScrapeConfig, otherConfigItems...)
 		addlScrapeConfig = append(addlScrapeConfig, yaml.MapItem{Key: "relabel_configs", Value: relabelings})
 		addlScrapeConfigs = append(addlScrapeConfigs, addlScrapeConfig)
 	}
+
 	return addlScrapeConfigs, nil
 }
 
@@ -2575,24 +2634,19 @@ func (cg *ConfigGenerator) appendScrapeIntervals(slice yaml.MapSlice) yaml.MapSl
 	return slice
 }
 
-func (cg *ConfigGenerator) appendScrapeProtocols(slice yaml.MapSlice) yaml.MapSlice {
-	cpf := cg.prom.GetCommonPrometheusFields()
-
-	if len(cpf.ScrapeProtocols) == 0 {
+func (cg *ConfigGenerator) appendRuntime(slice yaml.MapSlice) yaml.MapSlice {
+	runtime := cg.prom.GetCommonPrometheusFields().Runtime
+	if runtime == nil {
 		return slice
 	}
-
-	return cg.WithMinimumVersion("2.49.0").AppendMapItem(slice, "scrape_protocols", cpf.ScrapeProtocols)
-}
-
-func (cg *ConfigGenerator) appendRuntime(slice yaml.MapSlice, runtime *monitoringv1.RuntimeConfig) yaml.MapSlice {
-	if runtime == nil || !cg.WithMinimumVersion("2.53.0").IsCompatible() {
+	if !cg.WithMinimumVersion("2.53.0").IsCompatible() {
+		cg.Warn("runtime")
 		return slice
 	}
 
 	var runtimeSlice yaml.MapSlice
 	if runtime.GoGC != nil {
-		runtimeSlice = cg.AppendMapItem(runtimeSlice, "gogc", *runtime.GoGC)
+		runtimeSlice = append(runtimeSlice, yaml.MapItem{Key: "gogc", Value: *runtime.GoGC})
 	}
 
 	return cg.AppendMapItem(slice, "runtime", runtimeSlice)
@@ -2654,11 +2708,11 @@ func (cg *ConfigGenerator) appendRuleQueryOffset(slice yaml.MapSlice, ruleQueryO
 }
 
 func (cg *ConfigGenerator) appendQueryLogFile(slice yaml.MapSlice, queryLogFile string) yaml.MapSlice {
-	if queryLogFile != "" {
-		slice = cg.WithMinimumVersion("2.16.0").AppendMapItem(slice, "query_log_file", queryLogFilePath(queryLogFile))
+	if queryLogFile == "" {
+		return slice
 	}
 
-	return slice
+	return cg.WithMinimumVersion("2.16.0").AppendMapItem(slice, "query_log_file", queryLogFilePath(queryLogFile))
 }
 
 func (cg *ConfigGenerator) appendRuleFiles(slice yaml.MapSlice, ruleFiles []string, ruleSelector *metav1.LabelSelector) yaml.MapSlice {
@@ -2771,14 +2825,13 @@ func (cg *ConfigGenerator) GenerateAgentConfiguration(
 		}
 	}
 
-	// Global config
 	cfg := yaml.MapSlice{}
-	globalItems := yaml.MapSlice{}
-	globalItems = cg.appendScrapeIntervals(globalItems)
-	globalItems = cg.appendScrapeProtocols(globalItems)
-	globalItems = cg.appendExternalLabels(globalItems)
-	globalItems = cg.appendScrapeLimits(globalItems)
-	cfg = append(cfg, yaml.MapItem{Key: "global", Value: globalItems})
+
+	// Global config
+	cfg = append(cfg, yaml.MapItem{Key: "global", Value: cg.buildGlobalConfig()})
+
+	// Runtime config
+	cfg = cg.appendRuntime(cfg)
 
 	// Scrape config
 	var (
@@ -2915,6 +2968,10 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 		cfg = cg.WithMinimumVersion("2.49.0").AppendMapItem(cfg, "enable_compression", *sc.Spec.EnableCompression)
 	}
 
+	if sc.Spec.EnableHTTP2 != nil {
+		cfg = cg.WithMinimumVersion("2.35.0").AppendMapItem(cfg, "enable_http2", *sc.Spec.EnableHTTP2)
+	}
+
 	if sc.Spec.ScrapeInterval != nil {
 		cfg = append(cfg, yaml.MapItem{Key: "scrape_interval", Value: *sc.Spec.ScrapeInterval})
 	}
@@ -2923,9 +2980,8 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 		cfg = append(cfg, yaml.MapItem{Key: "scrape_timeout", Value: *sc.Spec.ScrapeTimeout})
 	}
 
-	if len(sc.Spec.ScrapeProtocols) > 0 {
-		cfg = cg.WithMinimumVersion("2.49.0").AppendMapItem(cfg, "scrape_protocols", sc.Spec.ScrapeProtocols)
-	}
+	cfg = cg.addScrapeProtocols(cfg, sc.Spec.ScrapeProtocols)
+	cfg = cg.addScrapeFallbackProtocol(cfg, sc.Spec.ScrapeFallbackProtocol)
 
 	if sc.Spec.Scheme != nil {
 		cfg = append(cfg, yaml.MapItem{Key: "scheme", Value: strings.ToLower(*sc.Spec.Scheme)})
@@ -3142,7 +3198,8 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 		for i, config := range sc.Spec.ConsulSDConfigs {
 			configs[i] = cg.addBasicAuthToYaml(configs[i], s, config.BasicAuth)
 			configs[i] = cg.addSafeAuthorizationToYaml(configs[i], s, config.Authorization)
-			configs[i] = cg.addOAuth2ToYaml(configs[i], s, config.Oauth2)
+			configs[i] = cg.addOAuth2ToYaml(configs[i], s, config.OAuth2)
+			configs[i] = cg.addProxyConfigtoYaml(configs[i], s, config.ProxyConfig)
 
 			configs[i] = cg.addSafeTLStoYaml(configs[i], s, config.TLSConfig)
 
@@ -3150,6 +3207,13 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 				Key:   "server",
 				Value: config.Server,
 			})
+
+			if config.PathPrefix != nil {
+				configs[i] = append(configs[i], yaml.MapItem{
+					Key:   "path_prefix",
+					Value: config.PathPrefix,
+				})
+			}
 
 			if config.TokenRef != nil {
 				value, err := s.GetSecretKey(*config.TokenRef)
@@ -3219,6 +3283,13 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 				})
 			}
 
+			if config.Filter != nil {
+				configs[i] = append(configs[i], yaml.MapItem{
+					Key:   "filter",
+					Value: config.Filter,
+				})
+			}
+
 			if config.AllowStale != nil {
 				configs[i] = append(configs[i], yaml.MapItem{
 					Key:   "allow_stale",
@@ -3232,8 +3303,6 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 					Value: config.RefreshInterval,
 				})
 			}
-
-			configs[i] = cg.addProxyConfigtoYaml(configs[i], s, config.ProxyConfig)
 
 			if config.FollowRedirects != nil {
 				configs[i] = append(configs[i], yaml.MapItem{
@@ -4448,7 +4517,7 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 	}
 
 	if shards != 1 {
-		relabelings = cg.generateAddressShardingRelabelingRulesIfMissing(relabelings, shards)
+		relabelings = cg.appendShardingRelabelingWithAddressIfMissing(relabelings, shards)
 	}
 
 	// No need to check for the length because relabelings should always have
@@ -4468,6 +4537,8 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 
 func (cg *ConfigGenerator) appendOTLPConfig(cfg yaml.MapSlice) (yaml.MapSlice, error) {
 	otlpConfig := cg.prom.GetCommonPrometheusFields().OTLP
+	nameValidationScheme := cg.prom.GetCommonPrometheusFields().NameValidationScheme
+
 	if otlpConfig == nil {
 		return cfg, nil
 	}
@@ -4476,17 +4547,29 @@ func (cg *ConfigGenerator) appendOTLPConfig(cfg yaml.MapSlice) (yaml.MapSlice, e
 		return cfg, fmt.Errorf("OTLP configuration is only supported from Prometheus version 2.55.0")
 	}
 
-	return append(
-		cfg,
-		yaml.MapItem{
-			Key: "otlp",
-			Value: yaml.MapSlice{
-				{
-					Key:   "promote_resource_attributes",
-					Value: otlpConfig.PromoteResourceAttributes,
-				},
-			},
-		}), nil
+	if ptr.Deref(otlpConfig.TranslationStrategy, "") == monitoringv1.NoUTF8EscapingWithSuffixes && ptr.Deref(nameValidationScheme, "") == monitoringv1.LegacyNameValidationScheme {
+		return cfg, fmt.Errorf("nameValidationScheme %q is not compatible with OTLP translation strategy %q", monitoringv1.LegacyNameValidationScheme, monitoringv1.NoUTF8EscapingWithSuffixes)
+	}
+
+	otlp := yaml.MapSlice{}
+
+	if len(otlpConfig.PromoteResourceAttributes) > 0 {
+		otlp = cg.WithMinimumVersion("2.55.0").AppendMapItem(otlp,
+			"promote_resource_attributes",
+			otlpConfig.PromoteResourceAttributes)
+	}
+
+	if otlpConfig.TranslationStrategy != nil {
+		otlp = cg.WithMinimumVersion("3.0.0").AppendMapItem(otlp,
+			"translation_strategy",
+			otlpConfig.TranslationStrategy)
+	}
+
+	if len(otlp) == 0 {
+		return cfg, nil
+	}
+
+	return cg.AppendMapItem(cfg, "otlp", otlp), nil
 }
 
 func (cg *ConfigGenerator) appendTracingConfig(cfg yaml.MapSlice, s assets.StoreGetter) (yaml.MapSlice, error) {
@@ -4624,4 +4707,19 @@ func (cg *ConfigGenerator) addFiltersToYaml(cfg yaml.MapSlice, filters []monitor
 	}
 
 	return cg.AppendMapItem(cfg, "filters", filtersYamlMap)
+}
+
+func (cg *ConfigGenerator) buildGlobalConfig() yaml.MapSlice {
+	cpf := cg.prom.GetCommonPrometheusFields()
+	cfg := yaml.MapSlice{}
+	cfg = cg.appendScrapeIntervals(cfg)
+	cfg = cg.addScrapeProtocols(cfg, cg.prom.GetCommonPrometheusFields().ScrapeProtocols)
+	cfg = cg.addScrapeFallbackProtocol(cfg, cg.prom.GetCommonPrometheusFields().ScrapeFallbackProtocol)
+	cfg = cg.appendExternalLabels(cfg)
+	cfg = cg.appendScrapeLimits(cfg)
+	if cpf.NameValidationScheme != nil {
+		cg.WithMinimumVersion("3.0.0").AppendMapItem(cfg, "metric_name_validation_scheme", *cpf.NameValidationScheme)
+	}
+
+	return cfg
 }
