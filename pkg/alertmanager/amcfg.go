@@ -97,7 +97,7 @@ func checkAlertmanagerConfigRootRoute(rootRoute *route) error {
 	return nil
 }
 
-func (c alertmanagerConfig) String() string {
+func (c *alertmanagerConfig) String() string {
 	b, err := yaml.Marshal(c)
 	if err != nil {
 		return fmt.Sprintf("<error creating config string: %s>", err)
@@ -257,6 +257,13 @@ func (cb *configBuilder) initializeFromAlertmanagerConfig(ctx context.Context, g
 		return err
 	}
 	globalAlertmanagerConfig.Global = global
+
+	// This is need to check required fields are set either at global or receiver level at later step.
+	if global != nil {
+		cb.cfg = &alertmanagerConfig{
+			Global: global,
+		}
+	}
 
 	// Add inhibitRules to globalAlertmanagerConfig.InhibitRules without enforce namespace
 	for _, inhibitRule := range amConfig.Spec.InhibitRules {
@@ -1048,6 +1055,18 @@ func (cb *configBuilder) convertEmailConfig(ctx context.Context, in monitoringv1
 		RequireTLS:    in.RequireTLS,
 	}
 
+	if in.Smarthost == "" {
+		if cb.cfg.Global == nil || cb.cfg.Global.SMTPSmarthost.Host == "" {
+			return nil, fmt.Errorf("SMTP smarthost is a mandatory field, it is neither specified at global config nor at receiver level")
+		}
+	}
+
+	if in.From == "" {
+		if cb.cfg.Global == nil || cb.cfg.Global.SMTPFrom == "" {
+			return nil, fmt.Errorf("SMTP from is a mandatory field, it is neither specified at global config nor at receiver level")
+		}
+	}
+
 	if in.Smarthost != "" {
 		out.Smarthost.Host, out.Smarthost.Port, _ = net.SplitHostPort(in.Smarthost)
 	}
@@ -1210,6 +1229,10 @@ func (cb *configBuilder) convertTelegramConfig(ctx context.Context, in monitorin
 		return nil, err
 	}
 	out.HTTPConfig = httpConfig
+
+	if in.MessageThreadID != nil {
+		out.MessageThreadID = int(*in.MessageThreadID)
+	}
 
 	if in.BotToken != nil {
 		botToken, err := cb.store.GetSecretKey(ctx, crKey.Namespace, *in.BotToken)
@@ -2266,6 +2289,12 @@ func (tc *telegramConfig) sanitize(amVersion semver.Version, logger *slog.Logger
 		msg := "'bot_token' and 'bot_token_file' are mutually exclusive for telegram receiver config - 'bot_token' has taken precedence"
 		logger.Warn(msg)
 		tc.BotTokenFile = ""
+	}
+
+	if tc.MessageThreadID != 0 && lessThanV0_26 {
+		msg := "'message_thread_id' supported in Alertmanager >= 0.26.0 only - dropping field from provided config"
+		logger.Warn(msg, "current_version", amVersion.String())
+		tc.MessageThreadID = 0
 	}
 
 	return tc.HTTPConfig.sanitize(amVersion, logger)
