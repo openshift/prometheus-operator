@@ -156,6 +156,10 @@ func makeStatefulSet(logger *slog.Logger, am *monitoringv1.Alertmanager, config 
 
 	statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, am.Spec.Volumes...)
 
+	if am.Spec.PersistentVolumeClaimRetentionPolicy != nil {
+		statefulset.Spec.PersistentVolumeClaimRetentionPolicy = am.Spec.PersistentVolumeClaimRetentionPolicy
+	}
+
 	return statefulset, nil
 }
 
@@ -166,7 +170,8 @@ func makeStatefulSetService(a *monitoringv1.Alertmanager, config Config) *v1.Ser
 
 	svc := &v1.Service{
 		Spec: v1.ServiceSpec{
-			ClusterIP: "None",
+			ClusterIP:                "None",
+			PublishNotReadyAddresses: true,
 			Ports: []v1.ServicePort{
 				{
 					Name:       a.Spec.PortName,
@@ -615,12 +620,8 @@ func makeStatefulSetSpec(logger *slog.Logger, a *monitoringv1.Alertmanager, conf
 		volumes = append(volumes, configVol...)
 		amVolumeMounts = append(amVolumeMounts, configMount...)
 
-		// To avoid breaking users deploying an old version of the config-reloader image.
-		// TODO: remove the if condition after v0.72.0.
-		if a.Spec.Web != nil {
-			configReloaderWebConfigFile = confArg.Value
-			configReloaderVolumeMounts = append(configReloaderVolumeMounts, configMount...)
-		}
+		configReloaderWebConfigFile = confArg.Value
+		configReloaderVolumeMounts = append(configReloaderVolumeMounts, configMount...)
 	}
 
 	finalSelectorLabels := config.Labels.Merge(podSelectorLabels)

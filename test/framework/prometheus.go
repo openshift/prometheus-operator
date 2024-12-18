@@ -23,7 +23,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"testing"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -180,9 +179,8 @@ func (f *Framework) CreateCertificateResources(namespace, certsDir string, prwtc
 
 func (f *Framework) MakeBasicPrometheus(ns, name, group string, replicas int32) *monitoringv1.Prometheus {
 	promVersion := operator.DefaultPrometheusVersion
-	// Because Prometheus 3 is supported from version 0.77.0 only
-	if os.Getenv("TEST_EXPERIMENTAL_PROMETHEUS") == "true" && f.operatorVersion.Minor >= 77 {
-		promVersion = operator.DefaultPrometheusExperimentalVersion
+	if os.Getenv("TEST_PROMETHEUS_V2") == "true" {
+		promVersion = operator.DefaultPrometheusV2
 	}
 	return &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
@@ -378,7 +376,7 @@ func (f *Framework) MakeBasicPodMonitor(name string) *monitoringv1.PodMonitor {
 			},
 			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 				{
-					Port:     "web",
+					Port:     ptr.To("web"),
 					Interval: "30s",
 				},
 			},
@@ -796,25 +794,6 @@ func (f *Framework) PrometheusQuery(ns, svcName, scheme, query string) ([]Promet
 	}
 
 	return q.Data.Result, nil
-}
-
-// PrintPrometheusLogs prints the logs for each Prometheus replica.
-func (f *Framework) PrintPrometheusLogs(ctx context.Context, t *testing.T, p *monitoringv1.Prometheus) {
-	if p == nil {
-		return
-	}
-
-	replicas := int(*p.Spec.Replicas)
-	for i := 0; i < replicas; i++ {
-		b := &bytes.Buffer{}
-		err := f.WritePodLogs(ctx, b, p.Namespace, fmt.Sprintf("prometheus-%s-%d", p.Name, i), LogOptions{Container: "prometheus"})
-		if err != nil {
-			t.Logf("failed to retrieve logs for replica[%d]: %v", i, err)
-			continue
-		}
-		t.Logf("Prometheus %q/%q (replica #%d) logs:", p.Namespace, p.Name, i)
-		t.Log(b.String())
-	}
 }
 
 func (f *Framework) WaitForPrometheusFiringAlert(ctx context.Context, ns, svcName, alertName string) error {

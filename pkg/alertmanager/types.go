@@ -353,6 +353,7 @@ type telegramConfig struct {
 	BotToken             string            `yaml:"bot_token,omitempty" json:"bot_token,omitempty"`
 	BotTokenFile         string            `yaml:"bot_token_file,omitempty" json:"bot_token_file,omitempty"`
 	ChatID               int64             `yaml:"chat_id,omitempty" json:"chat_id,omitempty"`
+	MessageThreadID      int               `yaml:"message_thread_id,omitempty" json:"message_thread_id,omitempty"`
 	Message              string            `yaml:"message,omitempty" json:"message,omitempty"`
 	DisableNotifications bool              `yaml:"disable_notifications,omitempty" json:"disable_notifications,omitempty"`
 	ParseMode            string            `yaml:"parse_mode,omitempty" json:"parse_mode,omitempty"`
@@ -393,8 +394,8 @@ func (d *duration) UnmarshalText(text []byte) error {
 	return err
 }
 
-func (d duration) MarshalText() ([]byte, error) {
-	return []byte(time.Duration(d).String()), nil
+func (d *duration) MarshalText() ([]byte, error) {
+	return []byte(time.Duration(*d).String()), nil
 }
 
 type victorOpsConfig struct {

@@ -1019,6 +1019,7 @@ func TestGenerateConfig(t *testing.T) {
 		matcherStrategy monitoringv1.AlertmanagerConfigMatcherStrategy
 		amConfigs       map[string]*monitoringv1alpha1.AlertmanagerConfig
 		golden          string
+		expectedError   bool
 	}
 	version24, err := semver.ParseTolerant("v0.24.0")
 	require.NoError(t, err)
@@ -2364,6 +2365,157 @@ func TestGenerateConfig(t *testing.T) {
 			},
 			golden: "CR_with_MSTeams_Receiver_Partial_Conf.golden",
 		},
+		{
+			name:      "CR with EmailConfig with Required Fields specified at Receiver level",
+			amVersion: &version26,
+			kclient:   fake.NewSimpleClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								EmailConfigs: []monitoringv1alpha1.EmailConfig{
+									{
+										Smarthost: "example.com:25",
+										From:      "admin@example.com",
+										To:        "customers@example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_EmailConfig_Receiver_Conf.golden",
+		},
+		{
+			name:      "CR with EmailConfig Missing SmartHost Field",
+			amVersion: &version26,
+			kclient:   fake.NewSimpleClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								EmailConfigs: []monitoringv1alpha1.EmailConfig{
+									{
+										From: "admin@example.com",
+										To:   "customers@example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name:      "CR with EmailConfig Missing SMTP From Field",
+			amVersion: &version26,
+			kclient:   fake.NewSimpleClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								EmailConfigs: []monitoringv1alpha1.EmailConfig{
+									{
+										From: "admin@example.com",
+										To:   "customers@example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name:      "CR with EmailConfig Missing Required Fields from Receiver level but specified at Global level",
+			amVersion: &version26,
+			kclient:   fake.NewSimpleClientset(),
+			baseConfig: alertmanagerConfig{
+				Global: &globalConfig{
+					SMTPSmarthost: config.HostPort{
+						Host: "smtp.example.org",
+						Port: "587",
+					},
+					SMTPFrom: "admin@globaltest.com",
+				},
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								EmailConfigs: []monitoringv1alpha1.EmailConfig{
+									{
+										To: "customers@example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_EmailConfig_Receiver_Global_Defaults_Conf.golden",
+		},
 	}
 
 	logger := newNopLogger(t)
@@ -2380,6 +2532,10 @@ func TestGenerateConfig(t *testing.T) {
 			cb := newConfigBuilder(logger, *tc.amVersion, store, tc.matcherStrategy)
 			cb.cfg = &tc.baseConfig
 
+			if tc.expectedError {
+				require.Error(t, cb.addAlertmanagerConfigs(context.Background(), tc.amConfigs))
+				return
+			}
 			require.NoError(t, cb.addAlertmanagerConfigs(context.Background(), tc.amConfigs))
 
 			cfgBytes, err := cb.marshalJSON()
@@ -2414,6 +2570,9 @@ func TestSanitizeConfig(t *testing.T) {
 
 	versionTelegramBotTokenFileAllowed := semver.Version{Major: 0, Minor: 26}
 	versionTelegramBotTokenFileNotAllowed := semver.Version{Major: 0, Minor: 25}
+
+	versionTelegramMessageThreadIDAllowed := semver.Version{Major: 0, Minor: 26}
+	versionTelegramMessageThreadIDNotAllowed := semver.Version{Major: 0, Minor: 25}
 
 	versionMSTeamsSummaryAllowed := semver.Version{Major: 0, Minor: 27}
 	versionMSTeamsSummaryNotAllowed := semver.Version{Major: 0, Minor: 26}
@@ -2934,6 +3093,56 @@ func TestSanitizeConfig(t *testing.T) {
 						TelegramConfigs: []*telegramConfig{
 							{
 								ChatID: 12345,
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "message_thread_id field for Telegram config",
+			againstVersion: versionTelegramMessageThreadIDAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						Name: "telegram",
+						TelegramConfigs: []*telegramConfig{
+							{
+								ChatID:          12345,
+								MessageThreadID: 123,
+								BotToken:        "test",
+							},
+						},
+					},
+				},
+			},
+			expect: alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						Name: "telegram",
+						TelegramConfigs: []*telegramConfig{
+							{
+								ChatID:          12345,
+								MessageThreadID: 123,
+								BotToken:        "test",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:           "message_thread_id is dropped for unsupported versions",
+			againstVersion: versionTelegramMessageThreadIDNotAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						Name: "telegram",
+						TelegramConfigs: []*telegramConfig{
+							{
+								ChatID:          12345,
+								MessageThreadID: 123,
 							},
 						},
 					},

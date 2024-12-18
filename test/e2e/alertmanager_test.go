@@ -323,23 +323,6 @@ func testAMClusterInitialization(t *testing.T) {
 	alertmanager := framework.MakeBasicAlertmanager(ns, "test", int32(amClusterSize))
 	alertmanagerService := framework.MakeAlertmanagerService(alertmanager.Name, "alertmanager-service", v1.ServiceTypeClusterIP)
 
-	// Print Alertmanager logs on failure.
-	defer func() {
-		if !t.Failed() {
-			return
-		}
-
-		for i := 0; i < amClusterSize; i++ {
-			b := &bytes.Buffer{}
-			err := framework.WritePodLogs(context.Background(), b, ns, fmt.Sprintf("alertmanager-test-%v", strconv.Itoa(i)), testFramework.LogOptions{})
-			if err != nil {
-				t.Logf("failed to get logs: %v", err)
-			}
-
-			t.Log(b.String())
-		}
-	}()
-
 	_, err := framework.CreateAlertmanagerAndWaitUntilReady(context.Background(), alertmanager)
 	require.NoError(t, err)
 
@@ -1100,7 +1083,9 @@ func testAlertmanagerConfigCRD(t *testing.T) {
 					SendResolved: func(b bool) *bool {
 						return &b
 					}(true),
-					To: "test@example.com",
+					Smarthost: "example.com:25",
+					From:      "admin@example.com",
+					To:        "test@example.com",
 					AuthPassword: &v1.SecretKeySelector{
 						LocalObjectReference: v1.LocalObjectReference{
 							Name: testingSecret,
@@ -1513,6 +1498,8 @@ receivers:
   email_configs:
   - send_resolved: true
     to: test@example.com
+    from: admin@example.com
+    smarthost: example.com:25
     auth_password: 1234abc
     auth_secret: 1234abc
     headers:

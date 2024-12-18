@@ -49,6 +49,8 @@ Usage of ./operator:
     	Value used by the operator to filter Alertmanager, Prometheus, PrometheusAgent and ThanosRuler objects that it should reconcile. If the value isn't empty, the operator only reconciles objects with an operator.prometheus.io/controller-id annotation of the same value. Otherwise the operator reconciles all objects without the annotation or with an empty annotation value.
   -deny-namespaces value
     	Namespaces not to scope the interaction of the Prometheus Operator (deny list). This is mutually exclusive with --namespaces.
+  -disable-unmanaged-prometheus-configuration
+    	Disable support for unmanaged Prometheus configuration when all resource selectors are nil. As stated in the API documentation, unmanaged Prometheus configuration is a deprecated feature which can be avoided with '.spec.additionalScrapeConfigs' or the ScrapeConfig CRD. Default: false.
   -enable-config-reloader-probes
     	Enable liveness and readiness for the config-reloader container. Default: false
   -feature-gates value
@@ -78,7 +80,7 @@ Usage of ./operator:
   -namespaces value
     	Namespaces to scope the interaction of the Prometheus Operator and the apiserver (allow list). This is mutually exclusive with --deny-namespaces.
   -prometheus-config-reloader string
-    	Prometheus config reloader image (default "quay.io/prometheus-operator/prometheus-config-reloader:v0.78.2")
+    	Prometheus config reloader image (default "quay.io/prometheus-operator/prometheus-config-reloader:v0.79.2")
   -prometheus-default-base-image string
     	Prometheus default base image (path without tag/version) (default "quay.io/prometheus/prometheus")
   -prometheus-instance-namespaces value
