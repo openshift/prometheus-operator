@@ -73,7 +73,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -136,7 +136,7 @@ configured.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -200,7 +200,7 @@ Deprecated: use &lsquo;image&rsquo; instead.</p>
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -326,7 +326,7 @@ instances.</p>
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -341,7 +341,7 @@ StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -350,6 +350,23 @@ StorageSpec objects.</p>
 <p>VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
 VolumeMounts specified will be appended to other VolumeMounts in the alertmanager container,
 that are generated as a result of StorageSpec objects.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>persistentVolumeClaimRetentionPolicy</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The field controls if and how PVCs are deleted during the lifecycle of a StatefulSet.
+The default behavior is all PVCs are retained.
+This is an alpha field from kubernetes 1.23 until 1.26 and a beta field from 1.26.
+It requires enabling the StatefulSetAutoDeletePVC feature gate.</p>
 </td>
 </tr>
 <tr>
@@ -406,7 +423,7 @@ map[string]string
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -419,7 +436,7 @@ Kubernetes core/v1.ResourceRequirements
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -432,7 +449,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -445,7 +462,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>topologySpreadConstraints</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#topologyspreadconstraint-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#topologyspreadconstraint-v1-core">
 []Kubernetes core/v1.TopologySpreadConstraint
 </a>
 </em>
@@ -458,7 +475,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -525,7 +542,7 @@ UI, not the gossip communication.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -545,7 +562,7 @@ this behaviour may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -676,7 +693,7 @@ Use case is e.g. spanning an Alertmanager cluster across Kubernetes clusters wit
 <td>
 <code>alertmanagerConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -689,7 +706,7 @@ Kubernetes meta/v1.LabelSelector
 <td>
 <code>alertmanagerConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -860,7 +877,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -932,13 +949,31 @@ associated Kubernetes <code>Pod</code> object onto the ingested metrics.</p>
 <td>
 <code>selector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
 <p>Label selector to select the Kubernetes <code>Pod</code> objects to scrape metrics from.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selectorMechanism</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SelectorMechanism">
+SelectorMechanism
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Mechanism used to select the endpoints to scrape.
+By default, the selection process relies on relabel configurations to filter the discovered targets.
+Alternatively, you can opt in for role selectors, which may offer better efficiency in large clusters.
+Which strategy is best for your use case needs to be carefully evaluated.</p>
+<p>It requires Prometheus &gt;= v2.17.0.</p>
 </td>
 </tr>
 <tr>
@@ -996,6 +1031,21 @@ be accepted.</p>
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -1068,7 +1118,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -1179,7 +1231,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1299,7 +1351,7 @@ SafeTLSConfig
 <td>
 <code>bearerTokenSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -1406,6 +1458,21 @@ protocols supported by Prometheus in order of preference (from most to least pre
 </tr>
 <tr>
 <td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>labelLimit</code><br/>
 <em>
 uint64
@@ -1474,7 +1541,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -1552,7 +1621,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -1603,7 +1672,7 @@ EmbeddedObjectMetadata
 <td>
 <code>serviceMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1625,7 +1694,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>serviceMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1640,7 +1709,7 @@ namespace only.</p>
 <td>
 <code>podMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1662,7 +1731,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>podMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1677,7 +1746,7 @@ namespace only.</p>
 <td>
 <code>probeSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1699,7 +1768,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>probeNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1714,7 +1783,7 @@ current namespace only.</p>
 <td>
 <code>scrapeConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1738,7 +1807,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>scrapeConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -1800,7 +1869,7 @@ when the operator was released.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -1814,7 +1883,7 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -1849,16 +1918,23 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>Number of shards to distribute targets onto. <code>spec.replicas</code>
-multiplied by <code>spec.shards</code> is the total number of Pods created.</p>
-<p>Note that scaling down shards will not reshard data onto remaining
+<p>Number of shards to distribute scraped targets onto.</p>
+<p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
+being created.</p>
+<p>When not defined, the operator assumes only one shard.</p>
+<p>Note that scaling down shards will not reshard data onto the remaining
 instances, it must be manually moved. Increasing shards will not reshard
 data either but it will continue to be available from the same
 instances. To query globally, use Thanos sidecar and Thanos querier or
-remote write data to a central location.</p>
-<p>Sharding is performed on the content of the <code>__address__</code> target meta-label
-for PodMonitors and ServiceMonitors and <code>__param_target__</code> for Probes.</p>
-<p>Default: 1</p>
+remote write data to a central location.
+Alerting and recording rules</p>
+<p>By default, the sharding is performed on:
+* The <code>__address__</code> target&rsquo;s metadata label for PodMonitor,
+ServiceMonitor and ScrapeConfig resources.
+* The <code>__param_target__</code> label for Probe resources.</p>
+<p>Users can define their own sharding implementation by setting the
+<code>__tmp_hash</code> label during the target discovery with relabeling
+configuration (either in the monitoring resources or via scrape class).</p>
 </td>
 </tr>
 <tr>
@@ -1955,6 +2031,7 @@ Duration
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+<p><code>PrometheusText1.0.0</code> requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -1987,6 +2064,20 @@ It is not suitable for replacing the ingestion via scraping and turning
 Prometheus into a push-based metrics collection system.
 For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver">https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver</a></p>
 <p>It requires Prometheus &gt;= v2.33.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableOTLPReceiver</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enable Prometheus to be used as a receiver for the OTLP Metrics protocol.</p>
+<p>Note that the OTLP receiver endpoint is automatically enabled if <code>.spec.otlpConfig</code> is defined.</p>
+<p>It requires Prometheus &gt;= v2.47.0.</p>
 </td>
 </tr>
 <tr>
@@ -2068,7 +2159,7 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -2083,7 +2174,7 @@ volumes that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -2098,7 +2189,7 @@ container, that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>persistentVolumeClaimRetentionPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
 Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
 </a>
 </em>
@@ -2128,7 +2219,7 @@ PrometheusWebSpec
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -2207,7 +2298,7 @@ The ConfigMaps are mounted into /etc/prometheus/configmaps/<configmap-name> in t
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -2221,7 +2312,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -2278,7 +2369,7 @@ It requires Prometheus &gt;= v2.55.0.</p>
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -2333,7 +2424,7 @@ instead of the Pod IP&rsquo;s address.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -2359,7 +2450,7 @@ may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -2385,7 +2476,7 @@ may break at any time without notice.</p>
 <td>
 <code>additionalScrapeConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -2681,6 +2772,20 @@ the scrape to fail.</p>
 If Prometheus version is &gt;= 2.45.0 and the <code>enforcedBodySizeLimit</code> is greater than the <code>bodySizeLimit</code>, the <code>bodySizeLimit</code> will be set to <code>enforcedBodySizeLimit</code>.
 * Scrape objects with a bodySizeLimit value less than or equal to enforcedBodySizeLimit keep their specific value.
 * Scrape objects with a bodySizeLimit value greater than enforcedBodySizeLimit are set to enforcedBodySizeLimit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
 </td>
 </tr>
 <tr>
@@ -3076,7 +3181,9 @@ bool
 </em>
 </td>
 <td>
-<p>When true, the Prometheus compaction is disabled.</p>
+<p>When true, the Prometheus compaction is disabled.
+When <code>spec.thanos.objectStorageConfig</code> or <code>spec.objectStorageConfigFile</code> are defined, the operator automatically
+disables block compaction to avoid race conditions during block uploads (as the Thanos documentation recommends).</p>
 </td>
 </tr>
 <tr>
@@ -3113,7 +3220,7 @@ Deprecated: use <code>spec.excludedFromEnforcement</code> instead.</p>
 <td>
 <code>ruleSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -3129,7 +3236,7 @@ objects.</p>
 <td>
 <code>ruleNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -3173,7 +3280,7 @@ AlertingSpec
 <td>
 <code>additionalAlertRelabelConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -3197,7 +3304,7 @@ Prometheus after the upgrade.</p>
 <td>
 <code>additionalAlertManagerConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -3394,7 +3501,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -3476,7 +3583,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -3564,13 +3671,31 @@ In most cases, an Endpoints object is backed by a Kubernetes <a href="https://ku
 <td>
 <code>selector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
 <p>Label selector to select the Kubernetes <code>Endpoints</code> objects to scrape metrics from.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selectorMechanism</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SelectorMechanism">
+SelectorMechanism
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Mechanism used to select the endpoints to scrape.
+By default, the selection process relies on relabel configurations to filter the discovered targets.
+Alternatively, you can opt in for role selectors, which may offer better efficiency in large clusters.
+Which strategy is best for your use case needs to be carefully evaluated.</p>
+<p>It requires Prometheus &gt;= v2.17.0.</p>
 </td>
 </tr>
 <tr>
@@ -3615,6 +3740,21 @@ that will be accepted.</p>
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -3700,7 +3840,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -3809,7 +3951,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -3842,6 +3984,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Version of Thanos to be deployed.</p>
 </td>
 </tr>
@@ -3855,6 +3998,7 @@ EmbeddedObjectMetadata
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>PodMetadata configures labels and annotations which are propagated to the ThanosRuler pods.</p>
 <p>The following items are reserved and cannot be overridden:
 * &ldquo;app.kubernetes.io/name&rdquo; label, set to &ldquo;thanos-ruler&rdquo;.
@@ -3879,7 +4023,7 @@ string
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -3893,12 +4037,13 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>An optional list of references to secrets in the same namespace
 to use for pulling thanos images from registries
 see <a href="http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod">http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod</a></p>
@@ -3924,6 +4069,7 @@ int32
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Number of thanos ruler instances to deploy.</p>
 </td>
 </tr>
@@ -3935,6 +4081,7 @@ map[string]string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Define which Nodes the Pods are scheduled on.</p>
 </td>
 </tr>
@@ -3942,7 +4089,7 @@ map[string]string
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -3956,12 +4103,13 @@ If not provided, no requests/limits will be set</p>
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>If specified, the pod&rsquo;s scheduling constraints.</p>
 </td>
 </tr>
@@ -3969,12 +4117,13 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>If specified, the pod&rsquo;s tolerations.</p>
 </td>
 </tr>
@@ -3982,12 +4131,13 @@ Kubernetes core/v1.Affinity
 <td>
 <code>topologySpreadConstraints</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#topologyspreadconstraint-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#topologyspreadconstraint-v1-core">
 []Kubernetes core/v1.TopologySpreadConstraint
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>If specified, the pod&rsquo;s topology spread constraints.</p>
 </td>
 </tr>
@@ -3995,12 +4145,13 @@ Kubernetes core/v1.Affinity
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
 </td>
@@ -4066,6 +4217,7 @@ StorageSpec
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Storage spec to specify how storage shall be used.</p>
 </td>
 </tr>
@@ -4073,12 +4225,13 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Volumes allows configuration of additional volumes on the output StatefulSet definition. Volumes specified will
 be appended to other volumes that are generated as a result of StorageSpec objects.</p>
 </td>
@@ -4087,12 +4240,13 @@ be appended to other volumes that are generated as a result of StorageSpec objec
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
 VolumeMounts specified will be appended to other VolumeMounts in the ruler container,
 that are generated as a result of StorageSpec objects.</p>
@@ -4102,14 +4256,17 @@ that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>objectStorageConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>ObjectStorageConfig configures object storage in Thanos.
-Alternative to ObjectStorageConfigFile, and lower order priority.</p>
+<em>(Optional)</em>
+<p>Configures object storage.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage">https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage</a></p>
+<p>The operator performs no validation of the configuration.</p>
+<p><code>objectStorageConfigFile</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
@@ -4120,8 +4277,11 @@ string
 </em>
 </td>
 <td>
-<p>ObjectStorageConfigFile specifies the path of the object storage configuration file.
-When used alongside with ObjectStorageConfig, ObjectStorageConfigFile takes precedence.</p>
+<em>(Optional)</em>
+<p>Configures the path of the object storage configuration file.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage">https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage</a></p>
+<p>The operator performs no validation of the configuration file.</p>
+<p>This field takes precedence over <code>objectStorageConfig</code>.</p>
 </td>
 </tr>
 <tr>
@@ -4144,24 +4304,28 @@ does not bind against the Pod IP.</p>
 </em>
 </td>
 <td>
-<p>QueryEndpoints defines Thanos querier endpoints from which to query metrics.
-Maps to the &ndash;query flag of thanos ruler.</p>
+<em>(Optional)</em>
+<p>Configures the list of Thanos Query endpoints from which to query metrics.</p>
+<p>For Thanos &gt;= v0.11.0, it is recommended to use <code>queryConfig</code> instead.</p>
+<p><code>queryConfig</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>queryConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>Define configuration for connecting to thanos query instances.
-If this is defined, the QueryEndpoints field will be ignored.
-Maps to the <code>query.config</code> CLI argument.
-Only available with thanos v0.11.0 and higher.</p>
+<em>(Optional)</em>
+<p>Configures the list of Thanos Query endpoints from which to query metrics.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/components/rule.md/#query-api">https://thanos.io/tip/components/rule.md/#query-api</a></p>
+<p>It requires Thanos &gt;= v0.11.0.</p>
+<p>The operator performs no validation of the configuration.</p>
+<p>This field takes precedence over <code>queryEndpoints</code>.</p>
 </td>
 </tr>
 <tr>
@@ -4172,50 +4336,57 @@ Only available with thanos v0.11.0 and higher.</p>
 </em>
 </td>
 <td>
-<p>Define URLs to send alerts to Alertmanager.  For Thanos v0.10.0 and higher,
-AlertManagersConfig should be used instead.  Note: this field will be ignored
-if AlertManagersConfig is specified.
-Maps to the <code>alertmanagers.url</code> arg.</p>
+<em>(Optional)</em>
+<p>Configures the list of Alertmanager endpoints to send alerts to.</p>
+<p>For Thanos &gt;= v0.10.0, it is recommended to use <code>alertmanagersConfig</code> instead.</p>
+<p><code>alertmanagersConfig</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>alertmanagersConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>Define configuration for connecting to alertmanager.  Only available with thanos v0.10.0
-and higher.  Maps to the <code>alertmanagers.config</code> arg.</p>
+<em>(Optional)</em>
+<p>Configures the list of Alertmanager endpoints to send alerts to.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/components/rule.md/#alertmanager">https://thanos.io/tip/components/rule.md/#alertmanager</a>.</p>
+<p>It requires Thanos &gt;= v0.10.0.</p>
+<p>The operator performs no validation of the configuration.</p>
+<p>This field takes precedence over <code>alertmanagersUrl</code>.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>ruleSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
-<p>A label selector to select which PrometheusRules to mount for alerting and
-recording.</p>
+<em>(Optional)</em>
+<p>PrometheusRule objects to be selected for rule evaluation. An empty
+label selector matches all objects. A null label selector matches no
+objects.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>ruleNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Namespaces to be selected for Rules discovery. If unspecified, only
 the same namespace as the ThanosRuler object is in is used.</p>
 </td>
@@ -4243,6 +4414,7 @@ being created.</p>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>List of references to PrometheusRule objects
 to be excluded from enforcing a namespace label of origin.
 Applies only if enforcedNamespaceLabel set to true.</p>
@@ -4258,6 +4430,7 @@ Applies only if enforcedNamespaceLabel set to true.</p>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>PrometheusRulesExcludedFromEnforce - list of Prometheus rules to be excluded from enforcing
 of adding namespace labels. Works only if enforcedNamespaceLabel set to true.
 Make sure both ruleNamespace and ruleName are set for each pair
@@ -4329,12 +4502,13 @@ and must match the regular expression <code>[0-9]+(ms|s|m|h|d|w|y)</code> (milli
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Containers allows injecting additional containers or modifying operator generated
 containers. This can be used to allow adding an authentication proxy to a ThanosRuler pod or
 to change the behavior of an operator generated container. Containers described here modify
@@ -4348,12 +4522,13 @@ so, you accept that this behaviour may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>InitContainers allows adding initContainers to the pod definition. Those can be used to e.g.
 fetch secrets for injection into the ThanosRuler configuration from external sources. Any
 errors during the execution of an initContainer will lead to a restart of the Pod.
@@ -4367,17 +4542,19 @@ at any time without notice.</p>
 <td>
 <code>tracingConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>TracingConfig configures tracing in Thanos.</p>
-<p><code>tracingConfigFile</code> takes precedence over this field.</p>
+<p>Configures tracing.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/tracing.md/#configuration">https://thanos.io/tip/thanos/tracing.md/#configuration</a></p>
 <p>This is an <em>experimental feature</em>, it may change in any upcoming release
 in a breaking way.</p>
+<p>The operator performs no validation of the configuration.</p>
+<p><code>tracingConfigFile</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
@@ -4389,10 +4566,12 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>TracingConfig specifies the path of the tracing configuration file.</p>
-<p>This field takes precedence over <code>tracingConfig</code>.</p>
+<p>Configures the path of the tracing configuration file.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/tracing.md/#configuration">https://thanos.io/tip/thanos/tracing.md/#configuration</a></p>
 <p>This is an <em>experimental feature</em>, it may change in any upcoming release
 in a breaking way.</p>
+<p>The operator performs no validation of the configuration file.</p>
+<p>This field takes precedence over <code>tracingConfig</code>.</p>
 </td>
 </tr>
 <tr>
@@ -4403,8 +4582,10 @@ map[string]string
 </em>
 </td>
 <td>
-<p>Labels configure the external label pairs to ThanosRuler. A default replica label
-<code>thanos_ruler_replica</code> will be always added  as a label with the value of the pod&rsquo;s name and it will be dropped in the alerts.</p>
+<em>(Optional)</em>
+<p>Configures the external label pairs of the ThanosRuler resource.</p>
+<p>A default replica label <code>thanos_ruler_replica</code> will be always added as a
+label with the value of the pod&rsquo;s name.</p>
 </td>
 </tr>
 <tr>
@@ -4415,8 +4596,10 @@ map[string]string
 </em>
 </td>
 <td>
-<p>AlertDropLabels configure the label names which should be dropped in ThanosRuler alerts.
-The replica label <code>thanos_ruler_replica</code> will always be dropped in alerts.</p>
+<em>(Optional)</em>
+<p>Configures the label names which should be dropped in Thanos Ruler
+alerts.</p>
+<p>The replica label <code>thanos_ruler_replica</code> will always be dropped from the alerts.</p>
 </td>
 </tr>
 <tr>
@@ -4453,6 +4636,7 @@ TLSConfig
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>GRPCServerTLSConfig configures the gRPC server from which Thanos Querier reads
 recorded rule data.
 Note: Currently only the CAFile, CertFile, and KeyFile fields are supported.
@@ -4491,16 +4675,19 @@ This is an alpha field from kubernetes 1.22 until 1.24 which requires enabling t
 <td>
 <code>alertRelabelConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>AlertRelabelConfigs configures alert relabeling in ThanosRuler.
-Alert relabel configurations must have the form as specified in the official Prometheus documentation:
-<a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs</a>
-Alternative to AlertRelabelConfigFile, and lower order priority.</p>
+<em>(Optional)</em>
+<p>Configures alert relabeling in Thanos Ruler.</p>
+<p>Alert relabel configuration must have the form as specified in the
+official Prometheus documentation:
+<a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs</a></p>
+<p>The operator performs no validation of the configuration.</p>
+<p><code>alertRelabelConfigFile</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
@@ -4511,8 +4698,13 @@ string
 </em>
 </td>
 <td>
-<p>AlertRelabelConfigFile specifies the path of the alert relabeling configuration file.
-When used alongside with AlertRelabelConfigs, alertRelabelConfigFile takes precedence.</p>
+<em>(Optional)</em>
+<p>Configures the path to the alert relabeling configuration file.</p>
+<p>Alert relabel configuration must have the form as specified in the
+official Prometheus documentation:
+<a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs</a></p>
+<p>The operator performs no validation of the configuration file.</p>
+<p>This field takes precedence over <code>alertRelabelConfig</code>.</p>
 </td>
 </tr>
 <tr>
@@ -4538,6 +4730,7 @@ When used alongside with AlertRelabelConfigs, alertRelabelConfigFile takes prece
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>AdditionalArgs allows setting additional arguments for the ThanosRuler container.
 It is intended for e.g. activating hidden flags which are not supported by
 the dedicated configuration options yet. The arguments are passed as-is to the
@@ -4558,6 +4751,7 @@ ThanosRulerWebSpec
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Defines the configuration of the ThanosRuler web server.</p>
 </td>
 </tr>
@@ -4736,6 +4930,26 @@ in clear-text. Prefer using <code>authorization</code>.</em></p>
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.AlertmanagerAPIVersion">AlertmanagerAPIVersion
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;V1&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;V2&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.AlertmanagerConfigMatcherStrategy">AlertmanagerConfigMatcherStrategy
 </h3>
@@ -5006,14 +5220,74 @@ Sigv4
 </tr>
 <tr>
 <td>
-<code>apiVersion</code><br/>
+<code>proxyUrl</code><br/>
 <em>
 string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p><code>proxyURL</code> defines the HTTP proxy server to use.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>noProxy</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
+that should be excluded from proxying. IP and domain names can
+contain port numbers.</p>
+<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>proxyFromEnvironment</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
+<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>proxyConnectHeader</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
+map[string][]k8s.io/api/core/v1.SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ProxyConnectHeader optionally specifies headers to send to
+proxies during CONNECT requests.</p>
+<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AlertmanagerAPIVersion">
+AlertmanagerAPIVersion
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
 <p>Version of the Alertmanager API that Prometheus uses to send alerts.
-It can be &ldquo;v1&rdquo; or &ldquo;v2&rdquo;.</p>
+It can be &ldquo;V1&rdquo; or &ldquo;V2&rdquo;.
+The field has no effect for Prometheus &gt;= v3.0.0 because only the v2 API is supported.</p>
 </td>
 </tr>
 <tr>
@@ -5136,7 +5410,7 @@ HTTPConfig
 <td>
 <code>slackApiUrl</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -5149,7 +5423,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>opsGenieApiUrl</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -5162,7 +5436,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>opsGenieApiKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -5239,7 +5513,7 @@ configured.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -5303,7 +5577,7 @@ Deprecated: use &lsquo;image&rsquo; instead.</p>
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -5429,7 +5703,7 @@ instances.</p>
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -5444,7 +5718,7 @@ StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -5453,6 +5727,23 @@ StorageSpec objects.</p>
 <p>VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
 VolumeMounts specified will be appended to other VolumeMounts in the alertmanager container,
 that are generated as a result of StorageSpec objects.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>persistentVolumeClaimRetentionPolicy</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The field controls if and how PVCs are deleted during the lifecycle of a StatefulSet.
+The default behavior is all PVCs are retained.
+This is an alpha field from kubernetes 1.23 until 1.26 and a beta field from 1.26.
+It requires enabling the StatefulSetAutoDeletePVC feature gate.</p>
 </td>
 </tr>
 <tr>
@@ -5509,7 +5800,7 @@ map[string]string
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -5522,7 +5813,7 @@ Kubernetes core/v1.ResourceRequirements
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -5535,7 +5826,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -5548,7 +5839,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>topologySpreadConstraints</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#topologyspreadconstraint-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#topologyspreadconstraint-v1-core">
 []Kubernetes core/v1.TopologySpreadConstraint
 </a>
 </em>
@@ -5561,7 +5852,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -5628,7 +5919,7 @@ UI, not the gossip communication.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -5648,7 +5939,7 @@ this behaviour may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -5779,7 +6070,7 @@ Use case is e.g. spanning an Alertmanager cluster across Kubernetes clusters wit
 <td>
 <code>alertmanagerConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -5792,7 +6083,7 @@ Kubernetes meta/v1.LabelSelector
 <td>
 <code>alertmanagerConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6189,7 +6480,7 @@ permissions on the <code>Nodes</code> objects.</p>
 <h3 id="monitoring.coreos.com/v1.Authorization">Authorization
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.APIServerConfig">APIServerConfig</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.APIServerConfig">APIServerConfig</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.ScrapeClass">ScrapeClass</a>)
 </p>
 <div>
 </div>
@@ -6218,7 +6509,7 @@ string
 <td>
 <code>credentials</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -6375,7 +6666,7 @@ string
 <td>
 <code>clientSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -6447,7 +6738,7 @@ string
 <td>
 <code>username</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -6461,7 +6752,7 @@ authentication.</p>
 <td>
 <code>password</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -6524,7 +6815,7 @@ EmbeddedObjectMetadata
 <td>
 <code>serviceMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6546,7 +6837,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>serviceMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6561,7 +6852,7 @@ namespace only.</p>
 <td>
 <code>podMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6583,7 +6874,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>podMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6598,7 +6889,7 @@ namespace only.</p>
 <td>
 <code>probeSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6620,7 +6911,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>probeNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6635,7 +6926,7 @@ current namespace only.</p>
 <td>
 <code>scrapeConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6659,7 +6950,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>scrapeConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -6721,7 +7012,7 @@ when the operator was released.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -6735,7 +7026,7 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -6770,16 +7061,23 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>Number of shards to distribute targets onto. <code>spec.replicas</code>
-multiplied by <code>spec.shards</code> is the total number of Pods created.</p>
-<p>Note that scaling down shards will not reshard data onto remaining
+<p>Number of shards to distribute scraped targets onto.</p>
+<p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
+being created.</p>
+<p>When not defined, the operator assumes only one shard.</p>
+<p>Note that scaling down shards will not reshard data onto the remaining
 instances, it must be manually moved. Increasing shards will not reshard
 data either but it will continue to be available from the same
 instances. To query globally, use Thanos sidecar and Thanos querier or
-remote write data to a central location.</p>
-<p>Sharding is performed on the content of the <code>__address__</code> target meta-label
-for PodMonitors and ServiceMonitors and <code>__param_target__</code> for Probes.</p>
-<p>Default: 1</p>
+remote write data to a central location.
+Alerting and recording rules</p>
+<p>By default, the sharding is performed on:
+* The <code>__address__</code> target&rsquo;s metadata label for PodMonitor,
+ServiceMonitor and ScrapeConfig resources.
+* The <code>__param_target__</code> label for Probe resources.</p>
+<p>Users can define their own sharding implementation by setting the
+<code>__tmp_hash</code> label during the target discovery with relabeling
+configuration (either in the monitoring resources or via scrape class).</p>
 </td>
 </tr>
 <tr>
@@ -6876,6 +7174,7 @@ Duration
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+<p><code>PrometheusText1.0.0</code> requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -6908,6 +7207,20 @@ It is not suitable for replacing the ingestion via scraping and turning
 Prometheus into a push-based metrics collection system.
 For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver">https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver</a></p>
 <p>It requires Prometheus &gt;= v2.33.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableOTLPReceiver</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enable Prometheus to be used as a receiver for the OTLP Metrics protocol.</p>
+<p>Note that the OTLP receiver endpoint is automatically enabled if <code>.spec.otlpConfig</code> is defined.</p>
+<p>It requires Prometheus &gt;= v2.47.0.</p>
 </td>
 </tr>
 <tr>
@@ -6989,7 +7302,7 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -7004,7 +7317,7 @@ volumes that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -7019,7 +7332,7 @@ container, that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>persistentVolumeClaimRetentionPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
 Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
 </a>
 </em>
@@ -7049,7 +7362,7 @@ PrometheusWebSpec
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -7128,7 +7441,7 @@ The ConfigMaps are mounted into /etc/prometheus/configmaps/<configmap-name> in t
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -7142,7 +7455,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -7199,7 +7512,7 @@ It requires Prometheus &gt;= v2.55.0.</p>
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -7254,7 +7567,7 @@ instead of the Pod IP&rsquo;s address.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -7280,7 +7593,7 @@ may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -7306,7 +7619,7 @@ may break at any time without notice.</p>
 <td>
 <code>additionalScrapeConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -7602,6 +7915,20 @@ the scrape to fail.</p>
 If Prometheus version is &gt;= 2.45.0 and the <code>enforcedBodySizeLimit</code> is greater than the <code>bodySizeLimit</code>, the <code>bodySizeLimit</code> will be set to <code>enforcedBodySizeLimit</code>.
 * Scrape objects with a bodySizeLimit value less than or equal to enforcedBodySizeLimit keep their specific value.
 * Scrape objects with a bodySizeLimit value greater than enforcedBodySizeLimit are set to enforcedBodySizeLimit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
 </td>
 </tr>
 <tr>
@@ -7915,6 +8242,20 @@ TSDBSpec
 It requires Prometheus &gt;= v2.39.0 or PrometheusAgent &gt;= v2.54.0.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>runtime</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RuntimeConfig">
+RuntimeConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeConfig configures the values for the Prometheus process behavior</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.Condition">Condition
@@ -7964,7 +8305,7 @@ ConditionStatus
 <td>
 <code>lastTransitionTime</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#time-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta">
 Kubernetes meta/v1.Time
 </a>
 </em>
@@ -8137,7 +8478,7 @@ It&rsquo;s a required field.</p>
 <td>
 <code>whenUnsatisfiable</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#unsatisfiableconstraintaction-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#unsatisfiableconstraintaction-v1-core">
 Kubernetes core/v1.UnsatisfiableConstraintAction
 </a>
 </em>
@@ -8167,7 +8508,7 @@ It&rsquo;s a required field.</p>
 <td>
 <code>labelSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -8212,7 +8553,7 @@ it will violate MaxSkew.</p>
 <td>
 <code>nodeAffinityPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#nodeinclusionpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#nodeinclusionpolicy-v1-core">
 Kubernetes core/v1.NodeInclusionPolicy
 </a>
 </em>
@@ -8231,7 +8572,7 @@ This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopo
 <td>
 <code>nodeTaintsPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#nodeinclusionpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#nodeinclusionpolicy-v1-core">
 Kubernetes core/v1.NodeInclusionPolicy
 </a>
 </em>
@@ -8415,7 +8756,7 @@ EmbeddedObjectMetadata
 <td>
 <code>spec</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#persistentvolumeclaimspec-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#persistentvolumeclaimspec-v1-core">
 Kubernetes core/v1.PersistentVolumeClaimSpec
 </a>
 </em>
@@ -8431,7 +8772,7 @@ More info: <a href="https://kubernetes.io/docs/concepts/storage/persistent-volum
 <td>
 <code>accessModes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#persistentvolumeaccessmode-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#persistentvolumeaccessmode-v1-core">
 []Kubernetes core/v1.PersistentVolumeAccessMode
 </a>
 </em>
@@ -8446,7 +8787,7 @@ More info: <a href="https://kubernetes.io/docs/concepts/storage/persistent-volum
 <td>
 <code>selector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -8460,7 +8801,7 @@ Kubernetes meta/v1.LabelSelector
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumeresourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumeresourcerequirements-v1-core">
 Kubernetes core/v1.VolumeResourceRequirements
 </a>
 </em>
@@ -8503,7 +8844,7 @@ More info: <a href="https://kubernetes.io/docs/concepts/storage/persistent-volum
 <td>
 <code>volumeMode</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#persistentvolumemode-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#persistentvolumemode-v1-core">
 Kubernetes core/v1.PersistentVolumeMode
 </a>
 </em>
@@ -8518,7 +8859,7 @@ Value of Filesystem is implied when not included in claim spec.</p>
 <td>
 <code>dataSource</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#typedlocalobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#typedlocalobjectreference-v1-core">
 Kubernetes core/v1.TypedLocalObjectReference
 </a>
 </em>
@@ -8539,7 +8880,7 @@ If the namespace is specified, then dataSourceRef will not be copied to dataSour
 <td>
 <code>dataSourceRef</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#typedobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#typedobjectreference-v1-core">
 Kubernetes core/v1.TypedObjectReference
 </a>
 </em>
@@ -8601,7 +8942,7 @@ More info: <a href="https://kubernetes.io/docs/concepts/storage/volume-attribute
 <td>
 <code>status</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#persistentvolumeclaimstatus-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#persistentvolumeclaimstatus-v1-core">
 Kubernetes core/v1.PersistentVolumeClaimStatus
 </a>
 </em>
@@ -8760,7 +9101,7 @@ string
 <td>
 <code>bearerTokenSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -9053,7 +9394,7 @@ string
 <td>
 <code>authPassword</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -9079,7 +9420,7 @@ string
 <td>
 <code>authSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -9179,7 +9520,7 @@ OAuth2
 <td>
 <code>bearerTokenSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -9250,7 +9591,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -9437,6 +9778,31 @@ Duration
 </tr>
 </tbody>
 </table>
+<h3 id="monitoring.coreos.com/v1.NameValidationSchemeOptions">NameValidationSchemeOptions
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>)
+</p>
+<div>
+<p>Specifies the validation scheme for metric and label names.
+Supported values are:
+* <code>UTF8NameValidationScheme</code> for UTF-8 support.
+* <code>LegacyNameValidationScheme</code> for letters, numbers, colons, and underscores.</p>
+<p>Note that <code>LegacyNameValidationScheme</code> cannot be used along with the OpenTelemetry <code>NoUTF8EscapingWithSuffixes</code> translation strategy (if enabled).</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Legacy&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;UTF8&#34;</p></td>
+<td></td>
+</tr></tbody>
+</table>
 <h3 id="monitoring.coreos.com/v1.NamespaceSelector">NamespaceSelector
 </h3>
 <p>
@@ -9529,7 +9895,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -9586,7 +9954,7 @@ OAuth2 client&rsquo;s ID.</p>
 <td>
 <code>clientSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -9690,7 +10058,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -9754,6 +10122,22 @@ string
 <td>
 <em>(Optional)</em>
 <p>List of OpenTelemetry Attributes that should be promoted to metric labels, defaults to none.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>translationStrategy</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.TranslationStrategyOption">
+TranslationStrategyOption
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configures how the OTLP receiver endpoint translates the incoming metrics.
+If unset, Prometheus uses its default value.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 </tbody>
@@ -9947,8 +10331,21 @@ string
 </em>
 </td>
 <td>
-<p>Name of the Pod port which this endpoint refers to.</p>
-<p>It takes precedence over <code>targetPort</code>.</p>
+<em>(Optional)</em>
+<p>The <code>Pod</code> port name which exposes the endpoint.</p>
+<p>It takes precedence over the <code>portNumber</code> and <code>targetPort</code> fields.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>portNumber</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The <code>Pod</code> port number which exposes the endpoint.</p>
 </td>
 </tr>
 <tr>
@@ -9963,7 +10360,7 @@ k8s.io/apimachinery/pkg/util/intstr.IntOrString
 <td>
 <p>Name or number of the target port of the <code>Pod</code> object behind the Service, the
 port must be specified with container port property.</p>
-<p>Deprecated: use &lsquo;port&rsquo; instead.</p>
+<p>Deprecated: use &lsquo;port&rsquo; or &lsquo;portNumber&rsquo; instead.</p>
 </td>
 </tr>
 <tr>
@@ -10050,7 +10447,7 @@ SafeTLSConfig
 <td>
 <code>bearerTokenSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -10303,13 +10700,31 @@ associated Kubernetes <code>Pod</code> object onto the ingested metrics.</p>
 <td>
 <code>selector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
 <p>Label selector to select the Kubernetes <code>Pod</code> objects to scrape metrics from.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selectorMechanism</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SelectorMechanism">
+SelectorMechanism
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Mechanism used to select the endpoints to scrape.
+By default, the selection process relies on relabel configurations to filter the discovered targets.
+Alternatively, you can opt in for role selectors, which may offer better efficiency in large clusters.
+Which strategy is best for your use case needs to be carefully evaluated.</p>
+<p>It requires Prometheus &gt;= v2.17.0.</p>
 </td>
 </tr>
 <tr>
@@ -10367,6 +10782,21 @@ be accepted.</p>
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -10439,7 +10869,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -10621,7 +11053,7 @@ SafeTLSConfig
 <td>
 <code>bearerTokenSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -10728,6 +11160,21 @@ protocols supported by Prometheus in order of preference (from most to least pre
 </tr>
 <tr>
 <td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>labelLimit</code><br/>
 <em>
 uint64
@@ -10796,7 +11243,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -10855,7 +11304,7 @@ The operator configures a target for each host/path combination of each ingress 
 <td>
 <code>selector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11211,7 +11660,7 @@ EmbeddedObjectMetadata
 <td>
 <code>serviceMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11233,7 +11682,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>serviceMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11248,7 +11697,7 @@ namespace only.</p>
 <td>
 <code>podMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11270,7 +11719,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>podMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11285,7 +11734,7 @@ namespace only.</p>
 <td>
 <code>probeSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11307,7 +11756,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>probeNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11322,7 +11771,7 @@ current namespace only.</p>
 <td>
 <code>scrapeConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11346,7 +11795,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>scrapeConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -11408,7 +11857,7 @@ when the operator was released.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -11422,7 +11871,7 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -11457,16 +11906,23 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>Number of shards to distribute targets onto. <code>spec.replicas</code>
-multiplied by <code>spec.shards</code> is the total number of Pods created.</p>
-<p>Note that scaling down shards will not reshard data onto remaining
+<p>Number of shards to distribute scraped targets onto.</p>
+<p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
+being created.</p>
+<p>When not defined, the operator assumes only one shard.</p>
+<p>Note that scaling down shards will not reshard data onto the remaining
 instances, it must be manually moved. Increasing shards will not reshard
 data either but it will continue to be available from the same
 instances. To query globally, use Thanos sidecar and Thanos querier or
-remote write data to a central location.</p>
-<p>Sharding is performed on the content of the <code>__address__</code> target meta-label
-for PodMonitors and ServiceMonitors and <code>__param_target__</code> for Probes.</p>
-<p>Default: 1</p>
+remote write data to a central location.
+Alerting and recording rules</p>
+<p>By default, the sharding is performed on:
+* The <code>__address__</code> target&rsquo;s metadata label for PodMonitor,
+ServiceMonitor and ScrapeConfig resources.
+* The <code>__param_target__</code> label for Probe resources.</p>
+<p>Users can define their own sharding implementation by setting the
+<code>__tmp_hash</code> label during the target discovery with relabeling
+configuration (either in the monitoring resources or via scrape class).</p>
 </td>
 </tr>
 <tr>
@@ -11563,6 +12019,7 @@ Duration
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+<p><code>PrometheusText1.0.0</code> requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -11595,6 +12052,20 @@ It is not suitable for replacing the ingestion via scraping and turning
 Prometheus into a push-based metrics collection system.
 For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver">https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver</a></p>
 <p>It requires Prometheus &gt;= v2.33.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableOTLPReceiver</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enable Prometheus to be used as a receiver for the OTLP Metrics protocol.</p>
+<p>Note that the OTLP receiver endpoint is automatically enabled if <code>.spec.otlpConfig</code> is defined.</p>
+<p>It requires Prometheus &gt;= v2.47.0.</p>
 </td>
 </tr>
 <tr>
@@ -11676,7 +12147,7 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -11691,7 +12162,7 @@ volumes that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -11706,7 +12177,7 @@ container, that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>persistentVolumeClaimRetentionPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
 Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
 </a>
 </em>
@@ -11736,7 +12207,7 @@ PrometheusWebSpec
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -11815,7 +12286,7 @@ The ConfigMaps are mounted into /etc/prometheus/configmaps/<configmap-name> in t
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -11829,7 +12300,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -11886,7 +12357,7 @@ It requires Prometheus &gt;= v2.55.0.</p>
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -11941,7 +12412,7 @@ instead of the Pod IP&rsquo;s address.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -11967,7 +12438,7 @@ may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -11993,7 +12464,7 @@ may break at any time without notice.</p>
 <td>
 <code>additionalScrapeConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -12289,6 +12760,20 @@ the scrape to fail.</p>
 If Prometheus version is &gt;= 2.45.0 and the <code>enforcedBodySizeLimit</code> is greater than the <code>bodySizeLimit</code>, the <code>bodySizeLimit</code> will be set to <code>enforcedBodySizeLimit</code>.
 * Scrape objects with a bodySizeLimit value less than or equal to enforcedBodySizeLimit keep their specific value.
 * Scrape objects with a bodySizeLimit value greater than enforcedBodySizeLimit are set to enforcedBodySizeLimit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
 </td>
 </tr>
 <tr>
@@ -12684,7 +13169,9 @@ bool
 </em>
 </td>
 <td>
-<p>When true, the Prometheus compaction is disabled.</p>
+<p>When true, the Prometheus compaction is disabled.
+When <code>spec.thanos.objectStorageConfig</code> or <code>spec.objectStorageConfigFile</code> are defined, the operator automatically
+disables block compaction to avoid race conditions during block uploads (as the Thanos documentation recommends).</p>
 </td>
 </tr>
 <tr>
@@ -12721,7 +13208,7 @@ Deprecated: use <code>spec.excludedFromEnforcement</code> instead.</p>
 <td>
 <code>ruleSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -12737,7 +13224,7 @@ objects.</p>
 <td>
 <code>ruleNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -12781,7 +13268,7 @@ AlertingSpec
 <td>
 <code>additionalAlertRelabelConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -12805,7 +13292,7 @@ Prometheus after the upgrade.</p>
 <td>
 <code>additionalAlertManagerConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -13120,7 +13607,9 @@ string
 <td>
 <code>samplingFraction</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -13266,7 +13755,7 @@ A zero value means that Prometheus doesn&rsquo;t accept any incoming connection.
 <h3 id="monitoring.coreos.com/v1.ProxyConfig">ProxyConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.OAuth2">OAuth2</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DigitalOceanSDConfig">DigitalOceanSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSDConfig">DockerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSwarmSDConfig">DockerSwarmSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EC2SDConfig">EC2SDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EurekaSDConfig">EurekaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPSDConfig">HTTPSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HetznerSDConfig">HetznerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.IonosSDConfig">IonosSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KubernetesSDConfig">KubernetesSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KumaSDConfig">KumaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LightSailSDConfig">LightSailSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LinodeSDConfig">LinodeSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.NomadSDConfig">NomadSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScalewaySDConfig">ScalewaySDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.OAuth2">OAuth2</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DigitalOceanSDConfig">DigitalOceanSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSDConfig">DockerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSwarmSDConfig">DockerSwarmSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EC2SDConfig">EC2SDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EurekaSDConfig">EurekaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPSDConfig">HTTPSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HetznerSDConfig">HetznerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.IonosSDConfig">IonosSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KubernetesSDConfig">KubernetesSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KumaSDConfig">KumaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LightSailSDConfig">LightSailSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LinodeSDConfig">LinodeSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.NomadSDConfig">NomadSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScalewaySDConfig">ScalewaySDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
 </p>
 <div>
 </div>
@@ -13322,7 +13811,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -13910,7 +14399,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -14268,7 +14757,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -14471,6 +14960,21 @@ string
 </tr>
 <tr>
 <td>
+<code>labels</code><br/>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Labels to add or overwrite before storing the result for its rules.
+The labels defined at the rule level take precedence.</p>
+<p>It requires Prometheus &gt;= 3.0.0.
+The field is ignored for Thanos Ruler.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>interval</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.Duration">
@@ -14630,7 +15134,7 @@ Alertmanager.</p>
 <h3 id="monitoring.coreos.com/v1.RuntimeConfig">RuntimeConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>)
 </p>
 <div>
 <p>RuntimeConfig configures the values for the process behavior.</p>
@@ -14693,7 +15197,7 @@ string
 <td>
 <code>credentials</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -14750,7 +15254,7 @@ SecretOrConfigMap
 <td>
 <code>keySecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -14874,6 +15378,21 @@ precedence over the corresponding scrape class fields.</p>
 </tr>
 <tr>
 <td>
+<code>authorization</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Authorization">
+Authorization
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Authorization section for the ScrapeClass.
+It will only apply if the scrape resource doesn&rsquo;t specify any Authorization.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>relabelings</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.RelabelConfig">
@@ -14938,8 +15457,28 @@ Supported values are:
 * <code>OpenMetricsText0.0.1</code>
 * <code>OpenMetricsText1.0.0</code>
 * <code>PrometheusProto</code>
-* <code>PrometheusText0.0.4</code></p>
+* <code>PrometheusText0.0.4</code>
+* <code>PrometheusText1.0.0</code></p>
 </div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;OpenMetricsText0.0.1&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;OpenMetricsText1.0.0&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;PrometheusProto&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;PrometheusText0.0.4&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;PrometheusText1.0.0&#34;</p></td>
+<td></td>
+</tr></tbody>
+</table>
 <h3 id="monitoring.coreos.com/v1.SecretOrConfigMap">SecretOrConfigMap
 </h3>
 <p>
@@ -14960,7 +15499,7 @@ Supported values are:
 <td>
 <code>secret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -14973,7 +15512,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>configMap</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#configmapkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#configmapkeyselector-v1-core">
 Kubernetes core/v1.ConfigMapKeySelector
 </a>
 </em>
@@ -14983,6 +15522,26 @@ Kubernetes core/v1.ConfigMapKeySelector
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.SelectorMechanism">SelectorMechanism
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.PodMonitorSpec">PodMonitorSpec</a>, <a href="#monitoring.coreos.com/v1.ServiceMonitorSpec">ServiceMonitorSpec</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;RelabelConfig&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;RoleSelector&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.ServiceDiscoveryRole">ServiceDiscoveryRole
 (<code>string</code> alias)</h3>
@@ -15083,13 +15642,31 @@ In most cases, an Endpoints object is backed by a Kubernetes <a href="https://ku
 <td>
 <code>selector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
 <p>Label selector to select the Kubernetes <code>Endpoints</code> objects to scrape metrics from.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>selectorMechanism</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SelectorMechanism">
+SelectorMechanism
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Mechanism used to select the endpoints to scrape.
+By default, the selection process relies on relabel configurations to filter the discovered targets.
+Alternatively, you can opt in for role selectors, which may offer better efficiency in large clusters.
+Which strategy is best for your use case needs to be carefully evaluated.</p>
+<p>It requires Prometheus &gt;= v2.17.0.</p>
 </td>
 </tr>
 <tr>
@@ -15134,6 +15711,21 @@ that will be accepted.</p>
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -15219,7 +15811,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -15395,7 +15989,7 @@ string
 <td>
 <code>accessKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -15410,7 +16004,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>secretKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -15481,7 +16075,7 @@ bool
 <td>
 <code>emptyDir</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#emptydirvolumesource-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#emptydirvolumesource-v1-core">
 Kubernetes core/v1.EmptyDirVolumeSource
 </a>
 </em>
@@ -15496,7 +16090,7 @@ More info: <a href="https://kubernetes.io/docs/concepts/storage/volumes/#emptydi
 <td>
 <code>ephemeral</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#ephemeralvolumesource-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#ephemeralvolumesource-v1-core">
 Kubernetes core/v1.EphemeralVolumeSource
 </a>
 </em>
@@ -15571,7 +16165,7 @@ SecretOrConfigMap
 <td>
 <code>keySecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -15755,6 +16349,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Version of Thanos to be deployed.</p>
 </td>
 </tr>
@@ -15768,6 +16363,7 @@ EmbeddedObjectMetadata
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>PodMetadata configures labels and annotations which are propagated to the ThanosRuler pods.</p>
 <p>The following items are reserved and cannot be overridden:
 * &ldquo;app.kubernetes.io/name&rdquo; label, set to &ldquo;thanos-ruler&rdquo;.
@@ -15792,7 +16388,7 @@ string
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -15806,12 +16402,13 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>An optional list of references to secrets in the same namespace
 to use for pulling thanos images from registries
 see <a href="http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod">http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod</a></p>
@@ -15837,6 +16434,7 @@ int32
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Number of thanos ruler instances to deploy.</p>
 </td>
 </tr>
@@ -15848,6 +16446,7 @@ map[string]string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Define which Nodes the Pods are scheduled on.</p>
 </td>
 </tr>
@@ -15855,7 +16454,7 @@ map[string]string
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -15869,12 +16468,13 @@ If not provided, no requests/limits will be set</p>
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>If specified, the pod&rsquo;s scheduling constraints.</p>
 </td>
 </tr>
@@ -15882,12 +16482,13 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>If specified, the pod&rsquo;s tolerations.</p>
 </td>
 </tr>
@@ -15895,12 +16496,13 @@ Kubernetes core/v1.Affinity
 <td>
 <code>topologySpreadConstraints</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#topologyspreadconstraint-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#topologyspreadconstraint-v1-core">
 []Kubernetes core/v1.TopologySpreadConstraint
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>If specified, the pod&rsquo;s topology spread constraints.</p>
 </td>
 </tr>
@@ -15908,12 +16510,13 @@ Kubernetes core/v1.Affinity
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>SecurityContext holds pod-level security attributes and common container settings.
 This defaults to the default PodSecurityContext.</p>
 </td>
@@ -15979,6 +16582,7 @@ StorageSpec
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Storage spec to specify how storage shall be used.</p>
 </td>
 </tr>
@@ -15986,12 +16590,13 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Volumes allows configuration of additional volumes on the output StatefulSet definition. Volumes specified will
 be appended to other volumes that are generated as a result of StorageSpec objects.</p>
 </td>
@@ -16000,12 +16605,13 @@ be appended to other volumes that are generated as a result of StorageSpec objec
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
 VolumeMounts specified will be appended to other VolumeMounts in the ruler container,
 that are generated as a result of StorageSpec objects.</p>
@@ -16015,14 +16621,17 @@ that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>objectStorageConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>ObjectStorageConfig configures object storage in Thanos.
-Alternative to ObjectStorageConfigFile, and lower order priority.</p>
+<em>(Optional)</em>
+<p>Configures object storage.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage">https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage</a></p>
+<p>The operator performs no validation of the configuration.</p>
+<p><code>objectStorageConfigFile</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
@@ -16033,8 +16642,11 @@ string
 </em>
 </td>
 <td>
-<p>ObjectStorageConfigFile specifies the path of the object storage configuration file.
-When used alongside with ObjectStorageConfig, ObjectStorageConfigFile takes precedence.</p>
+<em>(Optional)</em>
+<p>Configures the path of the object storage configuration file.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage">https://thanos.io/tip/thanos/storage.md/#configuring-access-to-object-storage</a></p>
+<p>The operator performs no validation of the configuration file.</p>
+<p>This field takes precedence over <code>objectStorageConfig</code>.</p>
 </td>
 </tr>
 <tr>
@@ -16057,24 +16669,28 @@ does not bind against the Pod IP.</p>
 </em>
 </td>
 <td>
-<p>QueryEndpoints defines Thanos querier endpoints from which to query metrics.
-Maps to the &ndash;query flag of thanos ruler.</p>
+<em>(Optional)</em>
+<p>Configures the list of Thanos Query endpoints from which to query metrics.</p>
+<p>For Thanos &gt;= v0.11.0, it is recommended to use <code>queryConfig</code> instead.</p>
+<p><code>queryConfig</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>queryConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>Define configuration for connecting to thanos query instances.
-If this is defined, the QueryEndpoints field will be ignored.
-Maps to the <code>query.config</code> CLI argument.
-Only available with thanos v0.11.0 and higher.</p>
+<em>(Optional)</em>
+<p>Configures the list of Thanos Query endpoints from which to query metrics.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/components/rule.md/#query-api">https://thanos.io/tip/components/rule.md/#query-api</a></p>
+<p>It requires Thanos &gt;= v0.11.0.</p>
+<p>The operator performs no validation of the configuration.</p>
+<p>This field takes precedence over <code>queryEndpoints</code>.</p>
 </td>
 </tr>
 <tr>
@@ -16085,50 +16701,57 @@ Only available with thanos v0.11.0 and higher.</p>
 </em>
 </td>
 <td>
-<p>Define URLs to send alerts to Alertmanager.  For Thanos v0.10.0 and higher,
-AlertManagersConfig should be used instead.  Note: this field will be ignored
-if AlertManagersConfig is specified.
-Maps to the <code>alertmanagers.url</code> arg.</p>
+<em>(Optional)</em>
+<p>Configures the list of Alertmanager endpoints to send alerts to.</p>
+<p>For Thanos &gt;= v0.10.0, it is recommended to use <code>alertmanagersConfig</code> instead.</p>
+<p><code>alertmanagersConfig</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>alertmanagersConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>Define configuration for connecting to alertmanager.  Only available with thanos v0.10.0
-and higher.  Maps to the <code>alertmanagers.config</code> arg.</p>
+<em>(Optional)</em>
+<p>Configures the list of Alertmanager endpoints to send alerts to.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/components/rule.md/#alertmanager">https://thanos.io/tip/components/rule.md/#alertmanager</a>.</p>
+<p>It requires Thanos &gt;= v0.10.0.</p>
+<p>The operator performs no validation of the configuration.</p>
+<p>This field takes precedence over <code>alertmanagersUrl</code>.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>ruleSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
-<p>A label selector to select which PrometheusRules to mount for alerting and
-recording.</p>
+<em>(Optional)</em>
+<p>PrometheusRule objects to be selected for rule evaluation. An empty
+label selector matches all objects. A null label selector matches no
+objects.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>ruleNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Namespaces to be selected for Rules discovery. If unspecified, only
 the same namespace as the ThanosRuler object is in is used.</p>
 </td>
@@ -16156,6 +16779,7 @@ being created.</p>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>List of references to PrometheusRule objects
 to be excluded from enforcing a namespace label of origin.
 Applies only if enforcedNamespaceLabel set to true.</p>
@@ -16171,6 +16795,7 @@ Applies only if enforcedNamespaceLabel set to true.</p>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>PrometheusRulesExcludedFromEnforce - list of Prometheus rules to be excluded from enforcing
 of adding namespace labels. Works only if enforcedNamespaceLabel set to true.
 Make sure both ruleNamespace and ruleName are set for each pair
@@ -16242,12 +16867,13 @@ and must match the regular expression <code>[0-9]+(ms|s|m|h|d|w|y)</code> (milli
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Containers allows injecting additional containers or modifying operator generated
 containers. This can be used to allow adding an authentication proxy to a ThanosRuler pod or
 to change the behavior of an operator generated container. Containers described here modify
@@ -16261,12 +16887,13 @@ so, you accept that this behaviour may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>InitContainers allows adding initContainers to the pod definition. Those can be used to e.g.
 fetch secrets for injection into the ThanosRuler configuration from external sources. Any
 errors during the execution of an initContainer will lead to a restart of the Pod.
@@ -16280,17 +16907,19 @@ at any time without notice.</p>
 <td>
 <code>tracingConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>TracingConfig configures tracing in Thanos.</p>
-<p><code>tracingConfigFile</code> takes precedence over this field.</p>
+<p>Configures tracing.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/tracing.md/#configuration">https://thanos.io/tip/thanos/tracing.md/#configuration</a></p>
 <p>This is an <em>experimental feature</em>, it may change in any upcoming release
 in a breaking way.</p>
+<p>The operator performs no validation of the configuration.</p>
+<p><code>tracingConfigFile</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
@@ -16302,10 +16931,12 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>TracingConfig specifies the path of the tracing configuration file.</p>
-<p>This field takes precedence over <code>tracingConfig</code>.</p>
+<p>Configures the path of the tracing configuration file.</p>
+<p>The configuration format is defined at <a href="https://thanos.io/tip/thanos/tracing.md/#configuration">https://thanos.io/tip/thanos/tracing.md/#configuration</a></p>
 <p>This is an <em>experimental feature</em>, it may change in any upcoming release
 in a breaking way.</p>
+<p>The operator performs no validation of the configuration file.</p>
+<p>This field takes precedence over <code>tracingConfig</code>.</p>
 </td>
 </tr>
 <tr>
@@ -16316,8 +16947,10 @@ map[string]string
 </em>
 </td>
 <td>
-<p>Labels configure the external label pairs to ThanosRuler. A default replica label
-<code>thanos_ruler_replica</code> will be always added  as a label with the value of the pod&rsquo;s name and it will be dropped in the alerts.</p>
+<em>(Optional)</em>
+<p>Configures the external label pairs of the ThanosRuler resource.</p>
+<p>A default replica label <code>thanos_ruler_replica</code> will be always added as a
+label with the value of the pod&rsquo;s name.</p>
 </td>
 </tr>
 <tr>
@@ -16328,8 +16961,10 @@ map[string]string
 </em>
 </td>
 <td>
-<p>AlertDropLabels configure the label names which should be dropped in ThanosRuler alerts.
-The replica label <code>thanos_ruler_replica</code> will always be dropped in alerts.</p>
+<em>(Optional)</em>
+<p>Configures the label names which should be dropped in Thanos Ruler
+alerts.</p>
+<p>The replica label <code>thanos_ruler_replica</code> will always be dropped from the alerts.</p>
 </td>
 </tr>
 <tr>
@@ -16366,6 +17001,7 @@ TLSConfig
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>GRPCServerTLSConfig configures the gRPC server from which Thanos Querier reads
 recorded rule data.
 Note: Currently only the CAFile, CertFile, and KeyFile fields are supported.
@@ -16404,16 +17040,19 @@ This is an alpha field from kubernetes 1.22 until 1.24 which requires enabling t
 <td>
 <code>alertRelabelConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
 </td>
 <td>
-<p>AlertRelabelConfigs configures alert relabeling in ThanosRuler.
-Alert relabel configurations must have the form as specified in the official Prometheus documentation:
-<a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs</a>
-Alternative to AlertRelabelConfigFile, and lower order priority.</p>
+<em>(Optional)</em>
+<p>Configures alert relabeling in Thanos Ruler.</p>
+<p>Alert relabel configuration must have the form as specified in the
+official Prometheus documentation:
+<a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs</a></p>
+<p>The operator performs no validation of the configuration.</p>
+<p><code>alertRelabelConfigFile</code> takes precedence over this field.</p>
 </td>
 </tr>
 <tr>
@@ -16424,8 +17063,13 @@ string
 </em>
 </td>
 <td>
-<p>AlertRelabelConfigFile specifies the path of the alert relabeling configuration file.
-When used alongside with AlertRelabelConfigs, alertRelabelConfigFile takes precedence.</p>
+<em>(Optional)</em>
+<p>Configures the path to the alert relabeling configuration file.</p>
+<p>Alert relabel configuration must have the form as specified in the
+official Prometheus documentation:
+<a href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#alert_relabel_configs</a></p>
+<p>The operator performs no validation of the configuration file.</p>
+<p>This field takes precedence over <code>alertRelabelConfig</code>.</p>
 </td>
 </tr>
 <tr>
@@ -16451,6 +17095,7 @@ When used alongside with AlertRelabelConfigs, alertRelabelConfigFile takes prece
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>AdditionalArgs allows setting additional arguments for the ThanosRuler container.
 It is intended for e.g. activating hidden flags which are not supported by
 the dedicated configuration options yet. The arguments are passed as-is to the
@@ -16471,6 +17116,7 @@ ThanosRulerWebSpec
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Defines the configuration of the ThanosRuler web server.</p>
 </td>
 </tr>
@@ -16704,7 +17350,7 @@ string
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -16717,7 +17363,7 @@ Kubernetes core/v1.ResourceRequirements
 <td>
 <code>objectStorageConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -16784,7 +17430,7 @@ of the Pod IP&rsquo;s address for the HTTP endpoints.</p>
 <td>
 <code>tracingConfig</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -16927,7 +17573,7 @@ Duration
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -17026,7 +17672,7 @@ It&rsquo;s a required field.</p>
 <td>
 <code>whenUnsatisfiable</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#unsatisfiableconstraintaction-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#unsatisfiableconstraintaction-v1-core">
 Kubernetes core/v1.UnsatisfiableConstraintAction
 </a>
 </em>
@@ -17056,7 +17702,7 @@ It&rsquo;s a required field.</p>
 <td>
 <code>labelSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17101,7 +17747,7 @@ it will violate MaxSkew.</p>
 <td>
 <code>nodeAffinityPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#nodeinclusionpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#nodeinclusionpolicy-v1-core">
 Kubernetes core/v1.NodeInclusionPolicy
 </a>
 </em>
@@ -17120,7 +17766,7 @@ This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopo
 <td>
 <code>nodeTaintsPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#nodeinclusionpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#nodeinclusionpolicy-v1-core">
 Kubernetes core/v1.NodeInclusionPolicy
 </a>
 </em>
@@ -17171,6 +17817,30 @@ AdditionalLabelSelectors
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.TranslationStrategyOption">TranslationStrategyOption
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.OTLPConfig">OTLPConfig</a>)
+</p>
+<div>
+<p>TranslationStrategyOption represents a translation strategy option for the OTLP endpoint.
+Supported values are:
+* <code>NoUTF8EscapingWithSuffixes</code>
+* <code>UnderscoreEscapingWithSuffixes</code></p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;NoUTF8EscapingWithSuffixes&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;UnderscoreEscapingWithSuffixes&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.WebConfigFileFields">WebConfigFileFields
 </h3>
@@ -17391,7 +18061,7 @@ SecretOrConfigMap
 <td>
 <code>keySecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -17558,7 +18228,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -17680,7 +18350,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -17745,7 +18415,7 @@ EmbeddedObjectMetadata
 <td>
 <code>serviceMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17767,7 +18437,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>serviceMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17782,7 +18452,7 @@ namespace only.</p>
 <td>
 <code>podMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17804,7 +18474,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>podMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17819,7 +18489,7 @@ namespace only.</p>
 <td>
 <code>probeSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17841,7 +18511,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>probeNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17856,7 +18526,7 @@ current namespace only.</p>
 <td>
 <code>scrapeConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17880,7 +18550,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>scrapeConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -17942,7 +18612,7 @@ when the operator was released.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -17956,7 +18626,7 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -17991,16 +18661,23 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>Number of shards to distribute targets onto. <code>spec.replicas</code>
-multiplied by <code>spec.shards</code> is the total number of Pods created.</p>
-<p>Note that scaling down shards will not reshard data onto remaining
+<p>Number of shards to distribute scraped targets onto.</p>
+<p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
+being created.</p>
+<p>When not defined, the operator assumes only one shard.</p>
+<p>Note that scaling down shards will not reshard data onto the remaining
 instances, it must be manually moved. Increasing shards will not reshard
 data either but it will continue to be available from the same
 instances. To query globally, use Thanos sidecar and Thanos querier or
-remote write data to a central location.</p>
-<p>Sharding is performed on the content of the <code>__address__</code> target meta-label
-for PodMonitors and ServiceMonitors and <code>__param_target__</code> for Probes.</p>
-<p>Default: 1</p>
+remote write data to a central location.
+Alerting and recording rules</p>
+<p>By default, the sharding is performed on:
+* The <code>__address__</code> target&rsquo;s metadata label for PodMonitor,
+ServiceMonitor and ScrapeConfig resources.
+* The <code>__param_target__</code> label for Probe resources.</p>
+<p>Users can define their own sharding implementation by setting the
+<code>__tmp_hash</code> label during the target discovery with relabeling
+configuration (either in the monitoring resources or via scrape class).</p>
 </td>
 </tr>
 <tr>
@@ -18097,6 +18774,7 @@ Duration
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+<p><code>PrometheusText1.0.0</code> requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -18129,6 +18807,20 @@ It is not suitable for replacing the ingestion via scraping and turning
 Prometheus into a push-based metrics collection system.
 For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver">https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver</a></p>
 <p>It requires Prometheus &gt;= v2.33.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableOTLPReceiver</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enable Prometheus to be used as a receiver for the OTLP Metrics protocol.</p>
+<p>Note that the OTLP receiver endpoint is automatically enabled if <code>.spec.otlpConfig</code> is defined.</p>
+<p>It requires Prometheus &gt;= v2.47.0.</p>
 </td>
 </tr>
 <tr>
@@ -18210,7 +18902,7 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -18225,7 +18917,7 @@ volumes that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -18240,7 +18932,7 @@ container, that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>persistentVolumeClaimRetentionPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
 Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
 </a>
 </em>
@@ -18270,7 +18962,7 @@ PrometheusWebSpec
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -18349,7 +19041,7 @@ The ConfigMaps are mounted into /etc/prometheus/configmaps/<configmap-name> in t
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -18363,7 +19055,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -18420,7 +19112,7 @@ It requires Prometheus &gt;= v2.55.0.</p>
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -18475,7 +19167,7 @@ instead of the Pod IP&rsquo;s address.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -18501,7 +19193,7 @@ may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -18527,7 +19219,7 @@ may break at any time without notice.</p>
 <td>
 <code>additionalScrapeConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -18823,6 +19515,20 @@ the scrape to fail.</p>
 If Prometheus version is &gt;= 2.45.0 and the <code>enforcedBodySizeLimit</code> is greater than the <code>bodySizeLimit</code>, the <code>bodySizeLimit</code> will be set to <code>enforcedBodySizeLimit</code>.
 * Scrape objects with a bodySizeLimit value less than or equal to enforcedBodySizeLimit keep their specific value.
 * Scrape objects with a bodySizeLimit value greater than enforcedBodySizeLimit are set to enforcedBodySizeLimit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
 </td>
 </tr>
 <tr>
@@ -19136,6 +19842,20 @@ TSDBSpec
 It requires Prometheus &gt;= v2.39.0 or PrometheusAgent &gt;= v2.54.0.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>runtime</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RuntimeConfig">
+RuntimeConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeConfig configures the values for the Prometheus process behavior</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -19191,7 +19911,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -19627,6 +20347,21 @@ protocols supported by Prometheus in order of preference (from most to least pre
 </tr>
 <tr>
 <td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>honorTimestamps</code><br/>
 <em>
 bool
@@ -19701,6 +20436,18 @@ bool
 <p>When false, Prometheus will request uncompressed response from the scraped target.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
 <p>If unset, Prometheus uses true by default.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableHTTP2</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to enable HTTP2.</p>
 </td>
 </tr>
 <tr>
@@ -19853,7 +20600,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -19935,7 +20684,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -20161,7 +20910,7 @@ string
 <td>
 <code>clientSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -20237,14 +20986,27 @@ string
 </em>
 </td>
 <td>
-<p>A valid string consisting of a hostname or IP followed by an optional port number.</p>
+<p>Consul server address. A valid string consisting of a hostname or IP followed by an optional port number.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pathPrefix</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix for URIs for when consul is behind an API gateway (reverse proxy).</p>
+<p>It requires Prometheus &gt;= 2.45.0.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>tokenRef</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -20276,6 +21038,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Namespaces are only supported in Consul Enterprise.</p>
+<p>It requires Prometheus &gt;= 2.28.0.</p>
 </td>
 </tr>
 <tr>
@@ -20323,7 +21086,8 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>An optional list of tags used to filter nodes for a given service. Services must contain all tags in the list.</p>
+<p>An optional list of tags used to filter nodes for a given service. Services must contain all tags in the list.
+Starting with Consul 1.14, it is recommended to use <code>filter</code> with the <code>ServiceTags</code> selector instead.</p>
 </td>
 </tr>
 <tr>
@@ -20348,7 +21112,22 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Node metadata key/value pairs to filter nodes for a given service.</p>
+<p>Node metadata key/value pairs to filter nodes for a given service.
+Starting with Consul 1.14, it is recommended to use <code>filter</code> with the <code>NodeMeta</code> selector instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>filter</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Filter expression used to filter the catalog results.
+See <a href="https://www.consul.io/api-docs/catalog#list-services">https://www.consul.io/api-docs/catalog#list-services</a>
+It requires Prometheus &gt;= 3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -20391,8 +21170,9 @@ BasicAuth
 </td>
 <td>
 <em>(Optional)</em>
-<p>BasicAuth information to authenticate against the Consul Server.
-More info: <a href="https://prometheus.io/docs/operating/configuration/#endpoints">https://prometheus.io/docs/operating/configuration/#endpoints</a></p>
+<p>Optional BasicAuth information to authenticate against the Consul Server.
+More info: <a href="https://prometheus.io/docs/operating/configuration/#endpoints">https://prometheus.io/docs/operating/configuration/#endpoints</a>
+Cannot be set at the same time as <code>authorization</code>, or <code>oauth2</code>.</p>
 </td>
 </tr>
 <tr>
@@ -20406,7 +21186,8 @@ SafeAuthorization
 </td>
 <td>
 <em>(Optional)</em>
-<p>Authorization header configuration to authenticate against the Consul Server.</p>
+<p>Optional Authorization header configuration to authenticate against the Consul Server.
+Cannot be set at the same time as <code>basicAuth</code>, or <code>oauth2</code>.</p>
 </td>
 </tr>
 <tr>
@@ -20420,7 +21201,8 @@ OAuth2
 </td>
 <td>
 <em>(Optional)</em>
-<p>Optional OAuth 2.0 configuration.</p>
+<p>Optional OAuth2.0 configuration.
+Cannot be set at the same time as <code>basicAuth</code>, or <code>authorization</code>.</p>
 </td>
 </tr>
 <tr>
@@ -20467,7 +21249,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -20516,7 +21298,7 @@ SafeTLSConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>TLS Config</p>
+<p>TLS configuration to connect to the Consul API.</p>
 </td>
 </tr>
 </tbody>
@@ -20755,7 +21537,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -20809,7 +21591,7 @@ SafeTLSConfig
 <td>
 <code>port</code><br/>
 <em>
-int
+int32
 </em>
 </td>
 <td>
@@ -20866,7 +21648,7 @@ bool
 <td>
 <code>apiURL</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -20991,7 +21773,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -21325,7 +22107,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -21414,7 +22196,7 @@ string
 <td>
 <code>accessKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -21428,7 +22210,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>secretKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -21539,7 +22321,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -21686,7 +22468,7 @@ string
 <td>
 <code>authPassword</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -21701,7 +22483,7 @@ object and accessible by the Prometheus Operator.</p>
 <td>
 <code>authSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -21921,7 +22703,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -22234,7 +23016,7 @@ OAuth2
 <td>
 <code>bearerTokenSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -22318,7 +23100,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -22477,7 +23259,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -22647,7 +23429,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -22897,7 +23679,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -23256,7 +24038,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -23420,7 +24202,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -23549,7 +24331,7 @@ string
 <td>
 <code>accessKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -23563,7 +24345,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>secretKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -23712,7 +24494,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -23904,7 +24686,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -23989,7 +24771,7 @@ bool
 <td>
 <code>webhookUrl</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -24465,7 +25247,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -24535,7 +25317,7 @@ string
 <td>
 <code>applicationSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -24547,7 +25329,7 @@ Kubernetes core/v1.SecretKeySelector
 <td>
 <code>consumerKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -24700,7 +25482,7 @@ string
 <td>
 <code>password</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -24794,7 +25576,7 @@ string
 <td>
 <code>applicationCredentialSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -24906,7 +25688,7 @@ bool
 <td>
 <code>apiKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -25182,7 +25964,7 @@ bool
 <td>
 <code>routingKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -25199,7 +25981,7 @@ object and accessible by the Prometheus Operator.</p>
 <td>
 <code>serviceKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -25569,7 +26351,7 @@ EmbeddedObjectMetadata
 <td>
 <code>serviceMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25591,7 +26373,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>serviceMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25606,7 +26388,7 @@ namespace only.</p>
 <td>
 <code>podMonitorSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25628,7 +26410,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>podMonitorNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25643,7 +26425,7 @@ namespace only.</p>
 <td>
 <code>probeSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25665,7 +26447,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>probeNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25680,7 +26462,7 @@ current namespace only.</p>
 <td>
 <code>scrapeConfigSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25704,7 +26486,7 @@ of the custom resource definition. It is recommended to use
 <td>
 <code>scrapeConfigNamespaceSelector</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#labelselector-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#labelselector-v1-meta">
 Kubernetes meta/v1.LabelSelector
 </a>
 </em>
@@ -25766,7 +26548,7 @@ when the operator was released.</p>
 <td>
 <code>imagePullPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#pullpolicy-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#pullpolicy-v1-core">
 Kubernetes core/v1.PullPolicy
 </a>
 </em>
@@ -25780,7 +26562,7 @@ See <a href="https://kubernetes.io/docs/concepts/containers/images/#image-pull-p
 <td>
 <code>imagePullSecrets</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#localobjectreference-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core">
 []Kubernetes core/v1.LocalObjectReference
 </a>
 </em>
@@ -25815,16 +26597,23 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>Number of shards to distribute targets onto. <code>spec.replicas</code>
-multiplied by <code>spec.shards</code> is the total number of Pods created.</p>
-<p>Note that scaling down shards will not reshard data onto remaining
+<p>Number of shards to distribute scraped targets onto.</p>
+<p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
+being created.</p>
+<p>When not defined, the operator assumes only one shard.</p>
+<p>Note that scaling down shards will not reshard data onto the remaining
 instances, it must be manually moved. Increasing shards will not reshard
 data either but it will continue to be available from the same
 instances. To query globally, use Thanos sidecar and Thanos querier or
-remote write data to a central location.</p>
-<p>Sharding is performed on the content of the <code>__address__</code> target meta-label
-for PodMonitors and ServiceMonitors and <code>__param_target__</code> for Probes.</p>
-<p>Default: 1</p>
+remote write data to a central location.
+Alerting and recording rules</p>
+<p>By default, the sharding is performed on:
+* The <code>__address__</code> target&rsquo;s metadata label for PodMonitor,
+ServiceMonitor and ScrapeConfig resources.
+* The <code>__param_target__</code> label for Probe resources.</p>
+<p>Users can define their own sharding implementation by setting the
+<code>__tmp_hash</code> label during the target discovery with relabeling
+configuration (either in the monitoring resources or via scrape class).</p>
 </td>
 </tr>
 <tr>
@@ -25921,6 +26710,7 @@ Duration
 protocols supported by Prometheus in order of preference (from most to least preferred).</p>
 <p>If unset, Prometheus uses its default value.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
+<p><code>PrometheusText1.0.0</code> requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -25953,6 +26743,20 @@ It is not suitable for replacing the ingestion via scraping and turning
 Prometheus into a push-based metrics collection system.
 For more information see <a href="https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver">https://prometheus.io/docs/prometheus/latest/querying/api/#remote-write-receiver</a></p>
 <p>It requires Prometheus &gt;= v2.33.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableOTLPReceiver</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Enable Prometheus to be used as a receiver for the OTLP Metrics protocol.</p>
+<p>Note that the OTLP receiver endpoint is automatically enabled if <code>.spec.otlpConfig</code> is defined.</p>
+<p>It requires Prometheus &gt;= v2.47.0.</p>
 </td>
 </tr>
 <tr>
@@ -26034,7 +26838,7 @@ StorageSpec
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volume-v1-core">
 []Kubernetes core/v1.Volume
 </a>
 </em>
@@ -26049,7 +26853,7 @@ volumes that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>volumeMounts</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volumemount-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#volumemount-v1-core">
 []Kubernetes core/v1.VolumeMount
 </a>
 </em>
@@ -26064,7 +26868,7 @@ container, that are generated as a result of StorageSpec objects.</p>
 <td>
 <code>persistentVolumeClaimRetentionPolicy</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps">
 Kubernetes apps/v1.StatefulSetPersistentVolumeClaimRetentionPolicy
 </a>
 </em>
@@ -26094,7 +26898,7 @@ PrometheusWebSpec
 <td>
 <code>resources</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#resourcerequirements-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#resourcerequirements-v1-core">
 Kubernetes core/v1.ResourceRequirements
 </a>
 </em>
@@ -26173,7 +26977,7 @@ The ConfigMaps are mounted into /etc/prometheus/configmaps/<configmap-name> in t
 <td>
 <code>affinity</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#affinity-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core">
 Kubernetes core/v1.Affinity
 </a>
 </em>
@@ -26187,7 +26991,7 @@ Kubernetes core/v1.Affinity
 <td>
 <code>tolerations</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#toleration-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core">
 []Kubernetes core/v1.Toleration
 </a>
 </em>
@@ -26244,7 +27048,7 @@ It requires Prometheus &gt;= v2.55.0.</p>
 <td>
 <code>securityContext</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#podsecuritycontext-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#podsecuritycontext-v1-core">
 Kubernetes core/v1.PodSecurityContext
 </a>
 </em>
@@ -26299,7 +27103,7 @@ instead of the Pod IP&rsquo;s address.</p>
 <td>
 <code>containers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -26325,7 +27129,7 @@ may break at any time without notice.</p>
 <td>
 <code>initContainers</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#container-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#container-v1-core">
 []Kubernetes core/v1.Container
 </a>
 </em>
@@ -26351,7 +27155,7 @@ may break at any time without notice.</p>
 <td>
 <code>additionalScrapeConfigs</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -26647,6 +27451,20 @@ the scrape to fail.</p>
 If Prometheus version is &gt;= 2.45.0 and the <code>enforcedBodySizeLimit</code> is greater than the <code>bodySizeLimit</code>, the <code>bodySizeLimit</code> will be set to <code>enforcedBodySizeLimit</code>.
 * Scrape objects with a bodySizeLimit value less than or equal to enforcedBodySizeLimit keep their specific value.
 * Scrape objects with a bodySizeLimit value greater than enforcedBodySizeLimit are set to enforcedBodySizeLimit.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
 </td>
 </tr>
 <tr>
@@ -26960,6 +27778,20 @@ TSDBSpec
 It requires Prometheus &gt;= v2.39.0 or PrometheusAgent &gt;= v2.54.0.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>runtime</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RuntimeConfig">
+RuntimeConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RuntimeConfig configures the values for the Prometheus process behavior</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig
@@ -27130,7 +27962,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -27215,7 +28047,7 @@ bool
 <td>
 <code>userKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -27246,7 +28078,7 @@ It requires Alertmanager &gt;= v0.26.0.</p>
 <td>
 <code>token</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -27996,7 +28828,7 @@ string
 <td>
 <code>secretKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -28147,7 +28979,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -28628,6 +29460,21 @@ protocols supported by Prometheus in order of preference (from most to least pre
 </tr>
 <tr>
 <td>
+<code>fallbackScrapeProtocol</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ScrapeProtocol">
+ScrapeProtocol
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>honorTimestamps</code><br/>
 <em>
 bool
@@ -28702,6 +29549,18 @@ bool
 <p>When false, Prometheus will request uncompressed response from the scraped target.</p>
 <p>It requires Prometheus &gt;= v2.49.0.</p>
 <p>If unset, Prometheus uses true by default.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableHTTP2</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to enable HTTP2.</p>
 </td>
 </tr>
 <tr>
@@ -28854,7 +29713,9 @@ It requires Prometheus &gt;= v2.45.0.</p>
 <td>
 <code>nativeHistogramMinBucketFactor</code><br/>
 <em>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity">
 k8s.io/apimachinery/pkg/api/resource.Quantity
+</a>
 </em>
 </td>
 <td>
@@ -28936,7 +29797,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -29093,7 +29954,7 @@ bool
 <td>
 <code>apiURL</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -29553,7 +30414,7 @@ If not specified, default API URL will be used.</p>
 <td>
 <code>botToken</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -29589,6 +30450,19 @@ int64
 </td>
 <td>
 <p>The Telegram chat ID.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>messageThreadID</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The Telegram Group Topic ID.
+It requires Alertmanager &gt;= 0.26.0.</p>
 </td>
 </tr>
 <tr>
@@ -29824,7 +30698,7 @@ bool
 <td>
 <code>apiKey</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -29971,7 +30845,7 @@ bool
 <td>
 <code>apiSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -30219,7 +31093,7 @@ string
 <td>
 <code>urlSecret</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -30347,7 +31221,7 @@ string
 <td>
 <code>metadata</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#objectmeta-v1-meta">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta">
 Kubernetes meta/v1.ObjectMeta
 </a>
 </em>
@@ -30586,7 +31460,7 @@ bool
 <td>
 <code>apiURL</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -30983,7 +31857,7 @@ bool
 <td>
 <code>proxyConnectHeader</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 map[string][]k8s.io/api/core/v1.SecretKeySelector
 </a>
 </em>
@@ -31143,7 +32017,7 @@ bool
 <td>
 <code>webhookUrl</code><br/>
 <em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#secretkeyselector-v1-core">
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
 Kubernetes core/v1.SecretKeySelector
 </a>
 </em>
@@ -33324,6 +34198,19 @@ int64
 </td>
 <td>
 <p>The Telegram chat ID.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>messageThreadID</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The Telegram Group Topic ID.
+It requires Alertmanager &gt;= 0.26.0.</p>
 </td>
 </tr>
 <tr>
