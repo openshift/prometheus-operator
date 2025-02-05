@@ -3,8 +3,8 @@
   "kind": "CustomResourceDefinition",
   "metadata": {
     "annotations": {
-      "controller-gen.kubebuilder.io/version": "v0.16.5",
-      "operator.prometheus.io/version": "0.79.2"
+      "controller-gen.kubebuilder.io/version": "v0.17.1",
+      "operator.prometheus.io/version": "0.80.0"
     },
     "name": "prometheusagents.monitoring.coreos.com"
   },
@@ -4016,7 +4016,7 @@
                     "type": "integer"
                   },
                   "mode": {
-                    "description": "Mode defines how the Prometheus operator deploys the PrometheusAgent pod(s).\nFor now this field has no effect.\n\n(Alpha) Using this field requires the `PrometheusAgentDaemonSet` feature gate to be enabled.",
+                    "description": "Mode defines how the Prometheus operator deploys the PrometheusAgent pod(s).\n\n(Alpha) Using this field requires the `PrometheusAgentDaemonSet` feature gate to be enabled.",
                     "enum": [
                       "StatefulSet",
                       "DaemonSet"
@@ -4041,6 +4041,10 @@
                   "otlp": {
                     "description": "Settings related to the OTLP receiver feature.\nIt requires Prometheus >= v2.55.0.",
                     "properties": {
+                      "keepIdentifyingResourceAttributes": {
+                        "description": "Enables adding `service.name`, `service.namespace` and `service.instance.id`\nresource attributes to the `target_info` metric, on top of converting them into the `instance` and `job` labels.\n\nIt requires Prometheus >= v3.1.0.",
+                        "type": "boolean"
+                      },
                       "promoteResourceAttributes": {
                         "description": "List of OpenTelemetry Attributes that should be promoted to metric labels, defaults to none.",
                         "items": {
@@ -4052,7 +4056,7 @@
                         "x-kubernetes-list-type": "set"
                       },
                       "translationStrategy": {
-                        "description": "Configures how the OTLP receiver endpoint translates the incoming metrics.\nIf unset, Prometheus uses its default value.\n\nIt requires Prometheus >= v3.0.0.",
+                        "description": "Configures how the OTLP receiver endpoint translates the incoming metrics.\n\nIt requires Prometheus >= v3.0.0.",
                         "enum": [
                           "NoUTF8EscapingWithSuffixes",
                           "UnderscoreEscapingWithSuffixes"
@@ -5445,6 +5449,17 @@
                           "description": "Default indicates that the scrape applies to all scrape objects that\ndon't configure an explicit scrape class name.\n\nOnly one scrape class can be set as the default.",
                           "type": "boolean"
                         },
+                        "fallbackScrapeProtocol": {
+                          "description": "The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.\nIt will only apply if the scrape resource doesn't specify any FallbackScrapeProtocol\n\nIt requires Prometheus >= v3.0.0.",
+                          "enum": [
+                            "PrometheusProto",
+                            "OpenMetricsText0.0.1",
+                            "OpenMetricsText1.0.0",
+                            "PrometheusText0.0.4",
+                            "PrometheusText1.0.0"
+                          ],
+                          "type": "string"
+                        },
                         "metricRelabelings": {
                           "description": "MetricRelabelings configures the relabeling rules to apply to all samples before ingestion.\n\nThe Operator adds the scrape class metric relabelings defined here.\nThen the Operator adds the target-specific metric relabelings defined in ServiceMonitors, PodMonitors, Probes and ScrapeConfigs.\nThen the Operator adds namespace enforcement relabeling rule, specified in '.spec.enforcedNamespaceLabel'.\n\nMore info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs",
                           "items": {
@@ -5863,6 +5878,11 @@
                     "type": "object",
                     "x-kubernetes-map-type": "atomic"
                   },
+                  "scrapeFailureLogFile": {
+                    "description": "File to which scrape failures are logged.\nReloading the configuration will reopen the file.\n\nIf the filename has an empty path, e.g. 'file.log', The Prometheus Pods\nwill mount the file into an emptyDir volume at `/var/log/prometheus`.\nIf a full path is provided, e.g. '/var/log/prometheus/file.log', you\nmust mount a volume in the specified directory and it must be writable.\nIt requires Prometheus >= v2.55.0.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
                   "scrapeInterval": {
                     "default": "30s",
                     "description": "Interval between consecutive scrapes.\n\nDefault: \"30s\"",
@@ -5886,7 +5906,7 @@
                     "x-kubernetes-list-type": "set"
                   },
                   "scrapeTimeout": {
-                    "description": "Number of seconds to wait until a scrape request times out.",
+                    "description": "Number of seconds to wait until a scrape request times out.\nThe value cannot be greater than the scrape interval otherwise the operator will reject the resource.",
                     "pattern": "^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$",
                     "type": "string"
                   },
@@ -6146,6 +6166,11 @@
                     },
                     "type": "object",
                     "x-kubernetes-map-type": "atomic"
+                  },
+                  "serviceName": {
+                    "description": "The name of the service name used by the underlying StatefulSet(s) as the governing service.\nIf defined, the Service  must be created before the Prometheus/PrometheusAgent resource in the same namespace and it must define a selector that matches the pod labels.\nIf empty, the operator will create and manage a headless service named `prometheus-operated` for Prometheus resources,\nor `prometheus-agent-operated` for PrometheusAgent resources.\nWhen deploying multiple Prometheus/PrometheusAgent resources in the same namespace, it is recommended to specify a different value for each.\nSee https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id for more details.",
+                    "minLength": 1,
+                    "type": "string"
                   },
                   "shards": {
                     "description": "Number of shards to distribute scraped targets onto.\n\n`spec.replicas` multiplied by `spec.shards` is the total number of Pods\nbeing created.\n\nWhen not defined, the operator assumes only one shard.\n\nNote that scaling down shards will not reshard data onto the remaining\ninstances, it must be manually moved. Increasing shards will not reshard\ndata either but it will continue to be available from the same\ninstances. To query globally, use Thanos sidecar and Thanos querier or\nremote write data to a central location.\nAlerting and recording rules\n\nBy default, the sharding is performed on:\n* The `__address__` target's metadata label for PodMonitor,\nServiceMonitor and ScrapeConfig resources.\n* The `__param_target__` label for Probe resources.\n\nUsers can define their own sharding implementation by setting the\n`__tmp_hash` label during the target discovery with relabeling\nconfiguration (either in the monitoring resources or via scrape class).",
@@ -8609,7 +8634,7 @@
                         "description": "Defines the TLS parameters for HTTPS.",
                         "properties": {
                           "cert": {
-                            "description": "Contains the TLS certificate for the server.",
+                            "description": "Secret or ConfigMap containing the TLS certificate for the web server.\n\nEither `keySecret` or `keyFile` must be defined.\n\nIt is mutually exclusive with `certFile`.",
                             "properties": {
                               "configMap": {
                                 "description": "ConfigMap containing data to use for the targets.",
@@ -8661,26 +8686,26 @@
                             "type": "object"
                           },
                           "certFile": {
-                            "description": "Path to the TLS certificate file in the Prometheus container for the server.\nMutually exclusive with `cert`.",
+                            "description": "Path to the TLS certificate file in the container for the web server.\n\nEither `keySecret` or `keyFile` must be defined.\n\nIt is mutually exclusive with `cert`.",
                             "type": "string"
                           },
                           "cipherSuites": {
-                            "description": "List of supported cipher suites for TLS versions up to TLS 1.2. If empty,\nGo default cipher suites are used. Available cipher suites are documented\nin the go documentation: https://golang.org/pkg/crypto/tls/#pkg-constants",
+                            "description": "List of supported cipher suites for TLS versions up to TLS 1.2.\n\nIf not defined, the Go default cipher suites are used.\nAvailable cipher suites are documented in the Go documentation:\nhttps://golang.org/pkg/crypto/tls/#pkg-constants",
                             "items": {
                               "type": "string"
                             },
                             "type": "array"
                           },
                           "clientAuthType": {
-                            "description": "Server policy for client authentication. Maps to ClientAuth Policies.\nFor more detail on clientAuth options:\nhttps://golang.org/pkg/crypto/tls/#ClientAuthType",
+                            "description": "The server policy for client TLS authentication.\n\nFor more detail on clientAuth options:\nhttps://golang.org/pkg/crypto/tls/#ClientAuthType",
                             "type": "string"
                           },
                           "clientCAFile": {
-                            "description": "Path to the CA certificate file for client certificate authentication to the server.\nMutually exclusive with `client_ca`.",
+                            "description": "Path to the CA certificate file for client certificate authentication to\nthe server.\n\nIt is mutually exclusive with `client_ca`.",
                             "type": "string"
                           },
                           "client_ca": {
-                            "description": "Contains the CA certificate for client certificate authentication to the server.",
+                            "description": "Secret or ConfigMap containing the CA certificate for client certificate\nauthentication to the server.\n\nIt is mutually exclusive with `clientCAFile`.",
                             "properties": {
                               "configMap": {
                                 "description": "ConfigMap containing data to use for the targets.",
@@ -8732,18 +8757,18 @@
                             "type": "object"
                           },
                           "curvePreferences": {
-                            "description": "Elliptic curves that will be used in an ECDHE handshake, in preference\norder. Available curves are documented in the go documentation:\nhttps://golang.org/pkg/crypto/tls/#CurveID",
+                            "description": "Elliptic curves that will be used in an ECDHE handshake, in preference\norder.\n\nAvailable curves are documented in the Go documentation:\nhttps://golang.org/pkg/crypto/tls/#CurveID",
                             "items": {
                               "type": "string"
                             },
                             "type": "array"
                           },
                           "keyFile": {
-                            "description": "Path to the TLS key file in the Prometheus container for the server.\nMutually exclusive with `keySecret`.",
+                            "description": "Path to the TLS private key file in the container for the web server.\n\nIf defined, either `cert` or `certFile` must be defined.\n\nIt is mutually exclusive with `keySecret`.",
                             "type": "string"
                           },
                           "keySecret": {
-                            "description": "Secret containing the TLS key for the server.",
+                            "description": "Secret containing the TLS private key for the web server.\n\nEither `cert` or `certFile` must be defined.\n\nIt is mutually exclusive with `keyFile`.",
                             "properties": {
                               "key": {
                                 "description": "The key of the secret to select from.  Must be a valid secret key.",
@@ -8766,15 +8791,15 @@
                             "x-kubernetes-map-type": "atomic"
                           },
                           "maxVersion": {
-                            "description": "Maximum TLS version that is acceptable. Defaults to TLS13.",
+                            "description": "Maximum TLS version that is acceptable.",
                             "type": "string"
                           },
                           "minVersion": {
-                            "description": "Minimum TLS version that is acceptable. Defaults to TLS12.",
+                            "description": "Minimum TLS version that is acceptable.",
                             "type": "string"
                           },
                           "preferServerCipherSuites": {
-                            "description": "Controls whether the server selects the\nclient's most preferred cipher suite, or the server's most preferred\ncipher suite. If true then the server's preference, as expressed in\nthe order of elements in cipherSuites, is used.",
+                            "description": "Controls whether the server selects the client's most preferred cipher\nsuite, or the server's most preferred cipher suite.\n\nIf true then the server's preference, as expressed in\nthe order of elements in cipherSuites, is used.",
                             "type": "boolean"
                           }
                         },
