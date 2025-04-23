@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 
+	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager/clustertlsconfig"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/k8sutil"
 	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
@@ -49,6 +50,7 @@ const (
 	alertmanagerTemplatesVolumeName    = "notification-templates"
 	alertmanagerTemplatesDir           = "/etc/alertmanager/templates"
 	webConfigDir                       = "/etc/alertmanager/web_config"
+	clusterTLSConfigDir                = "/etc/alertmanager/cluster_tls_config"
 	alertmanagerConfigVolumeName       = "config-volume"
 	alertmanagerConfigDir              = "/etc/alertmanager/config"
 	alertmanagerConfigOutVolumeName    = "config-out"
@@ -465,6 +467,7 @@ func makeStatefulSetSpec(logger *slog.Logger, a *monitoringv1.Alertmanager, conf
 	}
 
 	var configReloaderWebConfigFile string
+
 	watchedDirectories := []string{alertmanagerConfigDir}
 	configReloaderVolumeMounts := []v1.VolumeMount{
 		{
@@ -624,6 +627,26 @@ func makeStatefulSetSpec(logger *slog.Logger, a *monitoringv1.Alertmanager, conf
 		configReloaderVolumeMounts = append(configReloaderVolumeMounts, configMount...)
 	}
 
+	if version.GTE(semver.MustParse("0.24.0")) {
+		clusterTLSConfig, err := clustertlsconfig.New(clusterTLSConfigDir, a)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the cluster TLS configuration: %w", err)
+		}
+
+		confArg, configVol, configMount, err := clusterTLSConfig.GetMountParameters()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get mount parameters for cluster TLS configuration: %w", err)
+		}
+
+		// confArg is nil if the Alertmanager resource doesn't configure mTLS for the cluster protocol.
+		if confArg != nil {
+			amArgs = append(amArgs, fmt.Sprintf("--%s=%s", confArg.Name, confArg.Value))
+		}
+
+		volumes = append(volumes, configVol...)
+		amVolumeMounts = append(amVolumeMounts, configMount...)
+	}
+
 	finalSelectorLabels := config.Labels.Merge(podSelectorLabels)
 	finalLabels := config.Labels.Merge(podLabels)
 
@@ -717,7 +740,7 @@ func makeStatefulSetSpec(logger *slog.Logger, a *monitoringv1.Alertmanager, conf
 	}
 
 	spec := appsv1.StatefulSetSpec{
-		ServiceName:     governingServiceName,
+		ServiceName:     ptr.Deref(a.Spec.ServiceName, governingServiceName),
 		Replicas:        a.Spec.Replicas,
 		MinReadySeconds: minReadySeconds,
 		// PodManagementPolicy is set to Parallel to mitigate issues in kubernetes: https://github.com/kubernetes/kubernetes/issues/60164
@@ -748,6 +771,7 @@ func makeStatefulSetSpec(logger *slog.Logger, a *monitoringv1.Alertmanager, conf
 				Affinity:                      a.Spec.Affinity,
 				TopologySpreadConstraints:     a.Spec.TopologySpreadConstraints,
 				HostAliases:                   operator.MakeHostAliases(a.Spec.HostAliases),
+				EnableServiceLinks:            a.Spec.EnableServiceLinks,
 			},
 		},
 	}
