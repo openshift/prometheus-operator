@@ -610,7 +610,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	}
 	operator.SanitizeSTS(sset)
 
-	if newSSetInputHash == existingStatefulSet.ObjectMeta.Annotations[operator.InputHashAnnotationName] {
+	if newSSetInputHash == existingStatefulSet.Annotations[operator.InputHashAnnotationName] {
 		logger.Debug("new statefulset generation inputs match current, skipping any actions")
 		return nil
 	}
@@ -746,8 +746,8 @@ func makeSelectorLabels(name string) map[string]string {
 
 func createSSetInputHash(a monitoringv1.Alertmanager, c Config, tlsAssets *operator.ShardedSecret, s appsv1.StatefulSetSpec) (string, error) {
 	var http2 *bool
-	if a.Spec.Web != nil && a.Spec.Web.WebConfigFileFields.HTTPConfig != nil {
-		http2 = a.Spec.Web.WebConfigFileFields.HTTPConfig.HTTP2
+	if a.Spec.Web != nil && a.Spec.Web.HTTPConfig != nil {
+		http2 = a.Spec.Web.HTTPConfig.HTTP2
 	}
 
 	// The controller should ignore any changes to RevisionHistoryLimit field because
@@ -861,7 +861,7 @@ func (c *Operator) provisionAlertmanagerConfiguration(ctx context.Context, am *m
 
 	var (
 		additionalData map[string][]byte
-		cfgBuilder     = newConfigBuilder(namespacedLogger, version, store, am.Spec.AlertmanagerConfigMatcherStrategy)
+		cfgBuilder     = NewConfigBuilder(namespacedLogger, version, store, am.Spec.AlertmanagerConfigMatcherStrategy)
 	)
 
 	if am.Spec.AlertmanagerConfiguration != nil {
@@ -897,17 +897,17 @@ func (c *Operator) provisionAlertmanagerConfiguration(ctx context.Context, am *m
 			return fmt.Errorf("failed to retrieve configuration from secret: %w", err)
 		}
 
-		err = cfgBuilder.initializeFromRawConfiguration(amRawConfiguration)
+		err = cfgBuilder.InitializeFromRawConfiguration(amRawConfiguration)
 		if err != nil {
 			return fmt.Errorf("failed to initialize from secret: %w", err)
 		}
 	}
 
-	if err := cfgBuilder.addAlertmanagerConfigs(ctx, amConfigs); err != nil {
+	if err := cfgBuilder.AddAlertmanagerConfigs(ctx, amConfigs); err != nil {
 		return fmt.Errorf("failed to generate Alertmanager configuration: %w", err)
 	}
 
-	generatedConfig, err := cfgBuilder.marshalJSON()
+	generatedConfig, err := cfgBuilder.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
@@ -1181,6 +1181,11 @@ func checkReceivers(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerCon
 		}
 
 		err = checkMSTeamsConfigs(ctx, receiver.MSTeamsConfigs, amc.GetNamespace(), store, amVersion)
+		if err != nil {
+			return err
+		}
+
+		err = checkMSTeamsV2Configs(ctx, receiver.MSTeamsV2Configs, amc.GetNamespace(), store, amVersion)
 		if err != nil {
 			return err
 		}
@@ -1588,6 +1593,40 @@ func checkMSTeamsConfigs(
 	}
 
 	for _, config := range configs {
+		if err := checkHTTPConfig(config.HTTPConfig, amVersion); err != nil {
+			return err
+		}
+
+		if err := configureHTTPConfigInStore(ctx, config.HTTPConfig, namespace, store); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkMSTeamsV2Configs(
+	ctx context.Context,
+	configs []monitoringv1alpha1.MSTeamsV2Config,
+	namespace string,
+	store *assets.StoreBuilder,
+	amVersion semver.Version,
+) error {
+	if len(configs) == 0 {
+		return nil
+	}
+
+	if amVersion.LT(semver.MustParse("0.28.0")) {
+		return fmt.Errorf(`invalid syntax in receivers config; msteamsv2 integration is only available in Alertmanager >= 0.28.0`)
+	}
+
+	for _, config := range configs {
+		if config.WebhookURL != nil {
+			if _, err := store.GetSecretKey(ctx, namespace, *config.WebhookURL); err != nil {
+				return err
+			}
+		}
+
 		if err := checkHTTPConfig(config.HTTPConfig, amVersion); err != nil {
 			return err
 		}

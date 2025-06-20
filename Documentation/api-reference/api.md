@@ -801,6 +801,19 @@ AlertmanagerWebSpec
 </tr>
 <tr>
 <td>
+<code>limits</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AlertmanagerLimitsSpec">
+AlertmanagerLimitsSpec
+</a>
+</em>
+</td>
+<td>
+<p>Defines the limits command line flags when starting Alertmanager.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>clusterTLS</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.ClusterTLSConfig">
@@ -858,6 +871,39 @@ Enabling features which are disabled by default is entirely outside the
 scope of what the maintainers will support and by doing so, you accept
 that this behaviour may break at any time without notice.</p>
 <p>It requires Alertmanager &gt;= 0.27.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>additionalArgs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Argument">
+[]Argument
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AdditionalArgs allows setting additional arguments for the &lsquo;Alertmanager&rsquo; container.
+It is intended for e.g. activating hidden flags which are not supported by
+the dedicated configuration options yet. The arguments are passed as-is to the
+Alertmanager container which may cause issues if they are invalid or not supported
+by the given Alertmanager version.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 120 seconds.</p>
 </td>
 </tr>
 </table>
@@ -1171,6 +1217,19 @@ k8s.io/apimachinery/pkg/api/resource.Quantity
 <p>If the growth factor of one bucket to the next is smaller than this,
 buckets will be merged to increase the factor sufficiently.
 It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -1599,6 +1658,19 @@ It requires Prometheus &gt;= v2.50.0.</p>
 </tr>
 <tr>
 <td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -1961,7 +2033,6 @@ int32
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Number of shards to distribute the scraped targets onto.</p>
 <p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
 being created.</p>
@@ -1979,6 +2050,9 @@ ServiceMonitor and ScrapeConfig resources.
 <p>Users can define their own sharding implementation by setting the
 <code>__tmp_hash</code> label during the target discovery with relabeling
 configuration (either in the monitoring resources or via scrape class).</p>
+<p>You can also disable sharding on a specific target by setting the
+<code>__tmp_disable_sharding</code> label with relabeling configuration. When
+the label value isn&rsquo;t empty, all Prometheus shards will scrape the target.</p>
 </td>
 </tr>
 <tr>
@@ -2843,6 +2917,38 @@ NameValidationSchemeOptions
 <td>
 <em>(Optional)</em>
 <p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v2.55.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the character escaping scheme that will be requested when scraping
+for metric and label names that do not conform to the legacy Prometheus
+character set.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native
+histogram with custom buckets.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -3203,6 +3309,21 @@ RuntimeConfig
 <td>
 <em>(Optional)</em>
 <p>RuntimeConfig configures the values for the Prometheus process behavior</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 600 seconds.</p>
 </td>
 </tr>
 <tr>
@@ -3964,6 +4085,19 @@ It requires Prometheus &gt;= v2.50.0.</p>
 </tr>
 <tr>
 <td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -4632,8 +4766,11 @@ Duration
 </em>
 </td>
 <td>
-<p>Time duration ThanosRuler shall retain data for. Default is &lsquo;24h&rsquo;,
-and must match the regular expression <code>[0-9]+(ms|s|m|h|d|w|y)</code> (milliseconds seconds minutes hours days weeks years).</p>
+<p>Time duration ThanosRuler shall retain data for. Default is &lsquo;24h&rsquo;, and
+must match the regular expression <code>[0-9]+(ms|s|m|h|d|w|y)</code> (milliseconds
+seconds minutes hours days weeks years).</p>
+<p>The field has no effect when remote-write is configured since the Ruler
+operates in stateless mode.</p>
 </td>
 </tr>
 <tr>
@@ -4891,6 +5028,37 @@ ThanosRulerWebSpec
 <td>
 <em>(Optional)</em>
 <p>Defines the configuration of the ThanosRuler web server.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>remoteWrite</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteSpec">
+[]RemoteWriteSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the list of remote write configurations.</p>
+<p>When the list isn&rsquo;t empty, the ruler is configured with stateless mode.</p>
+<p>It requires Thanos &gt;= 0.24.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 120 seconds.</p>
 </td>
 </tr>
 </table>
@@ -5380,7 +5548,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -5393,7 +5561,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -5409,7 +5577,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -5592,6 +5760,54 @@ string
 </td>
 <td>
 <p>The default Pagerduty URL.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.AlertmanagerLimitsSpec">AlertmanagerLimitsSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>)
+</p>
+<div>
+<p>AlertmanagerLimitsSpec defines the limits command line flags when starting Alertmanager.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>maxSilences</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum number active and pending silences. This corresponds to the
+Alertmanager&rsquo;s <code>--silences.max-silences</code> flag.
+It requires Alertmanager &gt;= v0.28.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxPerSilenceBytes</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.ByteSize">
+ByteSize
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum size of an individual silence as stored on disk. This corresponds to the Alertmanager&rsquo;s
+<code>--silences.max-per-silence-bytes</code> flag.
+It requires Alertmanager &gt;= v0.28.0.</p>
 </td>
 </tr>
 </tbody>
@@ -6316,6 +6532,19 @@ AlertmanagerWebSpec
 </tr>
 <tr>
 <td>
+<code>limits</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.AlertmanagerLimitsSpec">
+AlertmanagerLimitsSpec
+</a>
+</em>
+</td>
+<td>
+<p>Defines the limits command line flags when starting Alertmanager.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>clusterTLS</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1.ClusterTLSConfig">
@@ -6373,6 +6602,39 @@ Enabling features which are disabled by default is entirely outside the
 scope of what the maintainers will support and by doing so, you accept
 that this behaviour may break at any time without notice.</p>
 <p>It requires Alertmanager &gt;= 0.27.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>additionalArgs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Argument">
+[]Argument
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AdditionalArgs allows setting additional arguments for the &lsquo;Alertmanager&rsquo; container.
+It is intended for e.g. activating hidden flags which are not supported by
+the dedicated configuration options yet. The arguments are passed as-is to the
+Alertmanager container which may cause issues if they are invalid or not supported
+by the given Alertmanager version.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 120 seconds.</p>
 </td>
 </tr>
 </tbody>
@@ -6589,7 +6851,7 @@ bool
 <h3 id="monitoring.coreos.com/v1.Argument">Argument
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerSpec">AlertmanagerSpec</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>)
 </p>
 <div>
 <p>Argument as part of the AdditionalArgs list.</p>
@@ -6794,7 +7056,7 @@ AzureOAuth
 <em>(Optional)</em>
 <p>OAuth defines the oauth config that is being used to authenticate.
 Cannot be set at the same time as <code>managedIdentity</code> or <code>sdk</code>.</p>
-<p>It requires Prometheus &gt;= v2.48.0.</p>
+<p>It requires Prometheus &gt;= v2.48.0 or Thanos &gt;= v0.31.0.</p>
 </td>
 </tr>
 <tr>
@@ -6811,7 +7073,7 @@ AzureSDK
 <p>SDK defines the Azure SDK config that is being used to authenticate.
 See <a href="https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication">https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication</a>
 Cannot be set at the same time as <code>oauth</code> or <code>managedIdentity</code>.</p>
-<p>It requires Prometheus &gt;= 2.52.0.</p>
+<p>It requires Prometheus &gt;= v2.52.0 or Thanos &gt;= v0.36.0.</p>
 </td>
 </tr>
 </tbody>
@@ -6948,7 +7210,7 @@ authentication.</p>
 <h3 id="monitoring.coreos.com/v1.ByteSize">ByteSize
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.PodMonitorSpec">PodMonitorSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.ServiceMonitorSpec">ServiceMonitorSpec</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerLimitsSpec">AlertmanagerLimitsSpec</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.PodMonitorSpec">PodMonitorSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.ServiceMonitorSpec">ServiceMonitorSpec</a>)
 </p>
 <div>
 <p>ByteSize is a valid memory size type based on powers-of-2, so 1KB is 1024B.
@@ -7285,7 +7547,6 @@ int32
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Number of shards to distribute the scraped targets onto.</p>
 <p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
 being created.</p>
@@ -7303,6 +7564,9 @@ ServiceMonitor and ScrapeConfig resources.
 <p>Users can define their own sharding implementation by setting the
 <code>__tmp_hash</code> label during the target discovery with relabeling
 configuration (either in the monitoring resources or via scrape class).</p>
+<p>You can also disable sharding on a specific target by setting the
+<code>__tmp_disable_sharding</code> label with relabeling configuration. When
+the label value isn&rsquo;t empty, all Prometheus shards will scrape the target.</p>
 </td>
 </tr>
 <tr>
@@ -8167,6 +8431,38 @@ NameValidationSchemeOptions
 <td>
 <em>(Optional)</em>
 <p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v2.55.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the character escaping scheme that will be requested when scraping
+for metric and label names that do not conform to the legacy Prometheus
+character set.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native
+histogram with custom buckets.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -8529,6 +8825,21 @@ RuntimeConfig
 <p>RuntimeConfig configures the values for the Prometheus process behavior</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 600 seconds.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.Condition">Condition
@@ -8837,8 +9148,7 @@ Kubernetes core/v1.NodeInclusionPolicy
 when calculating pod topology spread skew. Options are:
 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
 - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.</p>
-<p>If this value is nil, the behavior is equivalent to the Honor policy.
-This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.</p>
+<p>If this value is nil, the behavior is equivalent to the Honor policy.</p>
 </td>
 </tr>
 <tr>
@@ -8857,8 +9167,7 @@ pod topology spread skew. Options are:
 - Honor: nodes without taints, along with tainted nodes for which the incoming pod
 has a toleration, are included.
 - Ignore: node taints are ignored. All nodes are included.</p>
-<p>If this value is nil, the behavior is equivalent to the Ignore policy.
-This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.</p>
+<p>If this value is nil, the behavior is equivalent to the Ignore policy.</p>
 </td>
 </tr>
 <tr>
@@ -8922,7 +9231,7 @@ DNSConfig.</p>
 <h3 id="monitoring.coreos.com/v1.Duration">Duration
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.MetadataConfig">MetadataConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusTracingConfig">PrometheusTracingConfig</a>, <a href="#monitoring.coreos.com/v1.QuerySpec">QuerySpec</a>, <a href="#monitoring.coreos.com/v1.QueueConfig">QueueConfig</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.Rule">Rule</a>, <a href="#monitoring.coreos.com/v1.RuleGroup">RuleGroup</a>, <a href="#monitoring.coreos.com/v1.TSDBSpec">TSDBSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.AzureSDConfig">AzureSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DNSSDConfig">DNSSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DigitalOceanSDConfig">DigitalOceanSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSDConfig">DockerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSwarmSDConfig">DockerSwarmSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EC2SDConfig">EC2SDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EurekaSDConfig">EurekaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.FileSDConfig">FileSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.GCESDConfig">GCESDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPSDConfig">HTTPSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HetznerSDConfig">HetznerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.IonosSDConfig">IonosSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KumaSDConfig">KumaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LightSailSDConfig">LightSailSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LinodeSDConfig">LinodeSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.NomadSDConfig">NomadSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OVHCloudSDConfig">OVHCloudSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OpenStackSDConfig">OpenStackSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScalewaySDConfig">ScalewaySDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>, <a href="#monitoring.coreos.com/v1beta1.PushoverConfig">PushoverConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.AlertmanagerGlobalConfig">AlertmanagerGlobalConfig</a>, <a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.MetadataConfig">MetadataConfig</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusSpec">PrometheusSpec</a>, <a href="#monitoring.coreos.com/v1.PrometheusTracingConfig">PrometheusTracingConfig</a>, <a href="#monitoring.coreos.com/v1.QuerySpec">QuerySpec</a>, <a href="#monitoring.coreos.com/v1.QueueConfig">QueueConfig</a>, <a href="#monitoring.coreos.com/v1.RemoteReadSpec">RemoteReadSpec</a>, <a href="#monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec</a>, <a href="#monitoring.coreos.com/v1.RetainConfig">RetainConfig</a>, <a href="#monitoring.coreos.com/v1.Rule">Rule</a>, <a href="#monitoring.coreos.com/v1.RuleGroup">RuleGroup</a>, <a href="#monitoring.coreos.com/v1.TSDBSpec">TSDBSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>, <a href="#monitoring.coreos.com/v1.ThanosSpec">ThanosSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.AzureSDConfig">AzureSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DNSSDConfig">DNSSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DigitalOceanSDConfig">DigitalOceanSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSDConfig">DockerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSwarmSDConfig">DockerSwarmSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EC2SDConfig">EC2SDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EurekaSDConfig">EurekaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.FileSDConfig">FileSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.GCESDConfig">GCESDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPSDConfig">HTTPSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HetznerSDConfig">HetznerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.IonosSDConfig">IonosSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KumaSDConfig">KumaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LightSailSDConfig">LightSailSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LinodeSDConfig">LinodeSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.NomadSDConfig">NomadSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OVHCloudSDConfig">OVHCloudSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OpenStackSDConfig">OpenStackSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScalewaySDConfig">ScalewaySDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.WebhookConfig">WebhookConfig</a>, <a href="#monitoring.coreos.com/v1beta1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WebhookConfig">WebhookConfig</a>)
 </p>
 <div>
 <p>Duration is a valid time duration that can be parsed by Prometheus model.ParseDuration() function.
@@ -9717,6 +10026,20 @@ bool
 Note that Go does not support unencrypted connections to remote SMTP endpoints.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>tlsConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.SafeTLSConfig">
+SafeTLSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The default TLS configuration for SMTP receivers</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.GoDuration">GoDuration
@@ -9845,7 +10168,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -9858,7 +10181,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -9874,7 +10197,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -10050,19 +10373,70 @@ Duration
 <p>Defines how frequently metric metadata is sent to the remote storage.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>maxSamplesPerSend</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxSamplesPerSend is the maximum number of metadata samples per send.</p>
+<p>It requires Prometheus &gt;= v2.29.0.</p>
+</td>
+</tr>
 </tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.NameEscapingSchemeOptions">NameEscapingSchemeOptions
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>)
+</p>
+<div>
+<p>Specifies the character escaping scheme that will be applied when scraping
+for metric and label names that do not conform to the legacy Prometheus
+character set.</p>
+<p>Supported values are:</p>
+<ul>
+<li><code>AllowUTF8</code>, full UTF-8 support, no escaping needed.</li>
+<li><code>Underscores</code>, legacy-invalid characters are escaped to underscores.</li>
+<li><code>Dots</code>, dot characters are escaped to <code>_dot_</code>, underscores to <code>__</code>, and
+all other legacy-invalid characters to underscores.</li>
+<li><code>Values</code>, the string is prefixed by <code>U__</code> and all invalid characters are
+escaped to their unicode value, surrounded by underscores.</li>
+</ul>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;AllowUTF8&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Dots&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Underscores&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Values&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.NameValidationSchemeOptions">NameValidationSchemeOptions
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>)
 </p>
 <div>
-<p>Specifies the validation scheme for metric and label names.
-Supported values are:
-* <code>UTF8NameValidationScheme</code> for UTF-8 support.
-* <code>LegacyNameValidationScheme</code> for letters, numbers, colons, and underscores.</p>
-<p>Note that <code>LegacyNameValidationScheme</code> cannot be used along with the OpenTelemetry <code>NoUTF8EscapingWithSuffixes</code> translation strategy (if enabled).</p>
+<p>Specifies the validation scheme for metric and label names.</p>
+<p>Supported values are:
+- <code>UTF8NameValidationScheme</code> for UTF-8 support.
+- <code>LegacyNameValidationScheme</code> for letters, numbers, colons, and underscores.</p>
+<p>Note that <code>LegacyNameValidationScheme</code> cannot be used along with the
+OpenTelemetry <code>NoUTF8EscapingWithSuffixes</code> translation strategy (if
+enabled).</p>
 </div>
 <table>
 <thead>
@@ -10179,6 +10553,19 @@ k8s.io/apimachinery/pkg/api/resource.Quantity
 <p>If the growth factor of one bucket to the next is smaller than this,
 buckets will be merged to increase the factor sufficiently.
 It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 </tbody>
@@ -10312,7 +10699,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -10325,7 +10712,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -10341,7 +10728,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 </tbody>
@@ -10425,6 +10812,19 @@ bool
 <p>Enables adding <code>service.name</code>, <code>service.namespace</code> and <code>service.instance.id</code>
 resource attributes to the <code>target_info</code> metric, on top of converting them into the <code>instance</code> and <code>job</code> labels.</p>
 <p>It requires Prometheus &gt;= v3.1.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Configures optional translation of OTLP explicit bucket histograms into native histograms with custom buckets.
+It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 </tbody>
@@ -11171,6 +11571,19 @@ It requires Prometheus &gt;= v2.50.0.</p>
 </tr>
 <tr>
 <td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -11542,6 +11955,19 @@ k8s.io/apimachinery/pkg/api/resource.Quantity
 <p>If the growth factor of one bucket to the next is smaller than this,
 buckets will be merged to increase the factor sufficiently.
 It requires Prometheus &gt;= v2.50.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
 </td>
 </tr>
 <tr>
@@ -12194,7 +12620,6 @@ int32
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Number of shards to distribute the scraped targets onto.</p>
 <p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
 being created.</p>
@@ -12212,6 +12637,9 @@ ServiceMonitor and ScrapeConfig resources.
 <p>Users can define their own sharding implementation by setting the
 <code>__tmp_hash</code> label during the target discovery with relabeling
 configuration (either in the monitoring resources or via scrape class).</p>
+<p>You can also disable sharding on a specific target by setting the
+<code>__tmp_disable_sharding</code> label with relabeling configuration. When
+the label value isn&rsquo;t empty, all Prometheus shards will scrape the target.</p>
 </td>
 </tr>
 <tr>
@@ -13076,6 +13504,38 @@ NameValidationSchemeOptions
 <td>
 <em>(Optional)</em>
 <p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v2.55.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the character escaping scheme that will be requested when scraping
+for metric and label names that do not conform to the legacy Prometheus
+character set.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native
+histogram with custom buckets.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -13436,6 +13896,21 @@ RuntimeConfig
 <td>
 <em>(Optional)</em>
 <p>RuntimeConfig configures the values for the Prometheus process behavior</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 600 seconds.</p>
 </td>
 </tr>
 <tr>
@@ -14146,7 +14621,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -14159,7 +14634,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -14175,7 +14650,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 </tbody>
@@ -14390,7 +14865,7 @@ Duration
 <td>
 <em>(Optional)</em>
 <p>SampleAgeLimit drops samples older than the limit.
-It requires Prometheus &gt;= v2.50.0.</p>
+It requires Prometheus &gt;= v2.50.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 </tbody>
@@ -14734,7 +15209,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -14747,7 +15222,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -14763,7 +15238,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -14819,7 +15294,7 @@ bool
 <h3 id="monitoring.coreos.com/v1.RemoteWriteSpec">RemoteWriteSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.CommonPrometheusFields">CommonPrometheusFields</a>, <a href="#monitoring.coreos.com/v1.ThanosRulerSpec">ThanosRulerSpec</a>)
 </p>
 <div>
 <p>RemoteWriteSpec defines the configuration to write samples from Prometheus
@@ -14855,7 +15330,7 @@ string
 <em>(Optional)</em>
 <p>The name of the remote write queue, it must be unique if specified. The
 name is used in metrics and logging in order to differentiate queues.</p>
-<p>It requires Prometheus &gt;= v2.15.0.</p>
+<p>It requires Prometheus &gt;= v2.15.0 or Thanos &gt;= 0.24.0.</p>
 </td>
 </tr>
 <tr>
@@ -14876,7 +15351,7 @@ RemoteWriteMessageVersion
 configured to append the metadata of scraped metrics to the WAL.</p>
 <p>Before setting this field, consult with your remote storage provider
 what message version it supports.</p>
-<p>It requires Prometheus &gt;= v2.54.0.</p>
+<p>It requires Prometheus &gt;= v2.54.0 or Thanos &gt;= v0.37.0.</p>
 </td>
 </tr>
 <tr>
@@ -14891,7 +15366,7 @@ bool
 <p>Enables sending of exemplars over remote write. Note that
 exemplar-storage itself must be enabled using the <code>spec.enableFeatures</code>
 option for exemplars to be scraped in the first place.</p>
-<p>It requires Prometheus &gt;= v2.27.0.</p>
+<p>It requires Prometheus &gt;= v2.27.0 or Thanos &gt;= v0.24.0.</p>
 </td>
 </tr>
 <tr>
@@ -14905,7 +15380,7 @@ bool
 <em>(Optional)</em>
 <p>Enables sending of native histograms, also known as sparse histograms
 over remote write.</p>
-<p>It requires Prometheus &gt;= v2.40.0.</p>
+<p>It requires Prometheus &gt;= v2.40.0 or Thanos &gt;= v0.30.0.</p>
 </td>
 </tr>
 <tr>
@@ -14933,7 +15408,7 @@ map[string]string
 <em>(Optional)</em>
 <p>Custom HTTP headers to be sent along with each remote write request.
 Be aware that headers that are set by Prometheus itself can&rsquo;t be overwritten.</p>
-<p>It requires Prometheus &gt;= v2.25.0.</p>
+<p>It requires Prometheus &gt;= v2.25.0 or Thanos &gt;= v0.24.0.</p>
 </td>
 </tr>
 <tr>
@@ -14962,7 +15437,7 @@ OAuth2
 <td>
 <em>(Optional)</em>
 <p>OAuth2 configuration for the URL.</p>
-<p>It requires Prometheus &gt;= v2.27.0.</p>
+<p>It requires Prometheus &gt;= v2.27.0 or Thanos &gt;= v0.24.0.</p>
 <p>Cannot be set at the same time as <code>sigv4</code>, <code>authorization</code>, <code>basicAuth</code>, or <code>azureAd</code>.</p>
 </td>
 </tr>
@@ -15005,7 +15480,7 @@ Authorization
 <td>
 <em>(Optional)</em>
 <p>Authorization section for the URL.</p>
-<p>It requires Prometheus &gt;= v2.26.0.</p>
+<p>It requires Prometheus &gt;= v2.26.0 or Thanos &gt;= v0.24.0.</p>
 <p>Cannot be set at the same time as <code>sigv4</code>, <code>basicAuth</code>, <code>oauth2</code>, or <code>azureAd</code>.</p>
 </td>
 </tr>
@@ -15021,7 +15496,7 @@ Sigv4
 <td>
 <em>(Optional)</em>
 <p>Sigv4 allows to configures AWS&rsquo;s Signature Verification 4 for the URL.</p>
-<p>It requires Prometheus &gt;= v2.26.0.</p>
+<p>It requires Prometheus &gt;= v2.26.0 or Thanos &gt;= v0.24.0.</p>
 <p>Cannot be set at the same time as <code>authorization</code>, <code>basicAuth</code>, <code>oauth2</code>, or <code>azureAd</code>.</p>
 </td>
 </tr>
@@ -15037,7 +15512,7 @@ AzureAD
 <td>
 <em>(Optional)</em>
 <p>AzureAD for the URL.</p>
-<p>It requires Prometheus &gt;= v2.45.0.</p>
+<p>It requires Prometheus &gt;= v2.45.0 or Thanos &gt;= v0.31.0.</p>
 <p>Cannot be set at the same time as <code>authorization</code>, <code>basicAuth</code>, <code>oauth2</code>, or <code>sigv4</code>.</p>
 </td>
 </tr>
@@ -15092,7 +15567,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -15105,7 +15580,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -15121,7 +15596,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -15134,7 +15609,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Configure whether HTTP requests follow HTTP 3xx redirects.</p>
-<p>It requires Prometheus &gt;= v2.26.0.</p>
+<p>It requires Prometheus &gt;= v2.26.0 or Thanos &gt;= v0.24.0.</p>
 </td>
 </tr>
 <tr>
@@ -15194,7 +15669,36 @@ bool
 - It will attempt connections to each resolved IP address sequentially.</p>
 <p>Note: The connection timeout applies to the entire resolution and connection process.
 If disabled, the timeout is distributed across all connection attempts.</p>
-<p>It requires Prometheus &gt;= v3.1.0.</p>
+<p>It requires Prometheus &gt;= v3.1.0 or Thanos &gt;= v0.38.0.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.RetainConfig">RetainConfig
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.ShardRetentionPolicy">ShardRetentionPolicy</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>retentionPeriod</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -15586,7 +16090,7 @@ Kubernetes core/v1.SecretKeySelector
 <h3 id="monitoring.coreos.com/v1.SafeTLSConfig">SafeTLSConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.ClusterTLSConfig">ClusterTLSConfig</a>, <a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.OAuth2">OAuth2</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.TLSConfig">TLSConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.AzureSDConfig">AzureSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DigitalOceanSDConfig">DigitalOceanSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSDConfig">DockerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSwarmSDConfig">DockerSwarmSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EC2SDConfig">EC2SDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EurekaSDConfig">EurekaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPSDConfig">HTTPSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HetznerSDConfig">HetznerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.IonosSDConfig">IonosSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KubernetesSDConfig">KubernetesSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KumaSDConfig">KumaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LightSailSDConfig">LightSailSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LinodeSDConfig">LinodeSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.NomadSDConfig">NomadSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OpenStackSDConfig">OpenStackSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScalewaySDConfig">ScalewaySDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>, <a href="#monitoring.coreos.com/v1beta1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.ClusterTLSConfig">ClusterTLSConfig</a>, <a href="#monitoring.coreos.com/v1.GlobalSMTPConfig">GlobalSMTPConfig</a>, <a href="#monitoring.coreos.com/v1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1.OAuth2">OAuth2</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProbeSpec">ProbeSpec</a>, <a href="#monitoring.coreos.com/v1.TLSConfig">TLSConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.AzureSDConfig">AzureSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DigitalOceanSDConfig">DigitalOceanSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSDConfig">DockerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.DockerSwarmSDConfig">DockerSwarmSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EC2SDConfig">EC2SDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.EurekaSDConfig">EurekaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HTTPSDConfig">HTTPSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.HetznerSDConfig">HetznerSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.IonosSDConfig">IonosSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KubernetesSDConfig">KubernetesSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.KumaSDConfig">KumaSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LightSailSDConfig">LightSailSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.LinodeSDConfig">LinodeSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.NomadSDConfig">NomadSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OpenStackSDConfig">OpenStackSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScalewaySDConfig">ScalewaySDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>, <a href="#monitoring.coreos.com/v1beta1.EmailConfig">EmailConfig</a>, <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig</a>)
 </p>
 <div>
 <p>SafeTLSConfig specifies safe TLS configuration parameters.</p>
@@ -15674,7 +16178,7 @@ TLSVersion
 <td>
 <em>(Optional)</em>
 <p>Minimum acceptable TLS version.</p>
-<p>It requires Prometheus &gt;= v2.35.0.</p>
+<p>It requires Prometheus &gt;= v2.35.0 or Thanos &gt;= v0.28.0.</p>
 </td>
 </tr>
 <tr>
@@ -15689,7 +16193,7 @@ TLSVersion
 <td>
 <em>(Optional)</em>
 <p>Maximum acceptable TLS version.</p>
-<p>It requires Prometheus &gt;= v2.41.0.</p>
+<p>It requires Prometheus &gt;= v2.41.0 or Thanos &gt;= v0.31.0.</p>
 </td>
 </tr>
 </tbody>
@@ -16216,6 +16720,19 @@ It requires Prometheus &gt;= v2.50.0.</p>
 </tr>
 <tr>
 <td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -16304,6 +16821,21 @@ WhenScaledRetentionType
 * <code>Delete</code>, the operator will delete the pods from the scaled-down shard(s).
 * <code>Retain</code>, the operator will keep the pods from the scaled-down shard(s), so the data can still be queried.</p>
 <p>If not defined, the operator assumes the <code>Delete</code> value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>retain</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RetainConfig">
+RetainConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the config for retention when the retention policy is set to <code>Retain</code>.
+This field is ineffective as of now.</p>
 </td>
 </tr>
 </tbody>
@@ -16635,7 +17167,7 @@ TLSVersion
 <td>
 <em>(Optional)</em>
 <p>Minimum acceptable TLS version.</p>
-<p>It requires Prometheus &gt;= v2.35.0.</p>
+<p>It requires Prometheus &gt;= v2.35.0 or Thanos &gt;= v0.28.0.</p>
 </td>
 </tr>
 <tr>
@@ -16650,7 +17182,7 @@ TLSVersion
 <td>
 <em>(Optional)</em>
 <p>Maximum acceptable TLS version.</p>
-<p>It requires Prometheus &gt;= v2.41.0.</p>
+<p>It requires Prometheus &gt;= v2.41.0 or Thanos &gt;= v0.31.0.</p>
 </td>
 </tr>
 <tr>
@@ -17312,8 +17844,11 @@ Duration
 </em>
 </td>
 <td>
-<p>Time duration ThanosRuler shall retain data for. Default is &lsquo;24h&rsquo;,
-and must match the regular expression <code>[0-9]+(ms|s|m|h|d|w|y)</code> (milliseconds seconds minutes hours days weeks years).</p>
+<p>Time duration ThanosRuler shall retain data for. Default is &lsquo;24h&rsquo;, and
+must match the regular expression <code>[0-9]+(ms|s|m|h|d|w|y)</code> (milliseconds
+seconds minutes hours days weeks years).</p>
+<p>The field has no effect when remote-write is configured since the Ruler
+operates in stateless mode.</p>
 </td>
 </tr>
 <tr>
@@ -17571,6 +18106,37 @@ ThanosRulerWebSpec
 <td>
 <em>(Optional)</em>
 <p>Defines the configuration of the ThanosRuler web server.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>remoteWrite</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.RemoteWriteSpec">
+[]RemoteWriteSpec
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Defines the list of remote write configurations.</p>
+<p>When the list isn&rsquo;t empty, the ruler is configured with stateless mode.</p>
+<p>It requires Thanos &gt;= 0.24.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 120 seconds.</p>
 </td>
 </tr>
 </tbody>
@@ -18211,8 +18777,7 @@ Kubernetes core/v1.NodeInclusionPolicy
 when calculating pod topology spread skew. Options are:
 - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations.
 - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.</p>
-<p>If this value is nil, the behavior is equivalent to the Honor policy.
-This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.</p>
+<p>If this value is nil, the behavior is equivalent to the Honor policy.</p>
 </td>
 </tr>
 <tr>
@@ -18231,8 +18796,7 @@ pod topology spread skew. Options are:
 - Honor: nodes without taints, along with tainted nodes for which the incoming pod
 has a toleration, are included.
 - Ignore: node taints are ignored. All nodes are included.</p>
-<p>If this value is nil, the behavior is equivalent to the Ignore policy.
-This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.</p>
+<p>If this value is nil, the behavior is equivalent to the Ignore policy.</p>
 </td>
 </tr>
 <tr>
@@ -18280,7 +18844,8 @@ AdditionalLabelSelectors
 <p>TranslationStrategyOption represents a translation strategy option for the OTLP endpoint.
 Supported values are:
 * <code>NoUTF8EscapingWithSuffixes</code>
-* <code>UnderscoreEscapingWithSuffixes</code></p>
+* <code>UnderscoreEscapingWithSuffixes</code>
+* <code>NoTranslation</code></p>
 </div>
 <table>
 <thead>
@@ -18289,7 +18854,10 @@ Supported values are:
 <th>Description</th>
 </tr>
 </thead>
-<tbody><tr><td><p>&#34;NoUTF8EscapingWithSuffixes&#34;</p></td>
+<tbody><tr><td><p>&#34;NoTranslation&#34;</p></td>
+<td><p>It requires Prometheus &gt;= v3.4.0.</p>
+</td>
+</tr><tr><td><p>&#34;NoUTF8EscapingWithSuffixes&#34;</p></td>
 <td></td>
 </tr><tr><td><p>&#34;UnderscoreEscapingWithSuffixes&#34;</p></td>
 <td></td>
@@ -19144,7 +19712,6 @@ int32
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Number of shards to distribute the scraped targets onto.</p>
 <p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
 being created.</p>
@@ -19162,6 +19729,9 @@ ServiceMonitor and ScrapeConfig resources.
 <p>Users can define their own sharding implementation by setting the
 <code>__tmp_hash</code> label during the target discovery with relabeling
 configuration (either in the monitoring resources or via scrape class).</p>
+<p>You can also disable sharding on a specific target by setting the
+<code>__tmp_disable_sharding</code> label with relabeling configuration. When
+the label value isn&rsquo;t empty, all Prometheus shards will scrape the target.</p>
 </td>
 </tr>
 <tr>
@@ -20026,6 +20596,38 @@ NameValidationSchemeOptions
 <td>
 <em>(Optional)</em>
 <p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v2.55.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the character escaping scheme that will be requested when scraping
+for metric and label names that do not conform to the legacy Prometheus
+character set.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native
+histogram with custom buckets.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -20386,6 +20988,21 @@ RuntimeConfig
 <td>
 <em>(Optional)</em>
 <p>RuntimeConfig configures the values for the Prometheus process behavior</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 600 seconds.</p>
 </td>
 </tr>
 </table>
@@ -21147,6 +21764,19 @@ It requires Prometheus &gt;= v2.50.0.</p>
 </tr>
 <tr>
 <td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -21197,7 +21827,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21210,7 +21840,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21226,7 +21856,37 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Metric name escaping mode to request through content negotiation.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -21587,7 +22247,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21600,7 +22260,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21616,7 +22276,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21927,7 +22587,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21940,7 +22600,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -21956,7 +22616,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22215,7 +22875,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22228,7 +22888,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22244,7 +22904,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22383,6 +23043,44 @@ string
 </tr>
 <tr>
 <td>
+<code>content</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The template of the content&rsquo;s body.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>username</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The username of the message sender.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>avatarURL</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1alpha1.URL">
+URL
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The avatar url of the message sender.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>httpConfig</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">
@@ -22451,7 +23149,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22464,7 +23162,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22480,7 +23178,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22785,7 +23483,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22798,7 +23496,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22814,7 +23512,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -22999,7 +23697,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23012,7 +23710,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23028,7 +23726,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23381,7 +24079,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23394,7 +24092,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23410,7 +24108,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23652,7 +24350,7 @@ string
 <h3 id="monitoring.coreos.com/v1alpha1.HTTPConfig">HTTPConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1alpha1.DiscordConfig">DiscordConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.MSTeamsConfig">MSTeamsConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.OpsGenieConfig">OpsGenieConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PagerDutyConfig">PagerDutyConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.SNSConfig">SNSConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.SlackConfig">SlackConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.TelegramConfig">TelegramConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.VictorOpsConfig">VictorOpsConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WeChatConfig">WeChatConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WebexConfig">WebexConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WebhookConfig">WebhookConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1alpha1.DiscordConfig">DiscordConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.MSTeamsConfig">MSTeamsConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.MSTeamsV2Config">MSTeamsV2Config</a>, <a href="#monitoring.coreos.com/v1alpha1.OpsGenieConfig">OpsGenieConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PagerDutyConfig">PagerDutyConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.SNSConfig">SNSConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.SlackConfig">SlackConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.TelegramConfig">TelegramConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.VictorOpsConfig">VictorOpsConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WeChatConfig">WeChatConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WebexConfig">WebexConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WebhookConfig">WebhookConfig</a>)
 </p>
 <div>
 <p>HTTPConfig defines a client HTTP configuration.
@@ -23778,7 +24476,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23791,7 +24489,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23807,7 +24505,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23937,7 +24635,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23950,7 +24648,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -23966,7 +24664,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24107,7 +24805,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24120,7 +24818,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24136,7 +24834,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24357,7 +25055,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24370,7 +25068,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24386,7 +25084,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24730,7 +25428,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24743,7 +25441,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24759,7 +25457,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24894,7 +25592,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24907,7 +25605,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -24923,7 +25621,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25186,7 +25884,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25199,7 +25897,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25215,7 +25913,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25378,7 +26076,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25391,7 +26089,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25407,7 +26105,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25515,6 +26213,90 @@ string
 <em>(Optional)</em>
 <p>Message summary template.
 It requires Alertmanager &gt;= 0.27.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>text</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Message body template.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">
+HTTPConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTP client configuration.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1alpha1.MSTeamsV2Config">MSTeamsV2Config
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1alpha1.Receiver">Receiver</a>)
+</p>
+<div>
+<p>MSTeamsV2Config configures notifications via Microsoft Teams using the new message format with adaptive cards as required by flows
+See <a href="https://prometheus.io/docs/alerting/latest/configuration/#msteamsv2_config">https://prometheus.io/docs/alerting/latest/configuration/#msteamsv2_config</a>
+It requires Alertmanager &gt;= 0.28.0.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>sendResolved</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to notify about resolved alerts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>webhookURL</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
+Kubernetes core/v1.SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MSTeams incoming webhook URL.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>title</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Message title template.</p>
 </td>
 </tr>
 <tr>
@@ -25939,7 +26721,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25952,7 +26734,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -25968,7 +26750,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -27356,7 +28138,6 @@ int32
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Number of shards to distribute the scraped targets onto.</p>
 <p><code>spec.replicas</code> multiplied by <code>spec.shards</code> is the total number of Pods
 being created.</p>
@@ -27374,6 +28155,9 @@ ServiceMonitor and ScrapeConfig resources.
 <p>Users can define their own sharding implementation by setting the
 <code>__tmp_hash</code> label during the target discovery with relabeling
 configuration (either in the monitoring resources or via scrape class).</p>
+<p>You can also disable sharding on a specific target by setting the
+<code>__tmp_disable_sharding</code> label with relabeling configuration. When
+the label value isn&rsquo;t empty, all Prometheus shards will scrape the target.</p>
 </td>
 </tr>
 <tr>
@@ -28238,6 +29022,38 @@ NameValidationSchemeOptions
 <td>
 <em>(Optional)</em>
 <p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v2.55.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the character escaping scheme that will be requested when scraping
+for metric and label names that do not conform to the legacy Prometheus
+character set.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native
+histogram with custom buckets.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -28600,6 +29416,21 @@ RuntimeConfig
 <p>RuntimeConfig configures the values for the Prometheus process behavior</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>terminationGracePeriodSeconds</code><br/>
+<em>
+int64
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Optional duration in seconds the pod needs to terminate gracefully.
+Value must be non-negative integer. The value zero indicates stop immediately via
+the kill signal (no opportunity to shut down) which may lead to data corruption.</p>
+<p>Defaults to 600 seconds.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1alpha1.PuppetDBSDConfig">PuppetDBSDConfig
@@ -28750,7 +29581,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -28763,7 +29594,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -28779,7 +29610,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -29261,6 +30092,20 @@ string
 <td>
 <p>List of MSTeams configurations.
 It requires Alertmanager &gt;= 0.26.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>msteamsv2Configs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1alpha1.MSTeamsV2Config">
+[]MSTeamsV2Config
+</a>
+</em>
+</td>
+<td>
+<p>List of MSTeamsV2 configurations.
+It requires Alertmanager &gt;= 0.28.0.</p>
 </td>
 </tr>
 </tbody>
@@ -29767,7 +30612,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -29780,7 +30625,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -29796,7 +30641,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -30536,6 +31381,19 @@ It requires Prometheus &gt;= v2.50.0.</p>
 </tr>
 <tr>
 <td>
+<code>convertClassicHistogramsToNHCB</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to convert all scraped classic histograms into a native histogram with custom buckets.
+It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>keepDroppedTargets</code><br/>
 <em>
 uint64
@@ -30586,7 +31444,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -30599,7 +31457,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -30615,7 +31473,37 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameValidationScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameValidationSchemeOptions">
+NameValidationSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Specifies the validation scheme for metric and label names.</p>
+<p>It requires Prometheus &gt;= v3.0.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nameEscapingScheme</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.NameEscapingSchemeOptions">
+NameEscapingSchemeOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Metric name escaping mode to request through content negotiation.</p>
+<p>It requires Prometheus &gt;= v3.4.0.</p>
 </td>
 </tr>
 <tr>
@@ -31469,7 +32357,7 @@ Time
 <h3 id="monitoring.coreos.com/v1alpha1.URL">URL
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1alpha1.WebexConfig">WebexConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1alpha1.DiscordConfig">DiscordConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.WebexConfig">WebexConfig</a>)
 </p>
 <div>
 <p>URL represents a valid URL</p>
@@ -31942,6 +32830,22 @@ int32
 <p>Maximum number of alerts to be sent per webhook message. When 0, all alerts are included.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>timeout</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum time to wait for a webhook request to complete, before failing the
+request and allowing it to be retried.
+It requires Alertmanager &gt;= v0.28.0.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1alpha1.Weekday">Weekday
@@ -32306,6 +33210,44 @@ string
 </tr>
 <tr>
 <td>
+<code>content</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The template of the content&rsquo;s body.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>username</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The username of the message sender.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>avatarURL</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1beta1.URL">
+URL
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The avatar url of the message sender.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>httpConfig</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1beta1.HTTPConfig">
@@ -32520,7 +33462,7 @@ SafeTLSConfig
 <h3 id="monitoring.coreos.com/v1beta1.HTTPConfig">HTTPConfig
 </h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1beta1.DiscordConfig">DiscordConfig</a>, <a href="#monitoring.coreos.com/v1beta1.MSTeamsConfig">MSTeamsConfig</a>, <a href="#monitoring.coreos.com/v1beta1.OpsGenieConfig">OpsGenieConfig</a>, <a href="#monitoring.coreos.com/v1beta1.PagerDutyConfig">PagerDutyConfig</a>, <a href="#monitoring.coreos.com/v1beta1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1beta1.SNSConfig">SNSConfig</a>, <a href="#monitoring.coreos.com/v1beta1.SlackConfig">SlackConfig</a>, <a href="#monitoring.coreos.com/v1beta1.TelegramConfig">TelegramConfig</a>, <a href="#monitoring.coreos.com/v1beta1.VictorOpsConfig">VictorOpsConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WeChatConfig">WeChatConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WebexConfig">WebexConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WebhookConfig">WebhookConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1beta1.DiscordConfig">DiscordConfig</a>, <a href="#monitoring.coreos.com/v1beta1.MSTeamsConfig">MSTeamsConfig</a>, <a href="#monitoring.coreos.com/v1beta1.MSTeamsV2Config">MSTeamsV2Config</a>, <a href="#monitoring.coreos.com/v1beta1.OpsGenieConfig">OpsGenieConfig</a>, <a href="#monitoring.coreos.com/v1beta1.PagerDutyConfig">PagerDutyConfig</a>, <a href="#monitoring.coreos.com/v1beta1.PushoverConfig">PushoverConfig</a>, <a href="#monitoring.coreos.com/v1beta1.SNSConfig">SNSConfig</a>, <a href="#monitoring.coreos.com/v1beta1.SlackConfig">SlackConfig</a>, <a href="#monitoring.coreos.com/v1beta1.TelegramConfig">TelegramConfig</a>, <a href="#monitoring.coreos.com/v1beta1.VictorOpsConfig">VictorOpsConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WeChatConfig">WeChatConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WebexConfig">WebexConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WebhookConfig">WebhookConfig</a>)
 </p>
 <div>
 <p>HTTPConfig defines a client HTTP configuration.
@@ -32646,7 +33588,7 @@ string
 <p><code>noProxy</code> is a comma-separated string that can contain IPs, CIDR notation, domain names
 that should be excluded from proxying. IP and domain names can
 contain port numbers.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -32659,7 +33601,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -32675,7 +33617,7 @@ map[string][]Kubernetes core/v1.SecretKeySelector
 <em>(Optional)</em>
 <p>ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.</p>
-<p>It requires Prometheus &gt;= v2.43.0 or Alertmanager &gt;= 0.25.0.</p>
+<p>It requires Prometheus &gt;= v2.43.0, Alertmanager &gt;= v0.25.0 or Thanos &gt;= v0.32.0.</p>
 </td>
 </tr>
 <tr>
@@ -32858,6 +33800,90 @@ string
 <em>(Optional)</em>
 <p>Message summary template.
 It requires Alertmanager &gt;= 0.27.0.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>text</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Message body template.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpConfig</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1beta1.HTTPConfig">
+HTTPConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HTTP client configuration.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1beta1.MSTeamsV2Config">MSTeamsV2Config
+</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1beta1.Receiver">Receiver</a>)
+</p>
+<div>
+<p>MSTeamsV2Config configures notifications via Microsoft Teams using the new message format with adaptive cards as required by flows
+See <a href="https://prometheus.io/docs/alerting/latest/configuration/#msteamsv2_config">https://prometheus.io/docs/alerting/latest/configuration/#msteamsv2_config</a>
+It requires Alertmanager &gt;= 0.28.0.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>sendResolved</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Whether to notify about resolved alerts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>webhookURL</code><br/>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#secretkeyselector-v1-core">
+Kubernetes core/v1.SecretKeySelector
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MSTeams incoming webhook URL.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>title</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Message title template.</p>
 </td>
 </tr>
 <tr>
@@ -34082,6 +35108,20 @@ string
 It requires Alertmanager &gt;= 0.26.0.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>msteamsv2Configs</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1beta1.MSTeamsV2Config">
+[]MSTeamsV2Config
+</a>
+</em>
+</td>
+<td>
+<p>List of MSTeamsV2 configurations.
+It requires Alertmanager &gt;= 0.28.0.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1beta1.Route">Route
@@ -35259,7 +36299,7 @@ Time
 <h3 id="monitoring.coreos.com/v1beta1.URL">URL
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#monitoring.coreos.com/v1beta1.WebexConfig">WebexConfig</a>)
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1beta1.DiscordConfig">DiscordConfig</a>, <a href="#monitoring.coreos.com/v1beta1.WebexConfig">WebexConfig</a>)
 </p>
 <div>
 <p>URL represents a valid URL</p>
@@ -35728,6 +36768,22 @@ int32
 <td>
 <em>(Optional)</em>
 <p>Maximum number of alerts to be sent per webhook message. When 0, all alerts are included.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code><br/>
+<em>
+<a href="#monitoring.coreos.com/v1.Duration">
+Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The maximum time to wait for a webhook request to complete, before failing the
+request and allowing it to be retried.
+It requires Alertmanager &gt;= v0.28.0.</p>
 </td>
 </tr>
 </tbody>
