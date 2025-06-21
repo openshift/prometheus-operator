@@ -90,6 +90,27 @@ kubectl -n monitoring port-forward svc/prometheus-operated 9090:9090
 
 If the command runs successfully, you should be able to access the [Prometheus server UI](http://localhost:9090/) via localhost. From there you can check the live configuration and the discovered targets.
 
+#### Debugging why monitoring resource spec changes are not reconciled
+
+The Prometheus Operator will reject invalid resources and not reconcile them in the Prometheus configuration. When it happens the Operator emits a Kubernetes Event detailing the issue.
+
+Events are supported for the following resources:
+* `AlertmanagerConfig`
+* `PrometheusRule`
+* `ServiceMonitor`
+* `PodMonitor`
+* `Probe`
+* `ScrapeConfig`
+
+To check for events related to rejected resources, you can use the following command:
+
+```sh
+kubectl get events --field-selector=involvedObject.name="<name of PodMonitor resource>" -n "<namespace where resource is deployed>"
+```
+
+If you've deployed the Prometheus Operator using kube-prometheus manifests, the `PrometheusOperatorRejectedResources` alert should fire when invalid objects are detected.
+The alert can be found in the [kube-prometheus-stack repository](https://github.com/prometheus-community/helm-charts/blob/db5b859d111c2c81534c5b716aff417f13b51d2b/charts/kube-prometheus-stack/templates/prometheus/rules-1.14/prometheus-operator.yaml#L226)
+
 #### It is in the configuration but not on the Service Discovery page
 
 ServiceMonitors pointing to Services that do not exist (e.g. nothing matching `.spec.selector`) will lead to this ServiceMonitor not being added to the Service Discovery page. Check if you can find any Service with the selector you configured.
@@ -198,6 +219,21 @@ kubectl get pods --all-namespaces | grep 'prom.*operator'
 ```
 
 Check the logs of the matching pods to see if they manage the same resource.
+
+If running multiple operators is desired, make sure to set the `--controller-id` flag for each operator instance to a different value. When `--controller-id` is set, the operator instance will only reconcile resources that have a `operator.prometheus.io/controller-id` annotation matching the value of `--controller-id` (eg: an operator with the flag `--controller-id=my-objects` will only reconcile objects that have `operator.prometheus.io/controller-id: my-objects` annotation on them). This allows multiple operator instances to run in the same cluster without conflicting over the same resources.
+
+Note: it is the responsibility of the resource owner (the user applying the resource) to set the `operator.prometheus.io/controller-id` annotation on the resources. The operator will not set this annotation automatically.
+
+If the `--controller-id` flag is not set, the operator will try to reconcile all resources, except the ones that have the `operator.prometheus.io/controller-id` annotation set. This can lead to conflicts (such as pods stuck in terminating loop) and should be avoided.
+
+The following table illustrates the behavior based on whether the `--controller-id` flag is set and whether the `operator.prometheus.io/controller-id` annotation is present on the resources:
+
+| Operator started with with the `--controller-id` flag | Resource with the `operator.prometheus.io/controller-id` annotation | Behavior                                                                            |
+|-------------------------------------------------------|---------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Yes                                                   | Yes                                                                 | The operator reconciles the resource only if the annotation value matches the flag. |
+| Yes                                                   | No                                                                  | The operator does not reconcile the resource                                        |
+| No                                                    | Yes                                                                 | The operator does not reconcile the resource.                                       |
+| No                                                    | No                                                                  | The operator reconciles the resource.                                               |
 
 ### Configuring Prometheus/PrometheusAgent for Mimir and Grafana Cloud
 
