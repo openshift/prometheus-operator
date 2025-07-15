@@ -9,7 +9,12 @@ scrape_configs:
   honor_timestamps: true
   metrics_path: /probe
   scheme: http
-  proxy_url: socks://myproxy:9095
+  proxy_url: http://no-proxy.com
+  no_proxy: 0.0.0.0
+  proxy_from_environment: false
+  proxy_connect_header:
+    header:
+    - value
   relabel_configs:
   - source_labels:
     - job
@@ -28,5 +33,6 @@ scrape_configs:
     action: hashmod
   - source_labels:
     - __tmp_hash
-    regex: $(SHARD)
+    - __tmp_disable_sharding
+    regex: $(SHARD);|.+;.+
     action: keep

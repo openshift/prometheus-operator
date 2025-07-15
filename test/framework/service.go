@@ -54,7 +54,7 @@ func (f *Framework) CreateOrUpdateServiceAndWaitUntilReady(ctx context.Context, 
 		}
 	} else {
 		// must set these immutable fields from the existing service to prevent update fail
-		service.ObjectMeta.ResourceVersion = s.ObjectMeta.ResourceVersion
+		service.ResourceVersion = s.ResourceVersion
 		service.Spec.ClusterIP = s.Spec.ClusterIP
 		service.Spec.ClusterIPs = s.Spec.ClusterIPs
 		service.Spec.IPFamilies = s.Spec.IPFamilies
@@ -104,6 +104,7 @@ func (f *Framework) DeleteServiceAndWaitUntilGone(ctx context.Context, namespace
 	return nil
 }
 
+//nolint:staticcheck // Ignore SA1019 Endpoints is marked as deprecated.
 func (f *Framework) getEndpoints(ctx context.Context, namespace, serviceName string) (*v1.Endpoints, error) {
 	endpoints, err := f.KubeClient.CoreV1().Endpoints(namespace).Get(ctx, serviceName, metav1.GetOptions{})
 	if err != nil {

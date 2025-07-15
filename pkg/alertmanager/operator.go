@@ -104,6 +104,8 @@ type Operator struct {
 	canReadStorageClass bool
 
 	config Config
+
+	configResourcesStatusEnabled bool
 }
 
 type ControllerOption func(*Operator)
@@ -161,6 +163,7 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger
 			Annotations:                  c.Annotations,
 			Labels:                       c.Labels,
 		},
+		configResourcesStatusEnabled: c.Gates.Enabled(operator.StatusForConfigurationResourcesFeature),
 	}
 	for _, opt := range options {
 		opt(o)
@@ -514,21 +517,15 @@ func (c *Operator) Sync(ctx context.Context, key string) error {
 }
 
 func (c *Operator) sync(ctx context.Context, key string) error {
-	aobj, err := c.alrtInfs.Get(key)
-
-	if apierrors.IsNotFound(err) {
-		c.reconciliations.ForgetObject(key)
-		// Dependent resources are cleaned up by K8s via OwnerReferences
-		return nil
-	}
+	am, err := operator.GetObjectFromKey[*monitoringv1.Alertmanager](c.alrtInfs, key)
 	if err != nil {
 		return err
 	}
 
-	am := aobj.(*monitoringv1.Alertmanager)
-	am = am.DeepCopy()
-	if err := k8sutil.AddTypeInformationToObject(am); err != nil {
-		return fmt.Errorf("failed to set Alertmanager type information: %w", err)
+	if am == nil {
+		c.reconciliations.ForgetObject(key)
+		// Dependent resources are cleaned up by K8s via OwnerReferences
+		return nil
 	}
 
 	// Check if the Alertmanager instance is marked for deletion.
@@ -610,7 +607,7 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	}
 	operator.SanitizeSTS(sset)
 
-	if newSSetInputHash == existingStatefulSet.ObjectMeta.Annotations[operator.InputHashAnnotationName] {
+	if newSSetInputHash == existingStatefulSet.Annotations[operator.InputHashAnnotationName] {
 		logger.Debug("new statefulset generation inputs match current, skipping any actions")
 		return nil
 	}
@@ -652,21 +649,6 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	return nil
 }
 
-// getAlertmanagerFromKey returns a copy of the Alertmanager object identified by key.
-// If the object is not found, it returns a nil pointer.
-func (c *Operator) getAlertmanagerFromKey(key string) (*monitoringv1.Alertmanager, error) {
-	obj, err := c.alrtInfs.Get(key)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			c.logger.Info("Alertmanager not found", "key", key)
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to retrieve Alertmanager from informer: %w", err)
-	}
-
-	return obj.(*monitoringv1.Alertmanager).DeepCopy(), nil
-}
-
 // getStatefulSetFromAlertmanagerKey returns a copy of the StatefulSet object
 // corresponding to the Alertmanager object identified by key.
 // If the object is not found, it returns a nil pointer without error.
@@ -689,12 +671,16 @@ func (c *Operator) getStatefulSetFromAlertmanagerKey(key string) (*appsv1.Statef
 // key.
 // UpdateStatus implements the operator.Syncer interface.
 func (c *Operator) UpdateStatus(ctx context.Context, key string) error {
-	a, err := c.getAlertmanagerFromKey(key)
+	a, err := operator.GetObjectFromKey[*monitoringv1.Alertmanager](c.alrtInfs, key)
 	if err != nil {
 		return err
 	}
 
-	if a == nil || c.rr.DeletionInProgress(a) {
+	if a == nil {
+		return nil
+	}
+
+	if c.rr.DeletionInProgress(a) {
 		return nil
 	}
 
@@ -746,8 +732,8 @@ func makeSelectorLabels(name string) map[string]string {
 
 func createSSetInputHash(a monitoringv1.Alertmanager, c Config, tlsAssets *operator.ShardedSecret, s appsv1.StatefulSetSpec) (string, error) {
 	var http2 *bool
-	if a.Spec.Web != nil && a.Spec.Web.WebConfigFileFields.HTTPConfig != nil {
-		http2 = a.Spec.Web.WebConfigFileFields.HTTPConfig.HTTP2
+	if a.Spec.Web != nil && a.Spec.Web.HTTPConfig != nil {
+		http2 = a.Spec.Web.HTTPConfig.HTTP2
 	}
 
 	// The controller should ignore any changes to RevisionHistoryLimit field because
@@ -861,7 +847,7 @@ func (c *Operator) provisionAlertmanagerConfiguration(ctx context.Context, am *m
 
 	var (
 		additionalData map[string][]byte
-		cfgBuilder     = newConfigBuilder(namespacedLogger, version, store, am.Spec.AlertmanagerConfigMatcherStrategy)
+		cfgBuilder     = NewConfigBuilder(namespacedLogger, version, store, am)
 	)
 
 	if am.Spec.AlertmanagerConfiguration != nil {
@@ -897,17 +883,17 @@ func (c *Operator) provisionAlertmanagerConfiguration(ctx context.Context, am *m
 			return fmt.Errorf("failed to retrieve configuration from secret: %w", err)
 		}
 
-		err = cfgBuilder.initializeFromRawConfiguration(amRawConfiguration)
+		err = cfgBuilder.InitializeFromRawConfiguration(amRawConfiguration)
 		if err != nil {
 			return fmt.Errorf("failed to initialize from secret: %w", err)
 		}
 	}
 
-	if err := cfgBuilder.addAlertmanagerConfigs(ctx, amConfigs); err != nil {
+	if err := cfgBuilder.AddAlertmanagerConfigs(ctx, amConfigs); err != nil {
 		return fmt.Errorf("failed to generate Alertmanager configuration: %w", err)
 	}
 
-	generatedConfig, err := cfgBuilder.marshalJSON()
+	generatedConfig, err := cfgBuilder.MarshalJSON()
 	if err != nil {
 		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
@@ -1181,6 +1167,11 @@ func checkReceivers(ctx context.Context, amc *monitoringv1alpha1.AlertmanagerCon
 		}
 
 		err = checkMSTeamsConfigs(ctx, receiver.MSTeamsConfigs, amc.GetNamespace(), store, amVersion)
+		if err != nil {
+			return err
+		}
+
+		err = checkMSTeamsV2Configs(ctx, receiver.MSTeamsV2Configs, amc.GetNamespace(), store, amVersion)
 		if err != nil {
 			return err
 		}
@@ -1588,6 +1579,40 @@ func checkMSTeamsConfigs(
 	}
 
 	for _, config := range configs {
+		if err := checkHTTPConfig(config.HTTPConfig, amVersion); err != nil {
+			return err
+		}
+
+		if err := configureHTTPConfigInStore(ctx, config.HTTPConfig, namespace, store); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkMSTeamsV2Configs(
+	ctx context.Context,
+	configs []monitoringv1alpha1.MSTeamsV2Config,
+	namespace string,
+	store *assets.StoreBuilder,
+	amVersion semver.Version,
+) error {
+	if len(configs) == 0 {
+		return nil
+	}
+
+	if amVersion.LT(semver.MustParse("0.28.0")) {
+		return fmt.Errorf(`invalid syntax in receivers config; msteamsv2 integration is only available in Alertmanager >= 0.28.0`)
+	}
+
+	for _, config := range configs {
+		if config.WebhookURL != nil {
+			if _, err := store.GetSecretKey(ctx, namespace, *config.WebhookURL); err != nil {
+				return err
+			}
+		}
+
 		if err := checkHTTPConfig(config.HTTPConfig, amVersion); err != nil {
 			return err
 		}
