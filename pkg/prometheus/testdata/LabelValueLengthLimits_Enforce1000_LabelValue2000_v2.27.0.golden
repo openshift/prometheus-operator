@@ -9,11 +9,11 @@ scrape_configs:
   honor_timestamps: true
   metrics_path: /probe
   scheme: http
-  proxy_url: socks://myproxy:9095
   params:
     module:
     - http_2xx
   label_value_length_limit: 1000
+  proxy_url: http://no-proxy.com
   static_configs:
   - targets:
     - prometheus.io
@@ -47,5 +47,6 @@ scrape_configs:
     action: hashmod
   - source_labels:
     - __tmp_hash
-    regex: $(SHARD)
+    - __tmp_disable_sharding
+    regex: $(SHARD);|.+;.+
     action: keep

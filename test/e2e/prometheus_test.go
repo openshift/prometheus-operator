@@ -1536,9 +1536,13 @@ func testPromMultiplePrometheusRulesDifferentNS(t *testing.T) {
 	for _, file := range ruleFiles {
 		var loopError error
 		err = wait.PollUntilContextTimeout(context.Background(), time.Second, 5*framework.DefaultTimeout, false, func(ctx context.Context) (bool, error) {
-			var firing bool
-			firing, loopError = framework.CheckPrometheusFiringAlert(ctx, file.ns, pSVC.Name, file.alertName)
-			return !firing, nil
+			var alerts []map[string]string
+			alerts, loopError = framework.GetPrometheusFiringAlerts(ctx, file.ns, pSVC.Name, file.alertName)
+			if len(alerts) > 0 {
+				loopError = fmt.Errorf("%s: got %d alerts", file.alertName, len(alerts))
+				return false, nil
+			}
+			return true, nil
 		})
 
 		if err != nil {
@@ -2269,14 +2273,16 @@ func testShardingProvisioning(t *testing.T) {
 			expectedShardConfigSnippet: `
   - source_labels:
     - __tmp_hash
-    regex: 0
+    - __tmp_disable_sharding
+    regex: 0;|.+;.+
     action: keep`,
 		}, {
 			pod: "prometheus-test-shard-1-0",
 			expectedShardConfigSnippet: `
   - source_labels:
     - __tmp_hash
-    regex: 1
+    - __tmp_disable_sharding
+    regex: 1;|.+;.+
     action: keep`,
 		},
 	}
@@ -2594,6 +2600,8 @@ func testPromOpMatchPromAndServMonInDiffNSs(t *testing.T) {
 	}
 }
 
+// testThanos deploys a Prometheus resource with 2 replicas ans Thanos sidecar
+// and verifies that it can be queried by a Thanos Querier.
 func testThanos(t *testing.T) {
 	t.Parallel()
 	testCtx := framework.NewTestCtx(t)
@@ -2601,56 +2609,37 @@ func testThanos(t *testing.T) {
 	ns := framework.CreateNamespace(context.Background(), t, testCtx)
 	framework.SetupPrometheusRBAC(context.Background(), t, testCtx, ns)
 
-	version := operator.DefaultThanosVersion
-
 	prom := framework.MakeBasicPrometheus(ns, "basic-prometheus", "test-group", 1)
 	prom.Spec.Replicas = proto.Int32(2)
 	prom.Spec.Thanos = &monitoringv1.ThanosSpec{
-		Version: &version,
+		Version: ptr.To(operator.DefaultThanosVersion),
 	}
-	if _, err := framework.CreatePrometheusAndWaitUntilReady(context.Background(), ns, prom); err != nil {
-		t.Fatal("Creating prometheus failed: ", err)
-	}
+	prom, err := framework.CreatePrometheusAndWaitUntilReady(context.Background(), ns, prom)
+	require.NoError(t, err)
 
 	promSvc := framework.MakePrometheusService(prom.Name, "test-group", v1.ServiceTypeClusterIP)
-	if _, err := framework.KubeClient.CoreV1().Services(ns).Create(context.Background(), promSvc, metav1.CreateOptions{}); err != nil {
-		t.Fatal("Creating prometheus service failed: ", err)
-	}
+	_, err = framework.KubeClient.CoreV1().Services(ns).Create(context.Background(), promSvc, metav1.CreateOptions{})
+	require.NoError(t, err)
 
 	svcMon := framework.MakeBasicServiceMonitor("test-group")
-	if _, err := framework.MonClientV1.ServiceMonitors(ns).Create(context.Background(), svcMon, metav1.CreateOptions{}); err != nil {
-		t.Fatal("Creating ServiceMonitor failed: ", err)
-	}
+	_, err = framework.MonClientV1.ServiceMonitors(ns).Create(context.Background(), svcMon, metav1.CreateOptions{})
+	require.NoError(t, err)
 
-	qryDep, err := testFramework.MakeDeployment("../../example/thanos/query-deployment.yaml")
-	if err != nil {
-		t.Fatal("Making thanos query deployment failed: ", err)
-	}
-	// override image
-	qryImage := "quay.io/thanos/thanos:" + version
-	t.Log("setting up query with image: ", qryImage)
-	qryDep.Spec.Template.Spec.Containers[0].Image = qryImage
-	// override args
-	qryArgs := []string{
-		"query",
-		"--log.level=debug",
-		"--query.replica-label=prometheus_replica",
-		fmt.Sprintf("--store=dnssrv+_grpc._tcp.prometheus-operated.%s.svc.cluster.local", ns),
-	}
-	t.Log("setting up query with args: ", qryArgs)
-	qryDep.Spec.Template.Spec.Containers[0].Args = qryArgs
-	if err := framework.CreateDeployment(context.Background(), ns, qryDep); err != nil {
-		t.Fatal("Creating Thanos query deployment failed: ", err)
-	}
+	querier, err := testFramework.MakeThanosQuerier(
+		fmt.Sprintf("dnssrv+_grpc._tcp.prometheus-operated.%s.svc.cluster.local", ns),
+	)
+	require.NoError(t, err)
 
-	qrySvc := framework.MakeThanosQuerierService(qryDep.Name)
-	if _, err := framework.CreateOrUpdateServiceAndWaitUntilReady(context.Background(), ns, qrySvc); err != nil {
-		t.Fatal("Creating Thanos query service failed: ", err)
-	}
+	err = framework.CreateDeployment(context.Background(), ns, querier)
+	require.NoError(t, err)
+
+	qrySvc := framework.MakeThanosQuerierService(querier.Name)
+	_, err = framework.CreateOrUpdateServiceAndWaitUntilReady(context.Background(), ns, qrySvc)
+	require.NoError(t, err)
 
 	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (bool, error) {
 		proxyGet := framework.KubeClient.CoreV1().Services(ns).ProxyGet
-		request := proxyGet("http", qrySvc.Name, "http-query", "/api/v1/query", map[string]string{
+		request := proxyGet("http", qrySvc.Name, "web", "/api/v1/query", map[string]string{
 			"query": "prometheus_build_info",
 			"dedup": "false",
 		})
@@ -2682,9 +2671,7 @@ func testThanos(t *testing.T) {
 		}
 		return true, nil
 	})
-	if err != nil {
-		t.Fatal("Failed to get correct result from Thanos query: ", err)
-	}
+	require.NoError(t, err)
 }
 
 func testPromGetAuthSecret(t *testing.T) {
@@ -2905,14 +2892,9 @@ func testOperatorNSScope(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		firing, err := framework.CheckPrometheusFiringAlert(context.Background(), p.Namespace, pSVC.Name, secondAlertName)
-		if err != nil && !strings.Contains(err.Error(), "expected 1 query result but got 0") {
-			t.Fatal(err)
-		}
-
-		if firing {
-			t.Fatalf("expected alert %q not to fire", secondAlertName)
-		}
+		alerts, err := framework.GetPrometheusFiringAlerts(context.Background(), p.Namespace, pSVC.Name, secondAlertName)
+		require.NoError(t, err)
+		require.Len(t, alerts, 0)
 	})
 
 	t.Run("MultiNS", func(t *testing.T) {
@@ -2976,14 +2958,9 @@ func testOperatorNSScope(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		firing, err := framework.CheckPrometheusFiringAlert(context.Background(), p.Namespace, pSVC.Name, secondAlertName)
-		if err != nil && !strings.Contains(err.Error(), "expected 1 query result but got 0") {
-			t.Fatal(err)
-		}
-
-		if firing {
-			t.Fatalf("expected alert %q not to fire", secondAlertName)
-		}
+		alerts, err := framework.GetPrometheusFiringAlerts(context.Background(), p.Namespace, pSVC.Name, secondAlertName)
+		require.NoError(t, err)
+		require.Len(t, alerts, 0)
 	})
 }
 
@@ -4861,6 +4838,45 @@ func testPrometheusCRDValidation(t *testing.T) {
 			},
 			expectedError: true,
 		},
+		{
+			name: "valid-retain-config",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:           &replicas,
+					Version:            operator.DefaultPrometheusVersion,
+					ServiceAccountName: "prometheus",
+				},
+				ShardRetentionPolicy: &monitoringv1.ShardRetentionPolicy{
+					WhenScaled: &monitoringv1.RetainWhenScaledRetentionType,
+					Retain: &monitoringv1.RetainConfig{
+						RetentionPeriod: monitoringv1.Duration("3d"),
+					},
+				},
+			},
+		},
+		{
+			name: "invalid-terminationGracePeriodSeconds",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:                      &replicas,
+					Version:                       operator.DefaultPrometheusVersion,
+					ServiceAccountName:            "prometheus",
+					TerminationGracePeriodSeconds: ptr.To(int64(-100)),
+				},
+			},
+			expectedError: true,
+		},
+		{
+			name: "valid-terminationGracePeriodSeconds",
+			prometheusSpec: monitoringv1.PrometheusSpec{
+				CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+					Replicas:                      &replicas,
+					Version:                       operator.DefaultPrometheusVersion,
+					ServiceAccountName:            "prometheus",
+					TerminationGracePeriodSeconds: ptr.To(int64(100)),
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -5366,7 +5382,7 @@ func testPrometheusRetentionPolicies(t *testing.T) {
 		ctx, testFramework.PrometheusOperatorOpts{
 			Namespace:           ns,
 			AllowedNamespaces:   []string{ns},
-			EnabledFeatureGates: []string{"PrometheusShardRetentionPolicy"},
+			EnabledFeatureGates: []operator.FeatureGateName{operator.PrometheusShardRetentionPolicyFeature},
 		},
 	)
 	require.NoError(t, err)

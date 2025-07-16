@@ -1,3 +1,59 @@
+## Unreleased
+
+## 0.84.0 / 2025-07-14
+
+* [FEATURE] Add `telegram` field to AlertManager CRD global configuration. #7631
+* [FEATURE] Add `jira` field to AlertManager CRD global configuration. #7626
+* [FEATURE] Add `webex` field to AlertManager CRD global configuration. #7632
+* [FEATURE] Add `victorops` field to Alertmanager CRD global configuration. #7654
+* [FEATURE] Add `wechat` field to Alertmanager CRD global configuration. #7627
+* [FEATURE] Add `ruleQueryOffset` field to ThanosRuler CRD. #7580
+* [FEATURE] Add `ruleConcurrentEval` field to ThanosRuler CRD. #7659
+* [FEATURE] Add `ruleOutageTolerance` field to ThanosRuler CRD. #7672
+* [FEATURE] Add ProxyConfig fields to ServiceMonitor. #7647
+* [FEATURE] Add ProxyConfig fields to Probe. #7660
+* [FEATURE] Add ProxyConfig fields to Prometheus `apiServerConfig`. #7670
+* [FEATURE] Add `scrapeClassicHistograms` field to Prometheus. #7667
+* [FEATURE] Add `labelSelector` field to HetznerSDConfig in the ScrapeConfig CRD. #7675
+* [FEATURE] Add startupProbe to config-reloader. #7575
+* [ENHANCEMENT] Set `reason: ConfigurationUnmanaged` in the `Reconciled` condition when the operator doesn't managed the Prometheus configuration. #7661
+* [ENHANCEMENT] AlertManager `matchType` defaults to `=` if neither `matchType` nor `regex` is set, and `=~` if `regex: true` is set without matchType. #7592
+
+## 0.83.0 / 2025-05-30
+
+* [FEATURE] Add `limits` option for Alertmanager silences. #7478
+* [FEATURE] Add `NoTranslation` as a `translationStrategy` option to OTLP config. #7539
+* [FEATURE] Add `nameEscapingScheme` field to Prometheus CRDs. #7538
+* [FEATURE] Add `convertHistogramsToNHCB` field to OTLPConfig. #7533
+* [FEATURE] Add `convert_classic_histograms_to_nhcb` option to Prometheus global config. #7543
+* [FEATURE] Add new `MetricNameEscapingScheme` and `MetricNameValidationScheme` parameters to ScrapeConfig. #7555
+* [ENHANCEMENT] Do not insert sharding relabeling in scrapeConfigs if already present.  #7421
+
+## 0.82.2 / 2025-05-12
+
+* [BUGFIX] Fix Alertmanager peer discovery for Alertmanager when using custom service name. #7512
+* [BUGFIX] Fix parsing `role` field in openstackSDConfigs in ScrapeConfig CRD. #7516
+
+## 0.82.1 / 2025-05-06
+
+* [BUGFIX] Fix ThanosRuler when no remote-write configuration is defined. #7498
+
+## 0.82.0 / 2025-04-17
+
+* [CHANGE] Add more API validations to the ScrapeConfig CRD. #7413
+* [CHANGE] Remove web console arguments if Prometheus version >= 3. #7457
+* [FEATURE] Add RemoteWrite support for ThanosRuler CRD. Note that when remote write is configured, Thanos Ruler runs in stateless mode. #7444
+* [FEATURE] Add `msTeamsV2Configs` receiver to AlertManagerConfig CRD. #7464
+* [FEATURE] Add `content`, `username` and `avatarURL` fields to `discordConfigs` receiver in AlertmanagerConfig CRD. #7307
+* [FEATURE] Add `convertClassicHistogramsToNHCB` field to `ServiceMonitor`, `PodMonitor`, `Probe` and `ScrapeConfig` CRDs. #7448
+* [FEATURE] Add `timeout` field to `webhookConfigs` receiver in AlertManagerConfig CRD. #7310
+* [FEATURE] Add `additionalArgs` field to AlertManager CRD. #7385
+* [ENHANCEMENT] Add `maxSamplesPerSend` field to RemoteWrite Metadata Config. #7443
+* [ENHANCEMENT] Add the `terminationGracePeriodSeconds` to the Alertmanager, Prometheus, PrometheusAgent and ThanosRuler CRDs. #7439
+* [ENHANCEMENT] Validate `proxyURL` field in AlertManagerConfig CRD. #6876
+* [BUGFIX] Fix `nameValidationScheme` support for Prometheus and PrometheusAgent CRDs. #7414
+* [BUGFIX] Support `socks5` scheme in `proxyUrl` field for all CRDs. #7460 #7466
+
 ## 0.81.0 / 2025-03-11
 
 * [CHANGE] Remove the lower-case `hypervisor` and `instance` roles for the OpenStack Service Discovery from the ScrapeConfig CRD (users are required to use `Hypervisor` and `Instance` instead). #7370

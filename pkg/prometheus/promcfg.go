@@ -20,7 +20,6 @@ import (
 	"log/slog"
 	"math"
 	"net/url"
-	"os"
 	"path"
 	"reflect"
 	"regexp"
@@ -53,7 +52,8 @@ const (
 	defaultPrometheusExternalLabelName = "prometheus"
 	defaultReplicaExternalLabelName    = "prometheus_replica"
 
-	hashLabelNameForSharding = "__tmp_hash"
+	hashLabelNameForSharding          = "__tmp_hash"
+	hashLabelNameForDisablingSharding = "__tmp_disable_sharding"
 )
 
 var invalidLabelCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
@@ -75,6 +75,8 @@ type ConfigGenerator struct {
 	daemonSet                  bool
 	prometheusTopologySharding bool
 	inlineTLSConfig            bool
+
+	bypassVersionCheck bool
 }
 
 type ConfigGeneratorOption func(*ConfigGenerator)
@@ -104,6 +106,14 @@ func WithInlineTLSConfig() ConfigGeneratorOption {
 	}
 }
 
+// WithoutVersionCheck returns a [ConfigGenerator] which doesn't perform any
+// version check.
+func WithoutVersionCheck() ConfigGeneratorOption {
+	return func(cg *ConfigGenerator) {
+		cg.bypassVersionCheck = true
+	}
+}
+
 // NewConfigGenerator creates a ConfigGenerator for the provided Prometheus resource.
 func NewConfigGenerator(
 	logger *slog.Logger,
@@ -111,40 +121,41 @@ func NewConfigGenerator(
 	opts ...ConfigGeneratorOption,
 ) (*ConfigGenerator, error) {
 	if logger == nil {
-		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			// slog level math.MaxInt means no logging
-			// We would like to use the slog buil-in No-op level once it is available
-			// More: https://github.com/golang/go/issues/62005
-			Level: slog.Level(math.MaxInt),
-		}))
+		logger = slog.New(slog.DiscardHandler)
+	}
+
+	cg := &ConfigGenerator{
+		logger: logger,
+		prom:   p,
+	}
+
+	if cg.prom == nil {
+		for _, opt := range opts {
+			opt(cg)
+		}
+		return cg, nil
 	}
 
 	cpf := p.GetCommonPrometheusFields()
-
 	promVersion := operator.StringValOrDefault(cpf.Version, operator.DefaultPrometheusVersion)
 	version, err := semver.ParseTolerant(promVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Prometheus version: %w", err)
 	}
+	cg.version = version
 
 	if version.Major != 2 && version.Major != 3 {
 		return nil, fmt.Errorf("unsupported Prometheus version %q", promVersion)
 	}
 
-	logger = logger.With("version", promVersion)
+	cg.logger = logger.With("version", promVersion)
 
 	scrapeClasses, defaultScrapeClassName, err := getScrapeClassConfig(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse scrape classes: %w", err)
 	}
-
-	cg := &ConfigGenerator{
-		logger:                 logger,
-		version:                version,
-		prom:                   p,
-		scrapeClasses:          scrapeClasses,
-		defaultScrapeClassName: defaultScrapeClassName,
-	}
+	cg.scrapeClasses = scrapeClasses
+	cg.defaultScrapeClassName = defaultScrapeClassName
 
 	for _, opt := range opts {
 		opt(cg)
@@ -215,15 +226,17 @@ func (cg *ConfigGenerator) Version() semver.Version {
 // logger.
 func (cg *ConfigGenerator) WithKeyVals(keyvals ...interface{}) *ConfigGenerator {
 	return &ConfigGenerator{
-		logger:                 cg.logger.With(keyvals...),
-		version:                cg.version,
-		notCompatible:          cg.notCompatible,
-		prom:                   cg.prom,
-		useEndpointSlice:       cg.useEndpointSlice,
-		scrapeClasses:          cg.scrapeClasses,
-		defaultScrapeClassName: cg.defaultScrapeClassName,
-		daemonSet:              cg.daemonSet,
-		inlineTLSConfig:        cg.inlineTLSConfig,
+		logger:                     cg.logger.With(keyvals...),
+		version:                    cg.version,
+		notCompatible:              cg.notCompatible,
+		prom:                       cg.prom,
+		useEndpointSlice:           cg.useEndpointSlice,
+		scrapeClasses:              cg.scrapeClasses,
+		defaultScrapeClassName:     cg.defaultScrapeClassName,
+		daemonSet:                  cg.daemonSet,
+		prometheusTopologySharding: cg.prometheusTopologySharding,
+		inlineTLSConfig:            cg.inlineTLSConfig,
+		bypassVersionCheck:         cg.bypassVersionCheck,
 	}
 }
 
@@ -232,19 +245,23 @@ func (cg *ConfigGenerator) WithKeyVals(keyvals ...interface{}) *ConfigGenerator 
 // given version.
 // The method panics if version isn't a valid SemVer value.
 func (cg *ConfigGenerator) WithMinimumVersion(version string) *ConfigGenerator {
-	minVersion := semver.MustParse(version)
+	if cg.bypassVersionCheck {
+		return cg
+	}
 
-	if cg.version.LT(minVersion) {
+	if cg.version.LT(semver.MustParse(version)) {
 		return &ConfigGenerator{
-			logger:                 cg.logger.With("minimum_version", version),
-			version:                cg.version,
-			notCompatible:          true,
-			prom:                   cg.prom,
-			useEndpointSlice:       cg.useEndpointSlice,
-			scrapeClasses:          cg.scrapeClasses,
-			defaultScrapeClassName: cg.defaultScrapeClassName,
-			daemonSet:              cg.daemonSet,
-			inlineTLSConfig:        cg.inlineTLSConfig,
+			logger:                     cg.logger.With("minimum_version", version),
+			version:                    cg.version,
+			notCompatible:              true,
+			prom:                       cg.prom,
+			useEndpointSlice:           cg.useEndpointSlice,
+			scrapeClasses:              cg.scrapeClasses,
+			defaultScrapeClassName:     cg.defaultScrapeClassName,
+			daemonSet:                  cg.daemonSet,
+			prometheusTopologySharding: cg.prometheusTopologySharding,
+			inlineTLSConfig:            cg.inlineTLSConfig,
+			bypassVersionCheck:         cg.bypassVersionCheck,
 		}
 	}
 
@@ -256,19 +273,23 @@ func (cg *ConfigGenerator) WithMinimumVersion(version string) *ConfigGenerator {
 // equal to the given version.
 // The method panics if version isn't a valid SemVer value.
 func (cg *ConfigGenerator) WithMaximumVersion(version string) *ConfigGenerator {
-	minVersion := semver.MustParse(version)
+	if cg.bypassVersionCheck {
+		return cg
+	}
 
-	if cg.version.GTE(minVersion) {
+	if cg.version.GTE(semver.MustParse(version)) {
 		return &ConfigGenerator{
-			logger:                 cg.logger.With("maximum_version", version),
-			version:                cg.version,
-			notCompatible:          true,
-			prom:                   cg.prom,
-			useEndpointSlice:       cg.useEndpointSlice,
-			scrapeClasses:          cg.scrapeClasses,
-			defaultScrapeClassName: cg.defaultScrapeClassName,
-			daemonSet:              cg.daemonSet,
-			inlineTLSConfig:        cg.inlineTLSConfig,
+			logger:                     cg.logger.With("maximum_version", version),
+			version:                    cg.version,
+			notCompatible:              true,
+			prom:                       cg.prom,
+			useEndpointSlice:           cg.useEndpointSlice,
+			scrapeClasses:              cg.scrapeClasses,
+			defaultScrapeClassName:     cg.defaultScrapeClassName,
+			daemonSet:                  cg.daemonSet,
+			prometheusTopologySharding: cg.prometheusTopologySharding,
+			inlineTLSConfig:            cg.inlineTLSConfig,
+			bypassVersionCheck:         cg.bypassVersionCheck,
 		}
 	}
 
@@ -454,6 +475,10 @@ func (cg *ConfigGenerator) addNativeHistogramConfig(cfg yaml.MapSlice, nhc monit
 		}
 	}
 
+	if nhc.ConvertClassicHistogramsToNHCB != nil {
+		cfg = cg.WithMinimumVersion("3.0.0").AppendMapItem(cfg, "convert_classic_histograms_to_nhcb", nhc.ConvertClassicHistogramsToNHCB)
+	}
+
 	return cfg
 }
 
@@ -486,8 +511,8 @@ func mergeAuthorizationWithScrapeClass(authz *monitoringv1.Authorization, scrape
 		return authz
 	}
 
-	if authz.SafeAuthorization.Credentials == nil {
-		authz.SafeAuthorization.Credentials = scrapeClass.Authorization.SafeAuthorization.Credentials
+	if authz.Credentials == nil {
+		authz.Credentials = scrapeClass.Authorization.Credentials
 	}
 
 	if authz.Credentials == nil && authz.CredentialsFile == "" {
@@ -515,15 +540,15 @@ func mergeTLSConfigWithScrapeClass(tlsConfig *monitoringv1.TLSConfig, scrapeClas
 		return tlsConfig
 	}
 
-	if tlsConfig.CAFile == "" && tlsConfig.SafeTLSConfig.CA == (monitoringv1.SecretOrConfigMap{}) {
+	if tlsConfig.CAFile == "" && tlsConfig.CA == (monitoringv1.SecretOrConfigMap{}) {
 		tlsConfig.CAFile = scrapeClass.TLSConfig.CAFile
 	}
 
-	if tlsConfig.CertFile == "" && tlsConfig.SafeTLSConfig.Cert == (monitoringv1.SecretOrConfigMap{}) {
+	if tlsConfig.CertFile == "" && tlsConfig.Cert == (monitoringv1.SecretOrConfigMap{}) {
 		tlsConfig.CertFile = scrapeClass.TLSConfig.CertFile
 	}
 
-	if tlsConfig.KeyFile == "" && tlsConfig.SafeTLSConfig.KeySecret == nil {
+	if tlsConfig.KeyFile == "" && tlsConfig.KeySecret == nil {
 		tlsConfig.KeyFile = scrapeClass.TLSConfig.KeyFile
 	}
 
@@ -942,7 +967,7 @@ func (cg *ConfigGenerator) GenerateServerConfiguration(
 
 	// Remote write config
 	if len(cpf.RemoteWrite) > 0 {
-		cfg = append(cfg, cg.generateRemoteWriteConfig(s))
+		cfg = append(cfg, cg.GenerateRemoteWriteConfig(cpf.RemoteWrite, s))
 	}
 
 	// Remote read config
@@ -1067,9 +1092,13 @@ func initRelabelings() []yaml.MapSlice {
 func (cg *ConfigGenerator) BuildCommonPrometheusArgs() []monitoringv1.Argument {
 	cpf := cg.prom.GetCommonPrometheusFields()
 	promArgs := []monitoringv1.Argument{
-		{Name: "web.console.templates", Value: "/etc/prometheus/consoles"},
-		{Name: "web.console.libraries", Value: "/etc/prometheus/console_libraries"},
 		{Name: "config.file", Value: path.Join(ConfOutDir, ConfigEnvsubstFilename)},
+	}
+
+	if cg.version.Major == 2 {
+		// Add web.console.templates and web.console.libraries only if Prometheus version is v2.x.
+		promArgs = append(promArgs, monitoringv1.Argument{Name: "web.console.templates", Value: "/etc/prometheus/consoles"},
+			monitoringv1.Argument{Name: "web.console.libraries", Value: "/etc/prometheus/console_libraries"})
 	}
 
 	if ptr.Deref(cpf.ReloadStrategy, monitoringv1.HTTPReloadStrategyType) == monitoringv1.HTTPReloadStrategyType {
@@ -1296,9 +1325,6 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 	if ep.Path != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "metrics_path", Value: ep.Path})
 	}
-	if ep.ProxyURL != nil {
-		cfg = append(cfg, yaml.MapItem{Key: "proxy_url", Value: ep.ProxyURL})
-	}
 	if ep.Params != nil {
 		cfg = append(cfg, yaml.MapItem{Key: "params", Value: ep.Params})
 	}
@@ -1328,6 +1354,8 @@ func (cg *ConfigGenerator) generatePodMonitorConfig(
 
 	cfg = cg.addBasicAuthToYaml(cfg, s, ep.BasicAuth)
 	cfg = cg.addOAuth2ToYaml(cfg, s, ep.OAuth2)
+
+	cfg = cg.addProxyConfigtoYaml(cfg, s, ep.ProxyConfig)
 
 	cfg = cg.addAuthorizationToYaml(cfg, s, mergeSafeAuthorizationWithScrapeClass(ep.Authorization, scrapeClass))
 
@@ -1541,9 +1569,6 @@ func (cg *ConfigGenerator) generateProbeConfig(
 	if m.Spec.ProberSpec.Scheme != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "scheme", Value: m.Spec.ProberSpec.Scheme})
 	}
-	if m.Spec.ProberSpec.ProxyURL != "" {
-		cfg = append(cfg, yaml.MapItem{Key: "proxy_url", Value: m.Spec.ProberSpec.ProxyURL})
-	}
 
 	if m.Spec.Module != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "params", Value: yaml.MapSlice{
@@ -1579,6 +1604,8 @@ func (cg *ConfigGenerator) generateProbeConfig(
 	labeler := namespacelabeler.New(cpf.EnforcedNamespaceLabel, cpf.ExcludedFromEnforcement, false)
 
 	s := store.ForNamespace(m.Namespace)
+
+	cfg = cg.addProxyConfigtoYaml(cfg, s, m.Spec.ProberSpec.ProxyConfig)
 
 	// As stated in the CRD documentation, if both StaticConfig and Ingress are
 	// defined, the former takes precedence which is why the first case statement
@@ -1798,9 +1825,6 @@ func (cg *ConfigGenerator) generateServiceMonitorConfig(
 	if ep.Path != "" {
 		cfg = append(cfg, yaml.MapItem{Key: "metrics_path", Value: ep.Path})
 	}
-	if ep.ProxyURL != nil {
-		cfg = append(cfg, yaml.MapItem{Key: "proxy_url", Value: ep.ProxyURL})
-	}
 	if ep.Params != nil {
 		cfg = append(cfg, yaml.MapItem{Key: "params", Value: ep.Params})
 	}
@@ -1813,6 +1837,8 @@ func (cg *ConfigGenerator) generateServiceMonitorConfig(
 	if ep.EnableHttp2 != nil {
 		cfg = cg.WithMinimumVersion("2.35.0").AppendMapItem(cfg, "enable_http2", *ep.EnableHttp2)
 	}
+
+	cfg = cg.addProxyConfigtoYaml(cfg, s, ep.ProxyConfig)
 
 	cfg = cg.addOAuth2ToYaml(cfg, s, ep.OAuth2)
 
@@ -2104,8 +2130,8 @@ func appendShardingRelabelingWithLabel(relabelings []yaml.MapSlice, shards int32
 			{Key: "modulus", Value: shards},
 			{Key: "action", Value: "hashmod"},
 		}, yaml.MapSlice{
-			{Key: "source_labels", Value: []string{hashLabelNameForSharding}},
-			{Key: "regex", Value: fmt.Sprintf("$(%s)", operator.ShardEnvVar)},
+			{Key: "source_labels", Value: []string{hashLabelNameForSharding, hashLabelNameForDisablingSharding}},
+			{Key: "regex", Value: fmt.Sprintf("$(%s);|.+;.+", operator.ShardEnvVar)},
 			{Key: "action", Value: "keep"},
 		})
 }
@@ -2238,6 +2264,8 @@ func (cg *ConfigGenerator) generateK8SSDConfig(
 		k8sSDConfig = cg.addAuthorizationToYaml(k8sSDConfig, store, apiserverConfig.Authorization)
 
 		k8sSDConfig = cg.addTLStoYaml(k8sSDConfig, store, apiserverConfig.TLSConfig)
+
+		k8sSDConfig = cg.addProxyConfigtoYaml(k8sSDConfig, store, apiserverConfig.ProxyConfig)
 	}
 
 	if attachMetadataConfig != nil {
@@ -2577,13 +2605,10 @@ func toProtobufMessageVersion(mv monitoringv1.RemoteWriteMessageVersion) string 
 	return "prometheus.WriteRequest"
 }
 
-func (cg *ConfigGenerator) generateRemoteWriteConfig(s assets.StoreGetter) yaml.MapItem {
-	var (
-		cfgs = []yaml.MapSlice{}
-		cpf  = cg.prom.GetCommonPrometheusFields()
-	)
+func (cg *ConfigGenerator) GenerateRemoteWriteConfig(rws []monitoringv1.RemoteWriteSpec, s assets.StoreGetter) yaml.MapItem {
+	var cfgs []yaml.MapSlice
 
-	for i, spec := range cpf.RemoteWrite {
+	for i, spec := range rws {
 		cfg := yaml.MapSlice{
 			{Key: "url", Value: spec.URL},
 		}
@@ -2612,43 +2637,43 @@ func (cg *ConfigGenerator) generateRemoteWriteConfig(s assets.StoreGetter) yaml.
 			cfg = cg.WithMinimumVersion("2.40.0").AppendMapItem(cfg, "send_native_histograms", spec.SendNativeHistograms)
 		}
 
-		if spec.WriteRelabelConfigs != nil {
-			relabelings := []yaml.MapSlice{}
-			for _, c := range spec.WriteRelabelConfigs {
-				relabeling := yaml.MapSlice{}
+		var relabelings []yaml.MapSlice
+		for _, c := range spec.WriteRelabelConfigs {
+			var relabeling yaml.MapSlice
 
-				if len(c.SourceLabels) > 0 {
-					relabeling = append(relabeling, yaml.MapItem{Key: "source_labels", Value: c.SourceLabels})
-				}
-
-				if c.Separator != nil {
-					relabeling = append(relabeling, yaml.MapItem{Key: "separator", Value: *c.Separator})
-				}
-
-				if c.TargetLabel != "" {
-					relabeling = append(relabeling, yaml.MapItem{Key: "target_label", Value: c.TargetLabel})
-				}
-
-				if c.Regex != "" {
-					relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
-				}
-
-				if c.Modulus != uint64(0) {
-					relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
-				}
-
-				if c.Replacement != nil {
-					relabeling = append(relabeling, yaml.MapItem{Key: "replacement", Value: *c.Replacement})
-				}
-
-				if c.Action != "" {
-					relabeling = append(relabeling, yaml.MapItem{Key: "action", Value: strings.ToLower(c.Action)})
-				}
-				relabelings = append(relabelings, relabeling)
+			if len(c.SourceLabels) > 0 {
+				relabeling = append(relabeling, yaml.MapItem{Key: "source_labels", Value: c.SourceLabels})
 			}
 
-			cfg = append(cfg, yaml.MapItem{Key: "write_relabel_configs", Value: relabelings})
+			if c.Separator != nil {
+				relabeling = append(relabeling, yaml.MapItem{Key: "separator", Value: *c.Separator})
+			}
 
+			if c.TargetLabel != "" {
+				relabeling = append(relabeling, yaml.MapItem{Key: "target_label", Value: c.TargetLabel})
+			}
+
+			if c.Regex != "" {
+				relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
+			}
+
+			if c.Modulus != uint64(0) {
+				relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
+			}
+
+			if c.Replacement != nil {
+				relabeling = append(relabeling, yaml.MapItem{Key: "replacement", Value: *c.Replacement})
+			}
+
+			if c.Action != "" {
+				relabeling = append(relabeling, yaml.MapItem{Key: "action", Value: strings.ToLower(c.Action)})
+			}
+
+			relabelings = append(relabelings, relabeling)
+		}
+
+		if len(relabelings) > 0 {
+			cfg = append(cfg, yaml.MapItem{Key: "write_relabel_configs", Value: relabelings})
 		}
 
 		cfg = cg.addBasicAuthToYaml(cfg, s, spec.BasicAuth)
@@ -2700,9 +2725,12 @@ func (cg *ConfigGenerator) generateRemoteWriteConfig(s assets.StoreGetter) yaml.
 			}
 
 			if spec.AzureAD.SDK != nil {
-				azureAd = cg.WithMinimumVersion("2.52.0").AppendMapItem(azureAd, "sdk", yaml.MapSlice{
-					{Key: "tenant_id", Value: ptr.Deref(spec.AzureAD.SDK.TenantID, "")},
-				})
+				azureAd = cg.WithMinimumVersion("2.52.0").AppendMapItem(
+					azureAd,
+					"sdk",
+					yaml.MapSlice{
+						{Key: "tenant_id", Value: ptr.Deref(spec.AzureAD.SDK.TenantID, "")},
+					})
 			}
 
 			if spec.AzureAD.Cloud != nil {
@@ -2770,6 +2798,9 @@ func (cg *ConfigGenerator) generateRemoteWriteConfig(s assets.StoreGetter) yaml.
 			metadataConfig := append(yaml.MapSlice{}, yaml.MapItem{Key: "send", Value: spec.MetadataConfig.Send})
 			if spec.MetadataConfig.SendInterval != "" {
 				metadataConfig = append(metadataConfig, yaml.MapItem{Key: "send_interval", Value: spec.MetadataConfig.SendInterval})
+			}
+			if spec.MetadataConfig.MaxSamplesPerSend != nil {
+				metadataConfig = cg.WithMinimumVersion("2.29.0").AppendMapItem(metadataConfig, "max_samples_per_send", *spec.MetadataConfig.MaxSamplesPerSend)
 			}
 
 			cfg = cg.WithMinimumVersion("2.23.0").AppendMapItem(cfg, "metadata_config", metadataConfig)
@@ -3051,7 +3082,7 @@ func (cg *ConfigGenerator) GenerateAgentConfiguration(
 	// Remote write config
 	s := store.ForNamespace(cg.prom.GetObjectMeta().GetNamespace())
 	if len(cpf.RemoteWrite) > 0 {
-		cfg = append(cfg, cg.generateRemoteWriteConfig(s))
+		cfg = append(cfg, cg.GenerateRemoteWriteConfig(cpf.RemoteWrite, s))
 	}
 
 	// OTLP config
@@ -3761,7 +3792,7 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 			configs[i] = []yaml.MapItem{
 				{
 					Key:   "role",
-					Value: string(config.Role),
+					Value: strings.ToLower(string(config.Role)),
 				},
 			}
 
@@ -4208,6 +4239,12 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 					Key:   "refresh_interval",
 					Value: config.RefreshInterval,
 				})
+			}
+
+			if config.LabelSelector != nil && len(*config.LabelSelector) > 0 {
+				configs[i] = cg.WithMinimumVersion("3.5.0").AppendMapItem(configs[i],
+					"label_selector",
+					config.LabelSelector)
 			}
 		}
 		cfg = append(cfg, yaml.MapItem{
@@ -4706,6 +4743,9 @@ func (cg *ConfigGenerator) generateScrapeConfig(
 		cfg = append(cfg, yaml.MapItem{Key: "metric_relabel_configs", Value: generateRelabelConfig(metricRelabelings)})
 	}
 
+	cfg = cg.appendNameValidationScheme(cfg, sc.Spec.NameValidationScheme)
+	cfg = cg.appendNameEscapingScheme(cfg, sc.Spec.NameEscapingScheme)
+
 	return cfg, nil
 }
 
@@ -4723,6 +4763,10 @@ func (cg *ConfigGenerator) appendOTLPConfig(cfg yaml.MapSlice) (yaml.MapSlice, e
 
 	if ptr.Deref(otlpConfig.TranslationStrategy, "") == monitoringv1.NoUTF8EscapingWithSuffixes && ptr.Deref(nameValidationScheme, "") == monitoringv1.LegacyNameValidationScheme {
 		return cfg, fmt.Errorf("nameValidationScheme %q is not compatible with OTLP translation strategy %q", monitoringv1.LegacyNameValidationScheme, monitoringv1.NoUTF8EscapingWithSuffixes)
+	}
+
+	if cg.version.LT(semver.MustParse("3.4.0")) && ptr.Deref(otlpConfig.TranslationStrategy, "") == monitoringv1.NoTranslation {
+		return cfg, fmt.Errorf("nameValidationScheme %q is only supported from Prometheus version 3.4.0 ", monitoringv1.NoTranslation)
 	}
 
 	otlp := yaml.MapSlice{}
@@ -4743,6 +4787,12 @@ func (cg *ConfigGenerator) appendOTLPConfig(cfg yaml.MapSlice) (yaml.MapSlice, e
 		otlp = cg.WithMinimumVersion("3.1.0").AppendMapItem(otlp,
 			"keep_identifying_resource_attributes",
 			otlpConfig.KeepIdentifyingResourceAttributes)
+	}
+
+	if otlpConfig.ConvertHistogramsToNHCB != nil {
+		otlp = cg.WithMinimumVersion("3.4.0").AppendMapItem(otlp,
+			"convert_histograms_to_nhcb",
+			otlpConfig.ConvertHistogramsToNHCB)
 	}
 
 	if len(otlp) == 0 {
@@ -4824,6 +4874,57 @@ func (cg *ConfigGenerator) appendTracingConfig(cfg yaml.MapSlice, s assets.Store
 		}), nil
 }
 
+func (cg *ConfigGenerator) appendNameValidationScheme(cfg yaml.MapSlice, nameValidationScheme *monitoringv1.NameValidationSchemeOptions) yaml.MapSlice {
+	if nameValidationScheme == nil {
+		return cfg
+	}
+
+	// need to cast it to a string in order to use strings.ToLower() to render the value in the way prometheus expects it
+	nameValidationSchemeValue := string(*nameValidationScheme)
+
+	return cg.WithMinimumVersion("3.0.0").AppendMapItem(cfg, "metric_name_validation_scheme", strings.ToLower(nameValidationSchemeValue))
+}
+
+func (cg *ConfigGenerator) appendNameEscapingScheme(cfg yaml.MapSlice, nameEscapingScheme *monitoringv1.NameEscapingSchemeOptions) yaml.MapSlice {
+	if nameEscapingScheme == nil {
+		return cfg
+	}
+
+	// conversion to prometheus values.
+	nameMap := map[monitoringv1.NameEscapingSchemeOptions]string{
+		monitoringv1.AllowUTF8NameEscapingScheme:   "allow-utf-8",
+		monitoringv1.UnderscoresNameEscapingScheme: "underscores",
+		monitoringv1.DotsNameEscapingScheme:        "dots",
+		monitoringv1.ValuesNameEscapingScheme:      "values",
+	}
+
+	if v, ok := nameMap[*nameEscapingScheme]; ok {
+		return cg.WithMinimumVersion("3.4.0").AppendMapItem(cfg, "metric_name_escaping_scheme", v)
+	}
+
+	return cfg
+}
+
+func (cg *ConfigGenerator) appendConvertClassicHistogramsToNHCB(cfg yaml.MapSlice) yaml.MapSlice {
+	cpf := cg.prom.GetCommonPrometheusFields()
+
+	if cpf.ConvertClassicHistogramsToNHCB == nil {
+		return cfg
+	}
+
+	return cg.WithMinimumVersion("3.4.0").AppendMapItem(cfg, "convert_classic_histograms_to_nhcb", *cpf.ConvertClassicHistogramsToNHCB)
+}
+
+func (cg *ConfigGenerator) appendConvertScrapeClassicHistograms(cfg yaml.MapSlice) yaml.MapSlice {
+	cpf := cg.prom.GetCommonPrometheusFields()
+
+	if cpf.ScrapeClassicHistograms == nil {
+		return cfg
+	}
+
+	return cg.WithMinimumVersion("3.5.0").AppendMapItem(cfg, "always_scrape_classic_histograms", *cpf.ScrapeClassicHistograms)
+}
+
 func (cg *ConfigGenerator) getScrapeClassOrDefault(name *string) monitoringv1.ScrapeClass {
 	if name != nil {
 		if scrapeClass, found := cg.scrapeClasses[*name]; found {
@@ -4897,8 +4998,10 @@ func (cg *ConfigGenerator) buildGlobalConfig() yaml.MapSlice {
 	cfg = cg.appendExternalLabels(cfg)
 	cfg = cg.appendScrapeLimits(cfg)
 	cfg = cg.appendScrapeFailureLogFile(cfg, cg.prom.GetCommonPrometheusFields().ScrapeFailureLogFile)
-	if cpf.NameValidationScheme != nil {
-		cg.WithMinimumVersion("3.0.0").AppendMapItem(cfg, "metric_name_validation_scheme", *cpf.NameValidationScheme)
-	}
+	cfg = cg.appendNameValidationScheme(cfg, cpf.NameValidationScheme)
+	cfg = cg.appendNameEscapingScheme(cfg, cpf.NameEscapingScheme)
+	cfg = cg.appendConvertClassicHistogramsToNHCB(cfg)
+	cfg = cg.appendConvertScrapeClassicHistograms(cfg)
+
 	return cfg
 }
