@@ -138,6 +138,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1.PodMonitorSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("Probe"):
 		return &monitoringv1.ProbeApplyConfiguration{}
+	case v1.SchemeGroupVersion.WithKind("ProbeParam"):
+		return &monitoringv1.ProbeParamApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ProberSpec"):
 		return &monitoringv1.ProberSpecApplyConfiguration{}
 	case v1.SchemeGroupVersion.WithKind("ProbeSpec"):
@@ -328,6 +330,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1alpha1.PushoverConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Receiver"):
 		return &monitoringv1alpha1.ReceiverApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RocketChatActionConfig"):
+		return &monitoringv1alpha1.RocketChatActionConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RocketChatConfig"):
+		return &monitoringv1alpha1.RocketChatConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("RocketChatFieldConfig"):
+		return &monitoringv1alpha1.RocketChatFieldConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Route"):
 		return &monitoringv1alpha1.RouteApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ScalewaySDConfig"):
@@ -400,6 +408,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &monitoringv1beta1.PushoverConfigApplyConfiguration{}
 	case v1beta1.SchemeGroupVersion.WithKind("Receiver"):
 		return &monitoringv1beta1.ReceiverApplyConfiguration{}
+	case v1beta1.SchemeGroupVersion.WithKind("RocketChatActionConfig"):
+		return &monitoringv1beta1.RocketChatActionConfigApplyConfiguration{}
+	case v1beta1.SchemeGroupVersion.WithKind("RocketChatConfig"):
+		return &monitoringv1beta1.RocketChatConfigApplyConfiguration{}
+	case v1beta1.SchemeGroupVersion.WithKind("RocketChatFieldConfig"):
+		return &monitoringv1beta1.RocketChatFieldConfigApplyConfiguration{}
 	case v1beta1.SchemeGroupVersion.WithKind("Route"):
 		return &monitoringv1beta1.RouteApplyConfiguration{}
 	case v1beta1.SchemeGroupVersion.WithKind("SecretKeySelector"):

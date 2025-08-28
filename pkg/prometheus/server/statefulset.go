@@ -70,15 +70,14 @@ func makeStatefulSet(
 	operator.UpdateObject(
 		statefulset,
 		operator.WithName(name),
-		operator.WithInputHashAnnotation(inputHash),
 		operator.WithAnnotations(objMeta.GetAnnotations()),
 		operator.WithAnnotations(config.Annotations),
+		operator.WithInputHashAnnotation(inputHash),
 		operator.WithLabels(objMeta.GetLabels()),
 		operator.WithLabels(map[string]string{
-			prompkg.ShardLabelName:          fmt.Sprintf("%d", shard),
-			prompkg.PrometheusNameLabelName: objMeta.GetName(),
-			prompkg.PrometheusModeLabeLName: prometheusMode,
+			prompkg.PrometheusModeLabelName: prometheusMode,
 		}),
+		operator.WithSelectorLabels(spec.Selector),
 		operator.WithLabels(config.Labels),
 		operator.WithManagingOwner(p),
 		operator.WithoutKubectlAnnotations(),
@@ -262,11 +261,6 @@ func makeStatefulSetSpec(
 		}
 	}
 
-	var minReadySeconds int32
-	if cpf.MinReadySeconds != nil {
-		minReadySeconds = int32(*cpf.MinReadySeconds)
-	}
-
 	operatorInitContainers = append(operatorInitContainers,
 		prompkg.BuildConfigReloader(
 			p,
@@ -341,7 +335,7 @@ func makeStatefulSetSpec(
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			Type: appsv1.RollingUpdateStatefulSetStrategyType,
 		},
-		MinReadySeconds: minReadySeconds,
+		MinReadySeconds: ptr.Deref(p.Spec.MinReadySeconds, 0),
 		Selector: &metav1.LabelSelector{
 			MatchLabels: finalSelectorLabels,
 		},
@@ -367,6 +361,7 @@ func makeStatefulSetSpec(
 				HostAliases:                   operator.MakeHostAliases(cpf.HostAliases),
 				HostNetwork:                   cpf.HostNetwork,
 				EnableServiceLinks:            cpf.EnableServiceLinks,
+				HostUsers:                     cpf.HostUsers,
 			},
 		},
 	}
