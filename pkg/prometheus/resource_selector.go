@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
-	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/blang/semver/v4"
-	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -45,8 +43,15 @@ import (
 
 const (
 	// Generic reason for selected resources that are not valid.
-	invalidConfiguration = "InvalidConfiguration"
+	invalidConfiguration                  = "InvalidConfiguration"
+	selectingConfigurationResourcesAction = "SelectingConfigurationResources"
 )
+
+// isValidLabelName validates a label name using version-aware validation scheme.
+func isValidLabelName(labelName string, version semver.Version) bool {
+	scheme := operator.ValidationSchemeForPrometheus(version)
+	return scheme.IsValidLabelName(labelName)
+}
 
 // ConfigurationResource is a type constraint that permits only the specific pointer types for configuration resources
 // selectable by Prometheus or PrometheusAgent.
@@ -65,23 +70,29 @@ type ResourceSelector struct {
 	metrics            *operator.Metrics
 	accessor           *operator.Accessor
 
-	eventRecorder record.EventRecorder
+	eventRecorder *operator.EventRecorder
 }
 
 // TypedConfigurationResource is a generic type that holds a configuration resource with its validation status.
 type TypedConfigurationResource[T ConfigurationResource] struct {
-	resource T
-	err      error  // error encountered during selection or validation (nil if valid).
-	reason   string // Reason for rejection; empty if accepted.
+	resource   T
+	err        error  // Error encountered during selection or validation (nil if valid).
+	reason     string // Reason for rejection; empty if accepted.
+	generation int64  // Generation of the desired state (spec).
 }
 
-func (r *TypedConfigurationResource[T]) conditions(observedGeneration int64) []monitoringv1.ConfigResourceCondition {
+func (r *TypedConfigurationResource[T]) Resource() T {
+	return r.resource
+}
+
+// Conditions returns a list of conditions based on the validation status of the configuration resource.
+func (r *TypedConfigurationResource[T]) Conditions() []monitoringv1.ConfigResourceCondition {
 	condition := monitoringv1.ConfigResourceCondition{
 		Type:               monitoringv1.Accepted,
 		Status:             monitoringv1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		Reason:             r.reason,
-		ObservedGeneration: observedGeneration,
+		ObservedGeneration: r.generation,
 	}
 
 	if r.err != nil {
@@ -115,7 +126,7 @@ func NewResourceSelector(
 	store *assets.StoreBuilder,
 	namespaceInformers cache.SharedIndexInformer,
 	metrics *operator.Metrics,
-	eventRecorder record.EventRecorder,
+	eventRecorder *operator.EventRecorder,
 ) (*ResourceSelector, error) {
 	promVersion := operator.StringValOrDefault(p.GetCommonPrometheusFields().Version, operator.DefaultPrometheusVersion)
 	version, err := semver.ParseTolerant(promVersion)
@@ -174,7 +185,7 @@ func selectObjects[T ConfigurationResource](
 	)
 
 	for _, ns := range namespaces {
-		err := listFn(ns, labelSelector, func(o interface{}) {
+		err := listFn(ns, labelSelector, func(o any) {
 			k, ok := rs.accessor.MetaNamespaceKey(o)
 			if !ok {
 				return
@@ -207,15 +218,16 @@ func selectObjects[T ConfigurationResource](
 			rejected++
 			reason = invalidConfiguration
 			logger.Warn("skipping object", "error", err.Error(), "object", namespaceAndName)
-			rs.eventRecorder.Eventf(obj, v1.EventTypeWarning, operator.InvalidConfigurationEvent, "%q was rejected due to invalid configuration: %v", namespaceAndName, err)
+			rs.eventRecorder.Eventf(obj, v1.EventTypeWarning, operator.InvalidConfigurationEvent, selectingConfigurationResourcesAction, "%q was rejected due to invalid configuration: %v", namespaceAndName, err)
 		} else {
 			valid = append(valid, namespaceAndName)
 		}
 
 		res[namespaceAndName] = TypedConfigurationResource[T]{
-			resource: o,
-			err:      err,
-			reason:   reason,
+			resource:   o,
+			err:        err,
+			reason:     reason,
+			generation: obj.(metav1.Object).GetGeneration(),
 		}
 	}
 
@@ -376,9 +388,17 @@ func (lcv *LabelConfigValidator) Validate(rcs []monitoringv1.RelabelConfig) erro
 	return nil
 }
 
-func (lcv *LabelConfigValidator) validate(rc monitoringv1.RelabelConfig) error {
-	relabelTarget := regexp.MustCompile(`^(?:(?:[a-zA-Z_]|\$(?:\{\w+\}|\w+))+\w*)+$`)
+// From https://github.com/prometheus/prometheus/blob/747c5ee2b19a9e6a51acfafae9fa2c77e224803d/model/relabel/relabel.go#L378-L380
+func varInRegexTemplate(template string) bool {
+	return strings.Contains(template, "$")
+}
 
+func (lcv *LabelConfigValidator) isValidLabelName(labelName string) bool {
+	validationScheme := operator.ValidationSchemeForPrometheus(lcv.v)
+	return validationScheme.IsValidLabelName(labelName)
+}
+
+func (lcv *LabelConfigValidator) validate(rc monitoringv1.RelabelConfig) error {
 	minimumVersionCaseActions := lcv.v.GTE(semver.MustParse("2.36.0"))
 	minimumVersionEqualActions := lcv.v.GTE(semver.MustParse("2.41.0"))
 	if rc.Action == "" {
@@ -406,7 +426,15 @@ func (lcv *LabelConfigValidator) validate(rc monitoringv1.RelabelConfig) error {
 		return fmt.Errorf("relabel configuration for %s action needs targetLabel value", rc.Action)
 	}
 
-	if (action == string(relabel.Replace) || action == string(relabel.Lowercase) || action == string(relabel.Uppercase) || action == string(relabel.KeepEqual) || action == string(relabel.DropEqual)) && !relabelTarget.MatchString(rc.TargetLabel) {
+	if (action == string(relabel.Replace)) && !varInRegexTemplate(rc.TargetLabel) && !lcv.isValidLabelName(rc.TargetLabel) {
+		return fmt.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
+	}
+
+	if (action == string(relabel.Replace)) && varInRegexTemplate(rc.TargetLabel) && !lcv.isValidLabelName(rc.TargetLabel) {
+		return fmt.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
+	}
+
+	if (action == string(relabel.Lowercase) || action == string(relabel.Uppercase) || action == string(relabel.KeepEqual) || action == string(relabel.DropEqual)) && !lcv.isValidLabelName(rc.TargetLabel) {
 		return fmt.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
 	}
 
@@ -414,13 +442,11 @@ func (lcv *LabelConfigValidator) validate(rc monitoringv1.RelabelConfig) error {
 		return fmt.Errorf("'replacement' can not be set for %s action", rc.Action)
 	}
 
-	if action == string(relabel.LabelMap) {
-		if rc.Replacement != nil && !relabelTarget.MatchString(*rc.Replacement) {
-			return fmt.Errorf("%q is invalid 'replacement' for %s action", *rc.Replacement, rc.Action)
-		}
+	if action == string(relabel.LabelMap) && (rc.Replacement != nil) && !lcv.isValidLabelName(*rc.Replacement) {
+		return fmt.Errorf("%q is invalid 'replacement' for %s action", *rc.Replacement, rc.Action)
 	}
 
-	if action == string(relabel.HashMod) && !model.LabelName(rc.TargetLabel).IsValid() {
+	if action == string(relabel.HashMod) && !lcv.isValidLabelName(rc.TargetLabel) {
 		return fmt.Errorf("%q is invalid 'target_label' for %s action", rc.TargetLabel, rc.Action)
 	}
 
@@ -503,29 +529,6 @@ func (rs *ResourceSelector) checkPodMonitor(ctx context.Context, pm *monitoringv
 
 	for i, endpoint := range pm.Spec.PodMetricsEndpoints {
 		epErr := fmt.Errorf("endpoint[%d]", i)
-		//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
-		if endpoint.BearerTokenSecret.Name != "" && endpoint.BearerTokenSecret.Key != "" {
-			if _, err := rs.store.GetSecretKey(ctx, pm.GetNamespace(), endpoint.BearerTokenSecret); err != nil {
-				return fmt.Errorf("%w: bearerTokenSecret: %w", epErr, err)
-			}
-		}
-
-		if err := rs.store.AddBasicAuth(ctx, pm.GetNamespace(), endpoint.BasicAuth); err != nil {
-			return fmt.Errorf("%w: basicAuth: %w", epErr, err)
-		}
-
-		if err := rs.store.AddSafeTLSConfig(ctx, pm.GetNamespace(), endpoint.TLSConfig); err != nil {
-			return fmt.Errorf("%w: tlsConfig: %w", epErr, err)
-		}
-
-		if err := rs.store.AddOAuth2(ctx, pm.GetNamespace(), endpoint.OAuth2); err != nil {
-			return fmt.Errorf("%w: oauth2: %w", epErr, err)
-		}
-
-		if err := rs.store.AddSafeAuthorizationCredentials(ctx, pm.GetNamespace(), endpoint.Authorization); err != nil {
-			return fmt.Errorf("%w: authorization: %w", epErr, err)
-		}
-
 		if err := validateScrapeIntervalAndTimeout(rs.p, endpoint.Interval, endpoint.ScrapeTimeout); err != nil {
 			return fmt.Errorf("%w: %w", epErr, err)
 		}
@@ -538,13 +541,51 @@ func (rs *ResourceSelector) checkPodMonitor(ctx context.Context, pm *monitoringv
 			return fmt.Errorf("%w: metricRelabelConfigs: %w", epErr, err)
 		}
 
-		if err := addProxyConfigToStore(ctx, endpoint.ProxyConfig, rs.store, pm.GetNamespace()); err != nil {
-			return fmt.Errorf("%w: proxyConfig: %w", epErr, err)
+		if err := rs.addHTTPConfigToStore(ctx, endpoint.HTTPConfig, pm.GetNamespace()); err != nil {
+			return fmt.Errorf("%w: %w", epErr, err)
 		}
 	}
 
 	if err := validateScrapeClass(rs.p, pm.Spec.ScrapeClassName); err != nil {
 		return fmt.Errorf("scrapeClassName: %w", err)
+	}
+
+	return nil
+}
+
+func (rs *ResourceSelector) addHTTPConfigToStore(
+	ctx context.Context,
+	httpConfig monitoringv1.HTTPConfig,
+	namespace string) error {
+	if err := httpConfig.Validate(); err != nil {
+		return err
+	}
+
+	//nolint:staticcheck // Ignore SA1019 this field is marked as deprecated.
+	if httpConfig.BearerTokenSecret != nil && httpConfig.BearerTokenSecret.Name != "" && httpConfig.BearerTokenSecret.Key != "" {
+		if _, err := rs.store.GetSecretKey(ctx, namespace, *httpConfig.BearerTokenSecret); err != nil {
+			return fmt.Errorf("bearerTokenSecret: %w", err)
+		}
+	}
+
+	if err := rs.store.AddBasicAuth(ctx, namespace, httpConfig.BasicAuth); err != nil {
+		return fmt.Errorf("basicAuth: %w", err)
+	}
+
+	if err := rs.store.AddSafeTLSConfig(ctx, namespace, httpConfig.TLSConfig); err != nil {
+		return fmt.Errorf("tlsConfig: %w", err)
+	}
+
+	if err := rs.store.AddOAuth2(ctx, namespace, httpConfig.OAuth2); err != nil {
+		return fmt.Errorf("oauth2: %w", err)
+	}
+
+	if err := rs.store.AddSafeAuthorizationCredentials(ctx, namespace, httpConfig.Authorization); err != nil {
+		return fmt.Errorf("authorization: %w", err)
+	}
+
+	if err := addProxyConfigToStore(ctx, httpConfig.ProxyConfig, rs.store, namespace); err != nil {
+		return fmt.Errorf("proxyConfig: %w", err)
 	}
 
 	return nil
@@ -857,15 +898,7 @@ func (rs *ResourceSelector) validateKubernetesSDConfigs(ctx context.Context, sc 
 				return fmt.Errorf("[%d]: invalid role: %q, expecting one of: pod, service, endpoints, endpointslice, node or ingress", i, s.Role)
 			}
 
-			var allowed bool
-
-			for _, role := range allowedSelectors[configRole] {
-				if role == strings.ToLower(string(s.Role)) {
-					allowed = true
-					break
-				}
-			}
-			if !allowed {
+			if !slices.Contains(allowedSelectors[configRole], strings.ToLower(string(s.Role))) {
 				return fmt.Errorf("[%d] : %s role supports only %s selectors", i, config.Role, strings.Join(allowedSelectors[configRole], ", "))
 			}
 		}
@@ -1160,7 +1193,11 @@ func (rs *ResourceSelector) validateLinodeSDConfigs(ctx context.Context, sc *mon
 }
 func (rs *ResourceSelector) validateKumaSDConfigs(ctx context.Context, sc *monitoringv1alpha1.ScrapeConfig) error {
 	for i, config := range sc.Spec.KumaSDConfigs {
-		if err := validateServer(config.Server); err != nil {
+		if config.ClientID != nil && rs.version.LT(semver.MustParse("2.50.0")) {
+			return fmt.Errorf("field `clientID` in kuma SD configuration is only supported for Prometheus version >= 2.50.0")
+		}
+
+		if err := validateServer(string(config.Server)); err != nil {
 			return fmt.Errorf("[%d]: %w", i, err)
 		}
 
@@ -1424,7 +1461,7 @@ func (rs *ResourceSelector) validateScalewaySDConfigs(ctx context.Context, sc *m
 func (rs *ResourceSelector) validateStaticConfig(sc *monitoringv1alpha1.ScrapeConfig) error {
 	for i, config := range sc.Spec.StaticConfigs {
 		for labelName := range config.Labels {
-			if !model.LabelName(labelName).IsValid() {
+			if !isValidLabelName(labelName, rs.version) {
 				return fmt.Errorf("[%d]: invalid label in map %s", i, labelName)
 			}
 		}
