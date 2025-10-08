@@ -62,7 +62,7 @@ func defaultPrometheus() *monitoringv1.Prometheus {
 	}
 }
 
-func mustNewConfigGenerator(t *testing.T, p *monitoringv1.Prometheus) *ConfigGenerator {
+func mustNewConfigGenerator(t *testing.T, p *monitoringv1.Prometheus, opts ...ConfigGeneratorOption) *ConfigGenerator {
 	t.Helper()
 
 	if p == nil {
@@ -72,7 +72,6 @@ func mustNewConfigGenerator(t *testing.T, p *monitoringv1.Prometheus) *ConfigGen
 		Level: slog.LevelWarn,
 	}))
 
-	opts := []ConfigGeneratorOption{}
 	if p.Spec.ServiceDiscoveryRole != nil && *p.Spec.ServiceDiscoveryRole == monitoringv1.EndpointSliceRole {
 		opts = append(opts, WithEndpointSliceSupport())
 	}
@@ -1451,12 +1450,12 @@ func TestAlertmanagerAlertRelabelConfigs(t *testing.T) {
 		{
 			name:    "Invalid Prometheus Version",
 			version: "2.40.1",
-			golden:  "AlertmangerAlertRelabel_Invalid_Version.golden",
+			golden:  "AlertmanagerAlertRelabel_Invalid_Version.golden",
 		},
 		{
 			name:    "Valid Prometheus Version",
 			version: "2.51.0",
-			golden:  "AlertmangerAlertRelabel_Valid_Version.golden",
+			golden:  "AlertmanagerAlertRelabel_Valid_Version.golden",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1641,22 +1640,51 @@ func TestNoEnforcedNamespaceLabelServiceMonitor(t *testing.T) {
 	golden.Assert(t, string(cfg), "NoEnforcedNamespaceLabelServiceMonitor_Expected.golden")
 }
 
-func TestServiceMonitorWithEndpointSliceEnable(t *testing.T) {
-	p := defaultPrometheus()
-	p.Spec.CommonPrometheusFields.EnforcedNamespaceLabel = "ns-key"
-	p.Spec.CommonPrometheusFields.ServiceDiscoveryRole = ptr.To(monitoringv1.EndpointSliceRole)
+func TestServiceMonitorWithServiceDiscoveryRole(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		promRole *monitoringv1.ServiceDiscoveryRole
+		smonRole *monitoringv1.ServiceDiscoveryRole
+		golden   string
+	}{
+		{
+			name:   "Default",
+			golden: "TestServiceMonitorWithDefaultServiceDiscoveryRole.golden",
+		},
+		{
+			name:     "Prometheus with endpoints",
+			promRole: ptr.To(monitoringv1.EndpointsRole),
+			golden:   "TestServiceMonitorWithDefaultServiceDiscoveryRole.golden",
+		},
+		{
+			name:     "Prometheus with endpointslice",
+			promRole: ptr.To(monitoringv1.EndpointSliceRole),
+			golden:   "TestServiceMonitorWithEndpointSliceEnable_Expected.golden",
+		},
+		{
+			name:     "Prometheus with endpointslice and ServiceMonitor with endpoints",
+			promRole: ptr.To(monitoringv1.EndpointSliceRole),
+			smonRole: ptr.To(monitoringv1.EndpointsRole),
+			golden:   "TestServiceMonitorWithEndpointsAndPrometheusEndpointSlice.golden",
+		},
+		{
+			name:     "Prometheus with endpoints and ServiceMonitor with endpointslice",
+			promRole: ptr.To(monitoringv1.EndpointsRole),
+			smonRole: ptr.To(monitoringv1.EndpointSliceRole),
+			golden:   "TestServiceMonitorWithEndpointSliceAndPrometheusEndpoints.golden",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := defaultPrometheus()
+			p.Spec.CommonPrometheusFields.ServiceDiscoveryRole = tc.promRole
 
-	cg := mustNewConfigGenerator(t, p)
-
-	cfg, err := cg.GenerateServerConfiguration(
-		p,
-		map[string]*monitoringv1.ServiceMonitor{
-			"test": {
+			smon := &monitoringv1.ServiceMonitor{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
 				},
 				Spec: monitoringv1.ServiceMonitorSpec{
+					ServiceDiscoveryRole: ptr.To(monitoringv1.EndpointsRole),
 					Selector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"foo": "bar",
@@ -1673,38 +1701,31 @@ func TestServiceMonitorWithEndpointSliceEnable(t *testing.T) {
 						{
 							Port:     "web",
 							Interval: "30s",
-							MetricRelabelConfigs: []monitoringv1.RelabelConfig{
-								{
-									Action:       "drop",
-									Regex:        "my-job-pod-.+",
-									SourceLabels: []monitoringv1.LabelName{"pod_name"},
-									TargetLabel:  "ns-key",
-								},
-							},
-							RelabelConfigs: []monitoringv1.RelabelConfig{
-								{
-									Action:       "replace",
-									Regex:        "(.*)",
-									Replacement:  ptr.To("$1"),
-									SourceLabels: []monitoringv1.LabelName{"__meta_kubernetes_pod_ready"},
-								},
-							},
 						},
 					},
 				},
-			},
-		},
-		nil,
-		nil,
-		nil,
-		&assets.StoreBuilder{},
-		nil,
-		nil,
-		nil,
-		nil,
-	)
-	require.NoError(t, err)
-	golden.Assert(t, string(cfg), "TestServiceMonitorWithEndpointSliceEnable_Expected.golden")
+			}
+			smon.Spec.ServiceDiscoveryRole = tc.smonRole
+
+			cg := mustNewConfigGenerator(t, p, WithEndpointSliceSupport())
+			cfg, err := cg.GenerateServerConfiguration(
+				p,
+				map[string]*monitoringv1.ServiceMonitor{
+					"test": smon,
+				},
+				nil,
+				nil,
+				nil,
+				&assets.StoreBuilder{},
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			require.NoError(t, err)
+			golden.Assert(t, string(cfg), tc.golden)
+		})
+	}
 }
 
 func TestEnforcedNamespaceLabelPodMonitor(t *testing.T) {
@@ -2694,8 +2715,8 @@ func TestEndpointOAuth2(t *testing.T) {
 					Spec: monitoringv1.PodMonitorSpec{
 						PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 							{
-								Port:   ptr.To("web"),
-								OAuth2: &oauth2,
+								Port:       ptr.To("web"),
+								HTTPConfig: monitoringv1.HTTPConfig{OAuth2: &oauth2},
 							},
 						},
 					},
@@ -2729,7 +2750,6 @@ func TestEndpointOAuth2(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			p := defaultPrometheus()
 
@@ -4344,6 +4364,84 @@ func TestRemoteWriteConfig(t *testing.T) {
 			},
 			golden: "RemoteWriteConfig_v2.29.0_MaxSamplesPerSendMetadataConfig.golden",
 		},
+		{
+			version: "v2.53.0",
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL: "http://example.com",
+				Sigv4: &monitoringv1.Sigv4{
+					Profile: "profilename",
+					RoleArn: "arn:aws:iam::123456789012:instance-profile/prometheus",
+					AccessKey: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "access-key",
+					},
+					SecretKey: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "secret-key",
+					},
+					Region:             "us-central-0",
+					UseFIPSSTSEndpoint: ptr.To(true),
+				},
+				QueueConfig: &monitoringv1.QueueConfig{
+					Capacity:          1000,
+					MinShards:         1,
+					MaxShards:         10,
+					MaxSamplesPerSend: 100,
+					BatchSendDeadline: ptr.To(monitoringv1.Duration("20s")),
+					MaxRetries:        3,
+					MinBackoff:        ptr.To(monitoringv1.Duration("1s")),
+					MaxBackoff:        ptr.To(monitoringv1.Duration("10s")),
+				},
+				MetadataConfig: &monitoringv1.MetadataConfig{
+					Send:         false,
+					SendInterval: "1m",
+				},
+			},
+			golden: "RemoteWriteConfig_v2.53.0.golden",
+		},
+		{
+			version: "v2.54.0",
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL: "http://example.com",
+				Sigv4: &monitoringv1.Sigv4{
+					Profile: "profilename",
+					RoleArn: "arn:aws:iam::123456789012:instance-profile/prometheus",
+					AccessKey: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "access-key",
+					},
+					SecretKey: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "secret-key",
+					},
+					Region:             "us-central-0",
+					UseFIPSSTSEndpoint: ptr.To(true),
+				},
+				QueueConfig: &monitoringv1.QueueConfig{
+					Capacity:          1000,
+					MinShards:         1,
+					MaxShards:         10,
+					MaxSamplesPerSend: 100,
+					BatchSendDeadline: ptr.To(monitoringv1.Duration("20s")),
+					MaxRetries:        3,
+					MinBackoff:        ptr.To(monitoringv1.Duration("1s")),
+					MaxBackoff:        ptr.To(monitoringv1.Duration("10s")),
+				},
+				MetadataConfig: &monitoringv1.MetadataConfig{
+					Send:         false,
+					SendInterval: "1m",
+				},
+			},
+			golden: "RemoteWriteConfig_v2.54.0.golden",
+		},
 	} {
 		t.Run(fmt.Sprintf("i=%d,version=%s", i, tc.version), func(t *testing.T) {
 			p := defaultPrometheus()
@@ -5225,9 +5323,9 @@ func TestPodMonitorEndpointFollowRedirects(t *testing.T) {
 				Spec: monitoringv1.PodMonitorSpec{
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port:            ptr.To("web"),
-							Interval:        "30s",
-							FollowRedirects: ptr.To(tc.followRedirects),
+							Port:       ptr.To("web"),
+							Interval:   "30s",
+							HTTPConfig: monitoringv1.HTTPConfig{FollowRedirects: ptr.To(tc.followRedirects)},
 						},
 					},
 				},
@@ -5406,9 +5504,9 @@ func TestPodMonitorEndpointEnableHttp2(t *testing.T) {
 				Spec: monitoringv1.PodMonitorSpec{
 					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
 						{
-							Port:        ptr.To("web"),
-							Interval:    "30s",
-							EnableHttp2: ptr.To(tc.enableHTTP2),
+							Port:       ptr.To("web"),
+							Interval:   "30s",
+							HTTPConfig: monitoringv1.HTTPConfig{EnableHTTP2: ptr.To(tc.enableHTTP2)},
 						},
 					},
 				},
@@ -9227,7 +9325,7 @@ func TestScrapeConfigSpecConfigWithHetznerSD(t *testing.T) {
 						},
 						FollowRedirects: ptr.To(true),
 						EnableHTTP2:     ptr.To(true),
-						Port:            ptr.To(9100),
+						Port:            ptr.To(int32(9100)),
 						RefreshInterval: ptr.To(monitoringv1.Duration("5m")),
 					},
 				},
@@ -9258,7 +9356,7 @@ func TestScrapeConfigSpecConfigWithHetznerSD(t *testing.T) {
 						},
 						FollowRedirects: ptr.To(true),
 						EnableHTTP2:     ptr.To(true),
-						Port:            ptr.To(9100),
+						Port:            ptr.To(int32(9100)),
 						RefreshInterval: ptr.To(monitoringv1.Duration("5m")),
 						LabelSelector:   ptr.To("label_value"),
 					},
@@ -9290,7 +9388,7 @@ func TestScrapeConfigSpecConfigWithHetznerSD(t *testing.T) {
 						},
 						FollowRedirects: ptr.To(true),
 						EnableHTTP2:     ptr.To(true),
-						Port:            ptr.To(9100),
+						Port:            ptr.To(int32(9100)),
 						RefreshInterval: ptr.To(monitoringv1.Duration("5m")),
 						LabelSelector:   ptr.To("label_value"),
 					},
@@ -9824,6 +9922,22 @@ func TestOTLPConfig(t *testing.T) {
 				PromoteAllResourceAttributes: ptr.To(true),
 			},
 			golden: "OTLPConfig_Config_promote_all_resource_attributes_wrong_prom.golden",
+		},
+		{
+			name:    "Config PromoteScopeMetadata with compatible versiopn",
+			version: "v3.6.0",
+			otlpConfig: &monitoringv1.OTLPConfig{
+				PromoteScopeMetadata: ptr.To(true),
+			},
+			golden: "OTLPConfig_Config_promote_scope_metadata.golden",
+		},
+		{
+			name:    "Config PromoteScopeMetadata with wrong version",
+			version: "v3.5.0",
+			otlpConfig: &monitoringv1.OTLPConfig{
+				PromoteScopeMetadata: ptr.To(true),
+			},
+			golden: "OTLPConfig_Config_promote_scope_metadata_wrong_version.golden",
 		},
 	}
 	for _, tc := range testCases {
