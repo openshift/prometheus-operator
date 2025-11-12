@@ -258,18 +258,24 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger
 		}
 	}
 
+	allowList := c.Namespaces.PrometheusAllowList
+	if c.WatchObjectRefsInAllNamespaces {
+		allowList = operator.MergeAllowLists(
+			c.Namespaces.PrometheusAllowList,
+			c.Namespaces.AllowList,
+		)
+	}
+
 	o.cmapInfs, err = informers.NewInformersForResourceWithTransform(
 		informers.NewMetadataInformerFactory(
-			c.Namespaces.PrometheusAllowList,
+			allowList,
 			c.Namespaces.DenyList,
 			o.mdClient,
 			resyncPeriod,
-			func(options *metav1.ListOptions) {
-				options.LabelSelector = prompkg.LabelPrometheusName
-			},
+			nil,
 		),
 		v1.SchemeGroupVersion.WithResource(string(v1.ResourceConfigMaps)),
-		informers.PartialObjectMetadataStrip,
+		informers.PartialObjectMetadataStrip(operator.ConfigMapGVK()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating configmap informers: %w", err)
@@ -277,7 +283,7 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger
 
 	o.secrInfs, err = informers.NewInformersForResourceWithTransform(
 		informers.NewMetadataInformerFactory(
-			c.Namespaces.PrometheusAllowList,
+			allowList,
 			c.Namespaces.DenyList,
 			o.mdClient,
 			resyncPeriod,
@@ -287,7 +293,7 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger
 			},
 		),
 		v1.SchemeGroupVersion.WithResource(string(v1.ResourceSecrets)),
-		informers.PartialObjectMetadataStrip,
+		informers.PartialObjectMetadataStrip(operator.SecretGVK()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating secrets informers: %w", err)
@@ -515,12 +521,17 @@ func (c *Operator) addHandlers() {
 		))
 	}
 
+	hasRefFunc := operator.HasReferenceFunc(
+		c.promInfs,
+		c.reconciliations,
+	)
 	c.cmapInfs.AddEventHandler(operator.NewEventHandler(
 		c.logger,
 		c.accessor,
 		c.metrics,
 		"ConfigMap",
 		c.enqueueForPrometheusNamespace,
+		operator.WithFilter(hasRefFunc),
 	))
 
 	c.secrInfs.AddEventHandler(operator.NewEventHandler(
@@ -529,6 +540,7 @@ func (c *Operator) addHandlers() {
 		c.metrics,
 		"Secret",
 		c.enqueueForPrometheusNamespace,
+		operator.WithFilter(hasRefFunc),
 	))
 
 	// The controller needs to watch the namespaces in which the service/pod
@@ -602,6 +614,7 @@ func (c *Operator) syncDaemonSet(ctx context.Context, key string, p *monitoringv
 	if err := c.createOrUpdateConfigurationSecret(ctx, p, cg, assetStore); err != nil {
 		return fmt.Errorf("creating config failed: %w", err)
 	}
+	c.reconciliations.UpdateReferenceTracker(key, assetStore.RefTracker())
 
 	tlsAssets, err := operator.ReconcileShardedSecret(ctx, assetStore.TLSAssets(), c.kclient, prompkg.NewTLSAssetSecret(p, c.config))
 	if err != nil {
