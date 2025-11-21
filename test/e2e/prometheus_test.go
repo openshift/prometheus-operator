@@ -26,7 +26,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -138,7 +138,7 @@ func deployInstrumentedApplicationWithTLS(name, ns string) error {
 		{
 			Port:     "mtls",
 			Interval: "1s",
-			Scheme:   "https",
+			Scheme:   ptr.To(monitoringv1.SchemeHTTPS),
 			TLSConfig: &monitoringv1.TLSConfig{
 				SafeTLSConfig: monitoringv1.SafeTLSConfig{
 					ServerName: ptr.To("caandserver.com"),
@@ -1549,68 +1549,67 @@ func testPromRulesExceedingConfigMapLimit(t *testing.T) {
 	t.Parallel()
 	testCtx := framework.NewTestCtx(t)
 	defer testCtx.Cleanup(t)
+
 	ns := framework.CreateNamespace(context.Background(), t, testCtx)
 	framework.SetupPrometheusRBAC(context.Background(), t, testCtx, ns)
 
 	prometheusRules := []*monitoringv1.PrometheusRule{}
-	for i := range 2 {
-		rule := generateHugePrometheusRule(ns, strconv.Itoa(i))
-		rule, err := framework.CreateRule(context.Background(), ns, rule)
-		if err != nil {
-			t.Fatal(err)
-		}
-		prometheusRules = append(prometheusRules, rule)
-	}
+
+	rule, err := framework.CreateRule(context.Background(), ns, generateHugePrometheusRule(ns, "a"))
+	require.NoError(t, err)
+	prometheusRules = append(prometheusRules, rule)
 
 	name := "test"
-
 	p := framework.MakeBasicPrometheus(ns, name, name, 1)
 	p.Spec.EvaluationInterval = "1s"
-	p, err := framework.CreatePrometheusAndWaitUntilReady(context.Background(), ns, p)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	p, err = framework.CreatePrometheusAndWaitUntilReady(context.Background(), ns, p)
+	require.NoError(t, err)
+
+	// Record the statefulset's generation.
+	sts, err := framework.KubeClient.AppsV1().StatefulSets(ns).Get(context.Background(), fmt.Sprintf("prometheus-%s", p.Name), metav1.GetOptions{})
+	require.NoError(t, err)
+	generation := sts.Generation
 
 	pSVC := framework.MakePrometheusService(p.Name, "not-relevant", v1.ServiceTypeClusterIP)
-	if finalizerFn, err := framework.CreateOrUpdateServiceAndWaitUntilReady(context.Background(), ns, pSVC); err != nil {
-		t.Fatal(fmt.Errorf("creating Prometheus service failed: %w", err))
-	} else {
-		testCtx.AddFinalizerFn(finalizerFn)
-	}
-
-	for i := range prometheusRules {
-		_, err := framework.WaitForConfigMapExist(context.Background(), ns, "prometheus-"+p.Name+"-rulefiles-"+strconv.Itoa(i))
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// Make sure both rule files ended up in the Prometheus Pod
-	for i := range prometheusRules {
-		err := framework.WaitForPrometheusFiringAlert(context.Background(), ns, pSVC.Name, "my-alert-"+strconv.Itoa(i))
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	err = framework.DeleteRule(context.Background(), ns, prometheusRules[1].Name)
-	if err != nil {
-		t.Fatal(err)
-	}
+	_, err = framework.CreateOrUpdateServiceAndWaitUntilReady(context.Background(), ns, pSVC)
+	require.NoError(t, err)
 
 	_, err = framework.WaitForConfigMapExist(context.Background(), ns, "prometheus-"+p.Name+"-rulefiles-0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = framework.WaitForConfigMapNotExist(context.Background(), ns, "prometheus-"+p.Name+"-rulefiles-1")
-	if err != nil {
-		t.Fatal(err)
+	require.NoError(t, err)
+	require.NoError(t, framework.WaitForConfigMapNotExist(context.Background(), ns, "prometheus-"+p.Name+"-rulefiles-1"))
+
+	// Check that at least 1 alert of the PrometheusRule object fires.
+	for _, pr := range prometheusRules {
+		alertName := pr.Spec.Groups[0].Rules[0].Alert
+		require.NotEmpty(t, alertName)
+
+		require.NoError(t, framework.WaitForPrometheusFiringAlert(context.Background(), ns, pSVC.Name, alertName))
 	}
 
-	err = framework.WaitForPrometheusFiringAlert(context.Background(), ns, pSVC.Name, "my-alert-0")
-	if err != nil {
-		t.Fatal(err)
+	// Generate another large PrometheusRule object.
+	rule, err = framework.CreateRule(context.Background(), ns, generateHugePrometheusRule(ns, "b"))
+	require.NoError(t, err)
+
+	// Verify that 2 configmaps exist.
+	prometheusRules = append(prometheusRules, rule)
+	for i := range 2 {
+		_, err := framework.WaitForConfigMapExist(context.Background(), ns, "prometheus-"+p.Name+"-rulefiles-"+strconv.Itoa(i))
+		require.NoError(t, err)
 	}
+
+	// Check that at least 1 alert from each PrometheusRule object fires.
+	for _, pr := range prometheusRules {
+		alertName := pr.Spec.Groups[0].Rules[0].Alert
+		require.NotEmpty(t, alertName)
+
+		require.NoError(t, framework.WaitForPrometheusFiringAlert(context.Background(), ns, pSVC.Name, alertName))
+	}
+
+	// Verify that the statefulset's generation hasn't changed.
+	sts, err = framework.KubeClient.AppsV1().StatefulSets(ns).Get(context.Background(), fmt.Sprintf("prometheus-%s", p.Name), metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, generation, sts.Generation)
 }
 
 func testPromRulesMustBeAnnotated(t *testing.T) {
@@ -1685,26 +1684,24 @@ func testPromReconcileStatusWhenInvalidRuleCreated(t *testing.T) {
 	}
 }
 
-// generateHugePrometheusRule returns a Prometheus rule instance that would fill
+// generateHugePrometheusRule returns a Prometheus rule object that would fill
 // more than half of the space of a Kubernetes ConfigMap.
 func generateHugePrometheusRule(ns, identifier string) *monitoringv1.PrometheusRule {
-	alertName := "my-alert"
-	groups := []monitoringv1.RuleGroup{
-		{
-			Name:  alertName,
-			Rules: []monitoringv1.Rule{},
-		},
-	}
 	// One rule marshaled as yaml is ~34 bytes long, the max is ~524288 bytes.
+	rules := make([]monitoringv1.Rule, 0, 12000)
 	for range 12000 {
-		groups[0].Rules = append(groups[0].Rules, monitoringv1.Rule{
-			Alert: alertName + "-" + identifier,
+		rules = append(rules, monitoringv1.Rule{
+			Alert: "alert-" + identifier,
 			Expr:  intstr.FromString("vector(1)"),
 		})
 	}
-	rule := framework.MakeBasicRule(ns, "prometheus-rule-"+identifier, groups)
 
-	return rule
+	return framework.MakeBasicRule(ns, "prometheus-rule-"+identifier, []monitoringv1.RuleGroup{
+		{
+			Name:  "rules-group",
+			Rules: rules,
+		},
+	})
 }
 
 // Make sure the Prometheus operator only updates the Prometheus config secret
@@ -3341,7 +3338,7 @@ func testPromTLSConfigViaSecret(t *testing.T) {
 		{
 			Port:     "mtls",
 			Interval: "30s",
-			Scheme:   "https",
+			Scheme:   ptr.To(monitoringv1.SchemeHTTPS),
 			TLSConfig: &monitoringv1.TLSConfig{
 				SafeTLSConfig: monitoringv1.SafeTLSConfig{
 					InsecureSkipVerify: ptr.To(true),
@@ -3546,7 +3543,7 @@ func testPromSecurePodMonitor(t *testing.T) {
 			name: "tls-secret",
 			endpoint: monitoringv1.PodMetricsEndpoint{
 				Port:   ptr.To("mtls"),
-				Scheme: "https",
+				Scheme: ptr.To(monitoringv1.SchemeHTTPS),
 				HTTPConfig: monitoringv1.HTTPConfig{
 					TLSConfig: &monitoringv1.SafeTLSConfig{
 						InsecureSkipVerify: ptr.To(true),
@@ -3581,7 +3578,7 @@ func testPromSecurePodMonitor(t *testing.T) {
 			name: "tls-configmap",
 			endpoint: monitoringv1.PodMetricsEndpoint{
 				Port:   ptr.To("mtls"),
-				Scheme: "https",
+				Scheme: ptr.To(monitoringv1.SchemeHTTPS),
 				HTTPConfig: monitoringv1.HTTPConfig{
 					TLSConfig: &monitoringv1.SafeTLSConfig{
 						InsecureSkipVerify: ptr.To(true),
@@ -4665,8 +4662,8 @@ func testPrometheusCRDValidation(t *testing.T) {
 						{
 							Name:            "test",
 							Port:            intstr.FromInt(9797),
-							Scheme:          "https",
-							PathPrefix:      "/alerts",
+							Scheme:          ptr.To(monitoringv1.SchemeHTTPS),
+							PathPrefix:      ptr.To("/alerts"),
 							BearerTokenFile: "/file",
 							APIVersion:      ptr.To(monitoringv1.AlertmanagerAPIVersion1),
 						},
@@ -4694,8 +4691,8 @@ func testPrometheusCRDValidation(t *testing.T) {
 							Name:            "test",
 							Namespace:       ptr.To("default"),
 							Port:            intstr.FromInt(9797),
-							Scheme:          "https",
-							PathPrefix:      "/alerts",
+							Scheme:          ptr.To(monitoringv1.SchemeHTTPS),
+							PathPrefix:      ptr.To("/alerts"),
 							BearerTokenFile: "/file",
 							APIVersion:      ptr.To(monitoringv1.AlertmanagerAPIVersion1),
 						},
@@ -4722,8 +4719,8 @@ func testPrometheusCRDValidation(t *testing.T) {
 						{
 							Namespace:       ptr.To("default"),
 							Port:            intstr.FromInt(9797),
-							Scheme:          "https",
-							PathPrefix:      "/alerts",
+							Scheme:          ptr.To(monitoringv1.SchemeHTTPS),
+							PathPrefix:      ptr.To("/alerts"),
 							BearerTokenFile: "/file",
 							APIVersion:      ptr.To(monitoringv1.AlertmanagerAPIVersion1),
 						},
@@ -5497,6 +5494,9 @@ func testPrometheusReconciliationOnSecretChanges(t *testing.T) {
 }
 
 func testPrometheusUTF8MetricsSupport(t *testing.T) {
+	if os.Getenv("TEST_PROMETHEUS_V2") == "true" {
+		t.Skip("UTF-8 metrics support is not available in Prometheus v2")
+	}
 	t.Parallel()
 
 	testCtx := framework.NewTestCtx(t)
@@ -5723,6 +5723,10 @@ func testPrometheusUTF8MetricsSupport(t *testing.T) {
 }
 
 func testPrometheusUTF8LabelSupport(t *testing.T) {
+	if os.Getenv("TEST_PROMETHEUS_V2") == "true" {
+		t.Skip("UTF-8 label support is not available in Prometheus v2")
+	}
+
 	t.Parallel()
 
 	testCtx := framework.NewTestCtx(t)
@@ -5920,8 +5924,8 @@ func assertExpectedAlertmanagerTargets(ams []*alertmanagerTarget, expectedTarget
 		existingTargets = append(existingTargets, am.URL)
 	}
 
-	sort.Strings(expectedTargets)
-	sort.Strings(existingTargets)
+	slices.Sort(expectedTargets)
+	slices.Sort(existingTargets)
 
 	if !reflect.DeepEqual(expectedTargets, existingTargets) {
 		log.Printf("Existing Alertmanager Targets: %#+v\n", existingTargets)

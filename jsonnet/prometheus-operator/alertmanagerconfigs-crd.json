@@ -4,7 +4,7 @@
   "metadata": {
     "annotations": {
       "controller-gen.kubebuilder.io/version": "v0.19.0",
-      "operator.prometheus.io/version": "0.86.2"
+      "operator.prometheus.io/version": "0.87.0"
     },
     "name": "alertmanagerconfigs.monitoring.coreos.com"
   },
@@ -4845,6 +4845,10 @@
                                 "description": "message defines the notification message content.\nThis is the main body text of the Pushover notification.",
                                 "type": "string"
                               },
+                              "monospace": {
+                                "description": "monospace optional HTML/monospace formatting for the message, see https://pushover.net/api#html\nhtml and monospace formatting are mutually exclusive.",
+                                "type": "boolean"
+                              },
                               "priority": {
                                 "description": "priority defines the notification priority level.\nSee https://pushover.net/api#priority for valid values and behavior.",
                                 "type": "string"
@@ -7326,7 +7330,7 @@
                                     "x-kubernetes-map-type": "atomic"
                                   },
                                   "useFIPSSTSEndpoint": {
-                                    "description": "useFIPSSTSEndpoint defines FIPS mode for AWS STS endpoint.\nIt requires Prometheus >= v2.54.0.",
+                                    "description": "useFIPSSTSEndpoint defines the FIPS mode for the AWS STS endpoint.\nIt requires Prometheus >= v2.54.0.",
                                     "type": "boolean"
                                   }
                                 },

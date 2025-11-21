@@ -446,10 +446,16 @@ func (cb *ConfigBuilder) convertGlobalConfig(ctx context.Context, in *monitoring
 			FollowRedirects:   in.HTTPConfig.FollowRedirects,
 			EnableHTTP2:       in.HTTPConfig.EnableHTTP2,
 		}
+
 		httpConfig, err := cb.convertHTTPConfig(ctx, &v1alpha1Config, crKey)
 		if err != nil {
 			return nil, fmt.Errorf("invalid global httpConfig: %w", err)
 		}
+
+		if err := configureHTTPConfigInStore(ctx, &v1alpha1Config, crKey.Namespace, cb.store); err != nil {
+			return nil, err
+		}
+
 		out.HTTPConfig = httpConfig
 	}
 
@@ -1277,7 +1283,6 @@ func (cb *ConfigBuilder) convertPushoverConfig(ctx context.Context, in monitorin
 		URL:           in.URL,
 		URLTitle:      in.URLTitle,
 		Priority:      in.Priority,
-		HTML:          in.HTML,
 	}
 
 	if in.TTL != nil {
@@ -2441,6 +2446,7 @@ func (pdc *pagerdutyConfig) sanitize(amVersion semver.Version, logger *slog.Logg
 func (poc *pushoverConfig) sanitize(amVersion semver.Version, logger *slog.Logger) error {
 	lessThanV0_26 := amVersion.LT(semver.MustParse("0.26.0"))
 	lessThanV0_27 := amVersion.LT(semver.MustParse("0.27.0"))
+	lessThanV0_29 := amVersion.LT(semver.MustParse("0.29.0"))
 
 	if poc.UserKeyFile != "" && lessThanV0_26 {
 		msg := "'user_key_file' supported in Alertmanager >= 0.26.0 only - dropping field from pushover receiver config"
@@ -2484,6 +2490,16 @@ func (poc *pushoverConfig) sanitize(amVersion semver.Version, logger *slog.Logge
 		msg := "'device' supported in Alertmanager >= 0.26.0 only - dropping field from pushover receiver config"
 		logger.Warn(msg, "current_version", amVersion.String())
 		poc.Device = ""
+	}
+
+	if poc.Monospace != nil && *poc.Monospace && lessThanV0_29 {
+		msg := "'monospace' supported in Alertmanager >= 0.29.0 only - dropping field from pushover receiver config"
+		logger.Warn(msg, "current_version", amVersion.String())
+		*poc.Monospace = false
+	}
+
+	if poc.HTML != nil && *poc.HTML && poc.Monospace != nil && *poc.Monospace {
+		return errors.New("either monospace or html must be configured")
 	}
 
 	return poc.HTTPConfig.sanitize(amVersion, logger)
