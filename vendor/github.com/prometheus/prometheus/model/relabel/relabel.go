@@ -69,7 +69,7 @@ const (
 )
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
-func (a *Action) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (a *Action) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -105,7 +105,7 @@ type Config struct {
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
-func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (c *Config) UnmarshalYAML(unmarshal func(any) error) error {
 	*c = DefaultRelabelConfig
 	type plain Config
 	if err := unmarshal((*plain)(c)); err != nil {
@@ -145,7 +145,13 @@ func (c *Config) Validate(nameValidationScheme model.ValidationScheme) error {
 		// UTF-8 allows ${} characters, so standard validation allow $variables by default.
 		// TODO(bwplotka): Relabelling users cannot put $ and ${<...>} characters in metric names or values.
 		// Design escaping mechanism to allow that, once valid use case appears.
-		return c.NameValidationScheme.IsValidLabelName(value)
+		switch c.NameValidationScheme {
+		case model.UTF8Validation:
+			return c.NameValidationScheme.IsValidLabelName(value)
+		default:
+			// For legacy validation, use the legacy regex that allows $variables.
+			return relabelTargetLegacy.MatchString(value)
+		}
 	}
 	if c.Action == Replace && varInRegexTemplate(c.TargetLabel) && !isValidLabelNameWithRegexVarFn(c.TargetLabel) {
 		return fmt.Errorf("%q is invalid 'target_label' for %s action", c.TargetLabel, c.Action)
@@ -207,7 +213,7 @@ func MustNewRegexp(s string) Regexp {
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
-func (re *Regexp) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (re *Regexp) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err
@@ -221,7 +227,7 @@ func (re *Regexp) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 // MarshalYAML implements the yaml.Marshaler interface.
-func (re Regexp) MarshalYAML() (interface{}, error) {
+func (re Regexp) MarshalYAML() (any, error) {
 	if re.String() != "" {
 		return re.String(), nil
 	}
