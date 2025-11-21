@@ -542,7 +542,7 @@ func TestProbeStaticTargetsConfigGenerationWithLabelEnforce(t *testing.T) {
 				},
 				Spec: monitoringv1.ProbeSpec{
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 					},
@@ -599,7 +599,7 @@ func TestProbeStaticTargetsConfigGenerationWithJobName(t *testing.T) {
 				Spec: monitoringv1.ProbeSpec{
 					JobName: "blackbox",
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 					},
@@ -646,7 +646,7 @@ func TestProbeStaticTargetsConfigGenerationWithoutModule(t *testing.T) {
 				Spec: monitoringv1.ProbeSpec{
 					JobName: "blackbox",
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 					},
@@ -691,7 +691,7 @@ func TestProbeIngressSDConfigGeneration(t *testing.T) {
 				},
 				Spec: monitoringv1.ProbeSpec{
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 					},
@@ -750,7 +750,7 @@ func TestProbeIngressSDConfigGenerationWithShards(t *testing.T) {
 				},
 				Spec: monitoringv1.ProbeSpec{
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 					},
@@ -808,7 +808,7 @@ func TestProbeIngressSDConfigGenerationWithLabelEnforce(t *testing.T) {
 				},
 				Spec: monitoringv1.ProbeSpec{
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 					},
@@ -4023,7 +4023,7 @@ func TestRemoteWriteConfig(t *testing.T) {
 				AzureAD: &monitoringv1.AzureAD{
 					Cloud: ptr.To("AzureGovernment"),
 					ManagedIdentity: &monitoringv1.ManagedIdentity{
-						ClientID: "client-id",
+						ClientID: ptr.To("client-id"),
 					},
 				},
 			},
@@ -4094,6 +4094,19 @@ func TestRemoteWriteConfig(t *testing.T) {
 				},
 			},
 			golden: "RemoteWriteConfigAzureADSDK_v2.51.0.golden",
+		},
+		{
+			version: "v3.5.0",
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL: "http://example.com",
+				AzureAD: &monitoringv1.AzureAD{
+					Cloud: ptr.To("AzureGovernment"),
+					ManagedIdentity: &monitoringv1.ManagedIdentity{
+						ClientID: ptr.To(""),
+					},
+				},
+			},
+			golden: "RemoteWriteConfig_AzureADManagedIdentity_v3.5.0.golden",
 		},
 		{
 			version: "v2.26.0",
@@ -4441,6 +4454,14 @@ func TestRemoteWriteConfig(t *testing.T) {
 				},
 			},
 			golden: "RemoteWriteConfig_v2.54.0.golden",
+		},
+		{
+			// Empty metadataConfig defaults to no metadata being sent.
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL:            "http://example.com",
+				MetadataConfig: &monitoringv1.MetadataConfig{},
+			},
+			golden: "RemoteWriteConfigWithEmptyMetadataConfig.golden",
 		},
 	} {
 		t.Run(fmt.Sprintf("i=%d,version=%s", i, tc.version), func(t *testing.T) {
@@ -4833,7 +4854,7 @@ func TestLabelValueLengthLimits(t *testing.T) {
 				},
 				Spec: monitoringv1.ProbeSpec{
 					ProberSpec: monitoringv1.ProberSpec{
-						Scheme: "http",
+						Scheme: ptr.To(monitoringv1.SchemeHTTP),
 						URL:    "blackbox.exporter.io",
 						Path:   "/probe",
 						ProxyConfig: monitoringv1.ProxyConfig{
@@ -5765,7 +5786,7 @@ func TestScrapeFailureLogFilePrometheusAgent(t *testing.T) {
 			golden: "PrometheusAgent_no_scrapeFailureLogFile.golden",
 		},
 		{
-			name:                 "PrometheusAgent verison < v2.55.0",
+			name:                 "PrometheusAgent version < v2.55.0",
 			version:              "v2.54.0",
 			scrapeFailureLogFile: ptr.To("file.log"),
 			golden:               "PrometheusAgent_scrapeFailureLogFile_less_than_v2.54.0.golden",
@@ -5927,7 +5948,7 @@ func TestProbeSpecConfig(t *testing.T) {
 			golden: "ProbeSpecConfig_prober_spec.golden",
 			pbSpec: monitoringv1.ProbeSpec{
 				ProberSpec: monitoringv1.ProberSpec{
-					Scheme: "http",
+					Scheme: ptr.To(monitoringv1.SchemeHTTP),
 					URL:    "example.com",
 					Path:   "/probe",
 					ProxyConfig: monitoringv1.ProxyConfig{
@@ -6433,7 +6454,7 @@ func TestScrapeConfigSpecConfig(t *testing.T) {
 		{
 			name: "scheme",
 			scSpec: monitoringv1alpha1.ScrapeConfigSpec{
-				Scheme: ptr.To("HTTPS"),
+				Scheme: ptr.To(monitoringv1.SchemeHTTPS),
 			},
 			golden: "ScrapeConfigSpecConfig_Scheme.golden",
 		},
@@ -7491,7 +7512,7 @@ func TestScrapeConfigSpecConfigWithConsulSD(t *testing.T) {
 						Datacenter:   ptr.To("we1"),
 						Namespace:    ptr.To("observability"),
 						Partition:    ptr.To("1"),
-						Scheme:       ptr.To("https"),
+						Scheme:       ptr.To(monitoringv1.SchemeHTTPS),
 						Services:     []string{"prometheus", "alertmanager"},
 						Tags:         []string{"tag1"},
 						TagSeparator: ptr.To(";"),
@@ -8982,7 +9003,7 @@ func TestScrapeConfigSpecConfigWithDockerSDConfig(t *testing.T) {
 			golden: "ScrapeConfigSpecConfig_DockerSD_with_MatchFirstNetwork.golden",
 		},
 		{
-			name:    "docker_sd_config_match_first_network_with_old_verison",
+			name:    "docker_sd_config_match_first_network_with_old_version",
 			version: "v2.53.0",
 			scSpec: monitoringv1alpha1.ScrapeConfigSpec{
 				DockerSDConfigs: []monitoringv1alpha1.DockerSDConfig{
@@ -10301,7 +10322,7 @@ func defaultProbe() *monitoringv1.Probe {
 		},
 		Spec: monitoringv1.ProbeSpec{
 			ProberSpec: monitoringv1.ProberSpec{
-				Scheme: "http",
+				Scheme: ptr.To(monitoringv1.SchemeHTTP),
 				URL:    "blackbox.exporter.io",
 				Path:   "/probe",
 			},

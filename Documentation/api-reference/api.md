@@ -5902,12 +5902,14 @@ k8s.io/apimachinery/pkg/util/intstr.IntOrString
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>scheme to use when firing alerts.</p>
+<p>scheme defines the HTTP scheme to use when sending alerts.</p>
 </td>
 </tr>
 <tr>
@@ -10428,15 +10430,14 @@ string
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>scheme defines the HTTP scheme to use for scraping.</p>
-<p><code>http</code> and <code>https</code> are the expected values unless you rewrite the
-<code>__scheme__</code> label via relabeling.</p>
-<p>If empty, Prometheus uses the default value <code>http</code>.</p>
+<p>scheme defines the HTTP scheme to use when scraping the metrics.</p>
 </td>
 </tr>
 <tr>
@@ -11488,7 +11489,9 @@ string
 </em>
 </td>
 <td>
-<p>clientId defines defines the Azure User-assigned Managed identity.</p>
+<em>(Optional)</em>
+<p>clientId defines the Azure User-assigned Managed identity.</p>
+<p>For Prometheus &gt;= 3.5.0 and Thanos &gt;= 0.40.0, this field is allowed to be empty to support system-assigned managed identities.</p>
 </td>
 </tr>
 </tbody>
@@ -12208,6 +12211,11 @@ string
 <td>
 <em>(Optional)</em>
 <p>port defines the <code>Pod</code> port name which exposes the endpoint.</p>
+<p>If the pod doesn&rsquo;t expose a port with the same name, it will result
+in no targets being discovered.</p>
+<p>If a <code>Pod</code> has multiple <code>Port</code>s with the same name (which is not
+recommended), one target instance per unique port number will be
+generated.</p>
 <p>It takes precedence over the <code>portNumber</code> and <code>targetPort</code> fields.</p>
 </td>
 </tr>
@@ -12221,6 +12229,14 @@ int32
 <td>
 <em>(Optional)</em>
 <p>portNumber defines the <code>Pod</code> port number which exposes the endpoint.</p>
+<p>The <code>Pod</code> must declare the specified <code>Port</code> in its spec or the
+target will be dropped by Prometheus.</p>
+<p>This cannot be used to enable scraping of an undeclared port.
+To scrape targets on a port which isn&rsquo;t exposed, you need to use
+relabeling to override the <code>__address__</code> label (but beware of
+duplicate targets if the <code>Pod</code> has other declared ports).</p>
+<p>In practice Prometheus will select targets for which the
+matches the target&rsquo;s __meta_kubernetes_pod_container_port_number.</p>
 </td>
 </tr>
 <tr>
@@ -12256,15 +12272,14 @@ string
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
 <p>scheme defines the HTTP scheme to use for scraping.</p>
-<p><code>http</code> and <code>https</code> are the expected values unless you rewrite the
-<code>__scheme__</code> label via relabeling.</p>
-<p>If empty, Prometheus uses the default value <code>http</code>.</p>
 </td>
 </tr>
 <tr>
@@ -13514,21 +13529,24 @@ string
 </em>
 </td>
 <td>
-<p>url defines the mandatory URL of the prober.</p>
+<p>url defines the address of the prober.</p>
+<p>Unlike what the name indicates, the value should be in the form of
+<code>address:port</code> without any scheme which should be specified in the
+<code>scheme</code> field.</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>scheme defines the HTTP scheme to use for scraping.
-<code>http</code> and <code>https</code> are the expected values unless you rewrite the <code>__scheme__</code> label via relabeling.
-If empty, Prometheus uses the default value <code>http</code>.</p>
+<p>scheme defines the HTTP scheme to use when scraping the prober.</p>
 </td>
 </tr>
 <tr>
@@ -17086,6 +17104,8 @@ MetadataConfig
 <td>
 <em>(Optional)</em>
 <p>metadataConfig defines how to send a series metadata to the remote storage.</p>
+<p>When the field is empty, <strong>no metadata</strong> is sent. But when the field is
+null, metadata is sent.</p>
 </td>
 </tr>
 <tr>
@@ -17662,6 +17682,29 @@ TLSVersion
 </td>
 </tr>
 </tbody>
+</table>
+<h3 id="monitoring.coreos.com/v1.Scheme">Scheme
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#monitoring.coreos.com/v1.AlertmanagerEndpoints">AlertmanagerEndpoints</a>, <a href="#monitoring.coreos.com/v1.Endpoint">Endpoint</a>, <a href="#monitoring.coreos.com/v1.PodMetricsEndpoint">PodMetricsEndpoint</a>, <a href="#monitoring.coreos.com/v1.ProberSpec">ProberSpec</a>, <a href="#monitoring.coreos.com/v1alpha1.ConsulSDConfig">ConsulSDConfig</a>, <a href="#monitoring.coreos.com/v1alpha1.ScrapeConfigSpec">ScrapeConfigSpec</a>)
+</p>
+<div>
+<p>Supported values are <code>HTTP</code> and <code>HTTPS</code>. You can also rewrite the
+<code>__scheme__</code> label via relabeling configuration.</p>
+<p>If empty, the value defaults to <code>HTTP</code>.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;HTTP&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;HTTPS&#34;</p></td>
+<td></td>
+</tr></tbody>
 </table>
 <h3 id="monitoring.coreos.com/v1.ScrapeClass">ScrapeClass
 </h3>
@@ -18493,7 +18536,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>useFIPSSTSEndpoint defines FIPS mode for AWS STS endpoint.
+<p>useFIPSSTSEndpoint defines the FIPS mode for the AWS STS endpoint.
 It requires Prometheus &gt;= v2.54.0.</p>
 </td>
 </tr>
@@ -23394,13 +23437,14 @@ map[string][]string
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>scheme defines the protocol scheme used for requests.
-If empty, Prometheus uses HTTP by default.</p>
+<p>scheme defines the protocol scheme used for requests.</p>
 </td>
 </tr>
 <tr>
@@ -24263,12 +24307,14 @@ string
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>scheme defines the HTTP Scheme default &ldquo;http&rdquo;</p>
+<p>scheme defines the HTTP Scheme.</p>
 </td>
 </tr>
 <tr>
@@ -31917,6 +31963,19 @@ When true, the message can include HTML formatting tags.</p>
 </tr>
 <tr>
 <td>
+<code>monospace</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>monospace optional HTML/monospace formatting for the message, see <a href="https://pushover.net/api#html">https://pushover.net/api#html</a>
+html and monospace formatting are mutually exclusive.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>httpConfig</code><br/>
 <em>
 <a href="#monitoring.coreos.com/v1alpha1.HTTPConfig">
@@ -33629,13 +33688,14 @@ map[string][]string
 <td>
 <code>scheme</code><br/>
 <em>
-string
+<a href="#monitoring.coreos.com/v1.Scheme">
+Scheme
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>scheme defines the protocol scheme used for requests.
-If empty, Prometheus uses HTTP by default.</p>
+<p>scheme defines the protocol scheme used for requests.</p>
 </td>
 </tr>
 <tr>
@@ -37497,6 +37557,19 @@ bool
 <em>(Optional)</em>
 <p>html defines whether notification message is HTML or plain text.
 When true, the message can include HTML formatting tags.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>monospace</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>monospace optional HTML/monospace formatting for the message, see <a href="https://pushover.net/api#html">https://pushover.net/api#html</a>
+html and monospace formatting are mutually exclusive.</p>
 </td>
 </tr>
 <tr>
