@@ -4,7 +4,7 @@
   "metadata": {
     "annotations": {
       "controller-gen.kubebuilder.io/version": "v0.19.0",
-      "operator.prometheus.io/version": "0.86.2"
+      "operator.prometheus.io/version": "0.87.0"
     },
     "name": "servicemonitors.monitoring.coreos.com"
   },
@@ -714,10 +714,12 @@
                           "type": "array"
                         },
                         "scheme": {
-                          "description": "scheme defines the HTTP scheme to use for scraping.\n\n`http` and `https` are the expected values unless you rewrite the\n`__scheme__` label via relabeling.\n\nIf empty, Prometheus uses the default value `http`.",
+                          "description": "scheme defines the HTTP scheme to use when scraping the metrics.",
                           "enum": [
                             "http",
-                            "https"
+                            "https",
+                            "HTTP",
+                            "HTTPS"
                           ],
                           "type": "string"
                         },
