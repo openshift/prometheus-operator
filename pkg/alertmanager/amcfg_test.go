@@ -146,29 +146,33 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 					},
 				},
 				ResolveTimeout: "30s",
-				HTTPConfig: &monitoringv1.HTTPConfig{
-					OAuth2: &monitoringv1.OAuth2{
-						ClientID: monitoringv1.SecretOrConfigMap{
-							ConfigMap: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "webhook-client-id",
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							OAuth2: &monitoringv1.OAuth2{
+								ClientID: monitoringv1.SecretOrConfigMap{
+									ConfigMap: &corev1.ConfigMapKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "webhook-client-id",
+										},
+										Key: "test",
+									},
 								},
-								Key: "test",
+								ClientSecret: corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "webhook-client-secret",
+									},
+									Key: "test",
+								},
+								TokenURL: "https://test.com",
+								Scopes:   []string{"any"},
+								EndpointParams: map[string]string{
+									"some": "value",
+								},
 							},
-						},
-						ClientSecret: corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "webhook-client-secret",
-							},
-							Key: "test",
-						},
-						TokenURL: "https://test.com",
-						Scopes:   []string{"any"},
-						EndpointParams: map[string]string{
-							"some": "value",
+							FollowRedirects: ptr.To(true),
 						},
 					},
-					FollowRedirects: ptr.To(true),
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -204,18 +208,22 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 			name:      "valid global config with global HTTPConfig CA",
 			amVersion: &version28,
 			globalConfig: &monitoringv1.AlertmanagerGlobalConfig{
-				HTTPConfig: &monitoringv1.HTTPConfig{
-					TLSConfig: &monitoringv1.SafeTLSConfig{
-						CA: monitoringv1.SecretOrConfigMap{
-							ConfigMap: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "proxy-ca-certificate",
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							FollowRedirects: ptr.To(true),
+						},
+						TLSConfig: &monitoringv1.SafeTLSConfig{
+							CA: monitoringv1.SecretOrConfigMap{
+								ConfigMap: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "proxy-ca-certificate",
+									},
+									Key: "certificate",
 								},
-								Key: "certificate",
 							},
 						},
 					},
-					FollowRedirects: ptr.To(true),
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -622,8 +630,12 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 		{
 			name: "globalConfig has null resolve timeout",
 			globalConfig: &monitoringv1.AlertmanagerGlobalConfig{
-				HTTPConfig: &monitoringv1.HTTPConfig{
-					FollowRedirects: ptr.To(true),
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							FollowRedirects: ptr.To(true),
+						},
+					},
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -650,7 +662,12 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 		{
 			name: "globalConfig httpconfig/proxyconfig has null secretKey for proxyConnectHeader",
 			globalConfig: &monitoringv1.AlertmanagerGlobalConfig{
-				HTTPConfig: &monitoringv1.HTTPConfig{
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							FollowRedirects: ptr.To(true),
+						},
+					},
 					ProxyConfig: monitoringv1.ProxyConfig{
 						ProxyURL: ptr.To("http://example.com"),
 						NoProxy:  ptr.To("svc.cluster.local"),
@@ -665,7 +682,6 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 							},
 						},
 					},
-					FollowRedirects: ptr.To(true),
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -693,7 +709,7 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 			name:      "valid globalConfig httpconfig/proxyconfig/proxyConnectHeader with amVersion24",
 			amVersion: &version24,
 			globalConfig: &monitoringv1.AlertmanagerGlobalConfig{
-				HTTPConfig: &monitoringv1.HTTPConfig{
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
 					ProxyConfig: monitoringv1.ProxyConfig{
 						ProxyURL: ptr.To("http://example.com"),
 						NoProxy:  ptr.To("svc.cluster.local"),
@@ -708,7 +724,11 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 							},
 						},
 					},
-					FollowRedirects: ptr.To(true),
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							FollowRedirects: ptr.To(true),
+						},
+					},
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -736,7 +756,7 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 			name:      "valid globalConfig httpconfig/proxyconfig/proxyConnectHeader with amVersion26",
 			amVersion: &version26,
 			globalConfig: &monitoringv1.AlertmanagerGlobalConfig{
-				HTTPConfig: &monitoringv1.HTTPConfig{
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
 					ProxyConfig: monitoringv1.ProxyConfig{
 						ProxyURL: ptr.To("http://example.com"),
 						NoProxy:  ptr.To("svc.cluster.local"),
@@ -751,7 +771,11 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 							},
 						},
 					},
-					FollowRedirects: ptr.To(true),
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							FollowRedirects: ptr.To(true),
+						},
+					},
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -907,29 +931,33 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 					},
 				},
 				ResolveTimeout: "30s",
-				HTTPConfig: &monitoringv1.HTTPConfig{
-					OAuth2: &monitoringv1.OAuth2{
-						ClientID: monitoringv1.SecretOrConfigMap{
-							ConfigMap: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "webhook-client-id",
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							OAuth2: &monitoringv1.OAuth2{
+								ClientID: monitoringv1.SecretOrConfigMap{
+									ConfigMap: &corev1.ConfigMapKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "webhook-client-id",
+										},
+										Key: "test",
+									},
 								},
-								Key: "test",
+								ClientSecret: corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "webhook-client-secret",
+									},
+									Key: "test",
+								},
+								TokenURL: "https://test.com",
+								Scopes:   []string{"any"},
+								EndpointParams: map[string]string{
+									"some": "value",
+								},
 							},
-						},
-						ClientSecret: corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "webhook-client-secret",
-							},
-							Key: "test",
-						},
-						TokenURL: "https://test.com",
-						Scopes:   []string{"any"},
-						EndpointParams: map[string]string{
-							"some": "value",
+							FollowRedirects: ptr.To(true),
 						},
 					},
-					FollowRedirects: ptr.To(true),
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -1805,43 +1833,47 @@ func TestInitializeFromAlertmanagerConfig(t *testing.T) {
 			amVersion: &version28,
 			globalConfig: &monitoringv1.AlertmanagerGlobalConfig{
 				ResolveTimeout: "30s",
-				HTTPConfig: &monitoringv1.HTTPConfig{
-					OAuth2: &monitoringv1.OAuth2{
-						ClientID: monitoringv1.SecretOrConfigMap{
-							ConfigMap: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "webhook-client-id",
+				HTTPConfigWithProxy: &monitoringv1.HTTPConfigWithProxy{
+					HTTPConfig: monitoringv1.HTTPConfig{
+						HTTPConfigWithoutTLS: monitoringv1.HTTPConfigWithoutTLS{
+							OAuth2: &monitoringv1.OAuth2{
+								ClientID: monitoringv1.SecretOrConfigMap{
+									ConfigMap: &corev1.ConfigMapKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "webhook-client-id",
+										},
+										Key: "test",
+									},
 								},
-								Key: "test",
+								ClientSecret: corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "webhook-client-secret",
+									},
+									Key: "test",
+								},
+								TokenURL: "https://test.com",
+								Scopes:   []string{"any"},
+								EndpointParams: map[string]string{
+									"some": "value",
+								},
 							},
-						},
-						ClientSecret: corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "webhook-client-secret",
+							BasicAuth: &monitoringv1.BasicAuth{
+								Username: corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "webhook-client-secret",
+									},
+									Key: "test",
+								},
+								Password: corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "webhook-client-secret",
+									},
+									Key: "test",
+								},
 							},
-							Key: "test",
-						},
-						TokenURL: "https://test.com",
-						Scopes:   []string{"any"},
-						EndpointParams: map[string]string{
-							"some": "value",
+							FollowRedirects: ptr.To(true),
 						},
 					},
-					BasicAuth: &monitoringv1.BasicAuth{
-						Username: corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "webhook-client-secret",
-							},
-							Key: "test",
-						},
-						Password: corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "webhook-client-secret",
-							},
-							Key: "test",
-						},
-					},
-					FollowRedirects: ptr.To(true),
 				},
 			},
 			amConfig: &monitoringv1alpha1.AlertmanagerConfig{
@@ -2633,15 +2665,15 @@ func TestGenerateConfig(t *testing.T) {
 								},
 								PagerDutyImageConfigs: []monitoringv1alpha1.PagerDutyImageConfig{
 									{
-										Src:  "https://some-image.com",
-										Href: "https://some-image.com",
-										Alt:  "some-image",
+										Src:  ptr.To("https://some-image.com"),
+										Href: ptr.To(monitoringv1alpha1.URL("https://some-image.com")),
+										Alt:  ptr.To("some-image"),
 									},
 								},
 								PagerDutyLinkConfigs: []monitoringv1alpha1.PagerDutyLinkConfig{
 									{
-										Href: "https://some-link.com",
-										Text: "some-link",
+										Href: ptr.To(monitoringv1alpha1.URL("https://some-link.com")),
+										Text: ptr.To("some-link"),
 									},
 								},
 							}},
@@ -2692,7 +2724,7 @@ func TestGenerateConfig(t *testing.T) {
 						Receivers: []monitoringv1alpha1.Receiver{{
 							Name: "test",
 							WebhookConfigs: []monitoringv1alpha1.WebhookConfig{{
-								URL: ptr.To("http://test.url"),
+								URL: ptr.To(monitoringv1alpha1.URL("http://test.url")),
 								HTTPConfig: &monitoringv1alpha1.HTTPConfig{
 									OAuth2: &monitoringv1.OAuth2{
 										ClientID: monitoringv1.SecretOrConfigMap{
@@ -2819,6 +2851,52 @@ func TestGenerateConfig(t *testing.T) {
 			golden: "CR_with_Opsgenie_Team_Responder.golden",
 		},
 		{
+			name: "CR with Opsgenie Receiver",
+			kclient: fake.NewSimpleClientset(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "am-og-test-receiver",
+						Namespace: "mynamespace",
+					},
+					Data: map[string][]byte{
+						"apiKey": []byte("1234abc"),
+					},
+				},
+			),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{{
+							Name: "test",
+							OpsGenieConfigs: []monitoringv1alpha1.OpsGenieConfig{{
+								APIKey: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "am-og-test-receiver",
+									},
+									Key: "apiKey",
+								},
+								APIURL: ptr.To(monitoringv1alpha1.URL("https://example.com/")),
+							}},
+						}},
+					},
+				},
+			},
+			golden: "CR_with_Opsgenie_Receiver_Valid_APIURL.golden",
+		},
+		{
 			name: "CR with WeChat Receiver",
 			kclient: fake.NewSimpleClientset(
 				&corev1.Secret{
@@ -2917,8 +2995,8 @@ func TestGenerateConfig(t *testing.T) {
 									},
 									Key: "token",
 								},
-								Retry:  "5m",
-								Expire: "30s",
+								Retry:  ptr.To("5m"),
+								Expire: ptr.To("30s"),
 								HTML:   ptr.To(true),
 							}},
 						}},
@@ -2960,7 +3038,7 @@ func TestGenerateConfig(t *testing.T) {
 						Receivers: []monitoringv1alpha1.Receiver{{
 							Name: "test",
 							TelegramConfigs: []monitoringv1alpha1.TelegramConfig{{
-								APIURL: "https://api.telegram.org",
+								APIURL: ptr.To(monitoringv1alpha1.URL("https://api.telegram.org")),
 								BotToken: &corev1.SecretKeySelector{
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: "am-telegram-test-receiver",
@@ -3005,7 +3083,7 @@ func TestGenerateConfig(t *testing.T) {
 									{
 										Type: "type",
 										Text: "text",
-										Name: "my-action",
+										Name: ptr.To("my-action"),
 										ConfirmField: &monitoringv1alpha1.SlackConfirmationField{
 											Text: "text",
 										},
@@ -3053,7 +3131,7 @@ func TestGenerateConfig(t *testing.T) {
 									{
 										Type: "type",
 										Text: "text",
-										Name: "my-action",
+										Name: ptr.To("my-action"),
 										ConfirmField: &monitoringv1alpha1.SlackConfirmationField{
 											Text: "text",
 										},
@@ -3238,7 +3316,7 @@ func TestGenerateConfig(t *testing.T) {
 									{
 										Type: "type",
 										Text: "text",
-										Name: "my-action",
+										Name: ptr.To("my-action"),
 										ConfirmField: &monitoringv1alpha1.SlackConfirmationField{
 											Text: "text",
 										},
@@ -3319,7 +3397,7 @@ func TestGenerateConfig(t *testing.T) {
 									{
 										Type: "type",
 										Text: "text",
-										Name: "my-action",
+										Name: ptr.To("my-action"),
 										ConfirmField: &monitoringv1alpha1.SlackConfirmationField{
 											Text: "text",
 										},
@@ -3771,7 +3849,7 @@ func TestGenerateConfig(t *testing.T) {
 								Name: "test",
 								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
 									{
-										URL:     ptr.To("https://example.com/"),
+										URL:     ptr.To(monitoringv1alpha1.URL("https://example.com/")),
 										Timeout: ptr.To(monitoringv1.Duration("5s")),
 									},
 								},
@@ -3807,7 +3885,7 @@ func TestGenerateConfig(t *testing.T) {
 								Name: "test",
 								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
 									{
-										URL:     ptr.To("https://example.com/"),
+										URL:     ptr.To(monitoringv1alpha1.URL("https://example.com/")),
 										Timeout: ptr.To(monitoringv1.Duration("5s")),
 									},
 								},
@@ -3892,6 +3970,15 @@ func TestSanitizeConfig(t *testing.T) {
 
 	versionSMTPTLSConfigAllowed := semver.Version{Major: 0, Minor: 28}
 	versionSMTPTLSConfigNotAllowed := semver.Version{Major: 0, Minor: 27}
+
+	versionMattermostConfigAllowed := semver.Version{Major: 0, Minor: 30}
+	versionMattermostConfigNotAllowed := semver.Version{Major: 0, Minor: 29}
+
+	versionTimeoutConfigAllowed := semver.Version{Major: 0, Minor: 30}
+	versionTimeoutConfigNotAllowed := semver.Version{Major: 0, Minor: 29}
+
+	versionSlackAppConfigAllowed := semver.Version{Major: 0, Minor: 30}
+	versionSlackAppConfigNotAllowed := semver.Version{Major: 0, Minor: 29}
 
 	for _, tc := range []struct {
 		name           string
@@ -4001,6 +4088,38 @@ func TestSanitizeConfig(t *testing.T) {
 				},
 			},
 			golden: "test_slack_config_happy_path.golden",
+		},
+		{
+			name:           "Test timeout is dropped in slack config for unsupported versions",
+			againstVersion: versionTimeoutConfigNotAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						SlackConfigs: []*slackConfig{
+							{
+								Timeout: ptr.To(model.Duration(time.Minute)),
+							},
+						},
+					},
+				},
+			},
+			golden: "test_slack_timeout_is_dropped_in_slack_config_for_unsupported_versions.golden",
+		},
+		{
+			name:           "Test timeout is added in slack config for supported versions",
+			againstVersion: versionTimeoutConfigAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						SlackConfigs: []*slackConfig{
+							{
+								Timeout: ptr.To(model.Duration(time.Minute)),
+							},
+						},
+					},
+				},
+			},
+			golden: "test_slack_timeout_is_added_in_slack_config_for_supported_versions.golden",
 		},
 		{
 			name:           "Test inhibit rules error with unsupported syntax",
@@ -4552,6 +4671,207 @@ func TestSanitizeConfig(t *testing.T) {
 				},
 			},
 			golden: "summary_add_in_supported_versions_for_MSTeams_config.golden",
+		},
+		{
+			name:           "Test config version mattermost allowed",
+			againstVersion: versionMattermostConfigAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						MattermostConfigs: []*mattermostConfig{
+							{
+								WebhookURL: "www.test.com",
+								Text:       "test text",
+							},
+						},
+					},
+				},
+			},
+			golden: "test_config_version_mattermost_allowed.golden",
+		},
+		{
+			name:           "Test drop config version mattermost not allowed",
+			againstVersion: versionMattermostConfigNotAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						MattermostConfigs: []*mattermostConfig{
+							{
+								WebhookURL: "www.test.com",
+								Text:       "test text",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "Test webhook_url takes precedence in mattermost config",
+			againstVersion: versionMattermostConfigAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						MattermostConfigs: []*mattermostConfig{
+							{
+								WebhookURL:     "www.test.com",
+								WebhookURLFile: "/test",
+								Text:           "test text",
+							},
+						},
+					},
+				},
+			},
+			golden: "test_webhook_url_takes_precedence_in_mattermost_config.golden",
+		},
+		{
+			name:           "Test timeout is dropped in pagerduty config for unsupported versions",
+			againstVersion: versionTimeoutConfigNotAllowed,
+
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						PagerdutyConfigs: []*pagerdutyConfig{
+							{
+								Timeout: ptr.To(model.Duration(time.Minute)),
+							},
+						},
+					},
+				},
+			},
+			golden: "test_pagerduty_timeout_is_dropped_in_pagerduty_config_for_unsupported_versions.golden",
+		},
+		{
+			name:           "Test timeout is added in pagerduty config for supported versions",
+			againstVersion: versionTimeoutConfigAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						PagerdutyConfigs: []*pagerdutyConfig{
+							{
+								Timeout: ptr.To(model.Duration(time.Minute)),
+							},
+						},
+					},
+				},
+			},
+			golden: "test_pagerduty_timeout_is_added_in_pagerduty_config_for_supported_versions.golden",
+		},
+		{
+			name:           "Test slack_app_token is dropped for unsupported versions",
+			againstVersion: versionSlackAppConfigNotAllowed,
+			in: &alertmanagerConfig{
+				Global: &globalConfig{
+					SlackAppToken: "xoxb-token",
+					SlackAppURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+				},
+			},
+			golden: "test_slack_app_token_is_dropped_for_unsupported_versions.golden",
+		},
+		{
+			name:           "Test slack_app_url is dropped for unsupported versions",
+			againstVersion: versionSlackAppConfigNotAllowed,
+			in: &alertmanagerConfig{
+				Global: &globalConfig{
+					SlackAppURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+				},
+			},
+			golden: "test_slack_app_url_is_dropped_for_unsupported_versions.golden",
+		},
+		{
+			name:           "Test slack_app_token and slack_app_url preserved for supported versions",
+			againstVersion: versionSlackAppConfigAllowed,
+			in: &alertmanagerConfig{
+				Global: &globalConfig{
+					SlackAppToken: "xoxb-token",
+					SlackAppURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+				},
+			},
+			golden: "test_slack_app_token_and_slack_app_url_preserved_for_supported_versions.golden",
+		},
+		{
+			name:           "Test slack_app_token takes precedence over slack_app_token_file",
+			againstVersion: versionSlackAppConfigAllowed,
+			in: &alertmanagerConfig{
+				Global: &globalConfig{
+					SlackAppToken:     "xoxb-token",
+					SlackAppTokenFile: "/var/secrets/token",
+					SlackAppURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+				},
+			},
+			golden: "test_slack_app_token_takes_precedence_over_slack_app_token_file.golden",
+		},
+		{
+			name:           "Test slack_app_token and slack_api_url both configured with different URLs fails",
+			againstVersion: versionSlackAppConfigAllowed,
+			in: &alertmanagerConfig{
+				Global: &globalConfig{
+					SlackAPIURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "hooks.slack.com",
+							Path:   "/services/XXX",
+						},
+					},
+					SlackAppToken: "xoxb-token",
+					SlackAppURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "Test slack_app_token and slack_api_url with same URL is allowed",
+			againstVersion: versionSlackAppConfigAllowed,
+			in: &alertmanagerConfig{
+				Global: &globalConfig{
+					SlackAPIURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+					SlackAppToken: "xoxb-token",
+					SlackAppURL: &config.URL{
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "slack.com",
+							Path:   "/api/chat.postMessage",
+						},
+					},
+				},
+			},
+			golden: "test_slack_app_token_and_slack_api_url_with_same_url_is_allowed.golden",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -5348,6 +5668,7 @@ func TestSanitizeWebhookConfig(t *testing.T) {
 		againstVersion semver.Version
 		in             *alertmanagerConfig
 		golden         string
+		expectErr      bool
 	}{
 		{
 			name:           "Test webhook_url_file is dropped in webhook config for unsupported versions",
@@ -5373,7 +5694,7 @@ func TestSanitizeWebhookConfig(t *testing.T) {
 					{
 						WebhookConfigs: []*webhookConfig{
 							{
-								URL:     "foo",
+								URL:     "http://example.com/foo",
 								URLFile: "bar",
 							},
 						},
@@ -5414,9 +5735,45 @@ func TestSanitizeWebhookConfig(t *testing.T) {
 			},
 			golden: "test_webhook_timeout_is_added_in_webhook_config_for_supported_versions.golden",
 		},
+		{
+			name:           "Test invalid url returns error",
+			againstVersion: semver.Version{Major: 0, Minor: 26},
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						WebhookConfigs: []*webhookConfig{
+							{
+								URL: "not-a-valid-url",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "Test valid url passes validation",
+			againstVersion: semver.Version{Major: 0, Minor: 26},
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						WebhookConfigs: []*webhookConfig{
+							{
+								URL: "http://example.com/webhook",
+							},
+						},
+					},
+				},
+			},
+			golden: "test_webhook_valid_url_passes.golden",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.in.sanitize(tc.againstVersion, logger)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 
 			amConfigs, err := yaml.Marshal(tc.in)
@@ -5435,6 +5792,7 @@ func TestSanitizePushoverConfig(t *testing.T) {
 		againstVersion semver.Version
 		in             *alertmanagerConfig
 		golden         string
+		expectErr      bool
 	}{
 		{
 			name:           "Test pushover_user_key_file is dropped in pushover config for unsupported versions",
@@ -5508,9 +5866,49 @@ func TestSanitizePushoverConfig(t *testing.T) {
 			},
 			golden: "test_token_takes_precedence_in_pushover_config.golden",
 		},
+		{
+			name:           "Test invalid url returns error",
+			againstVersion: semver.Version{Major: 0, Minor: 26},
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						PushoverConfigs: []*pushoverConfig{
+							{
+								UserKey: "key",
+								Token:   "token",
+								URL:     "not-a-valid-url",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "Test valid url passes validation",
+			againstVersion: semver.Version{Major: 0, Minor: 26},
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						PushoverConfigs: []*pushoverConfig{
+							{
+								UserKey: "key",
+								Token:   "token",
+								URL:     "http://example.com",
+							},
+						},
+					},
+				},
+			},
+			golden: "test_pushover_valid_url_passes.golden",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.in.sanitize(tc.againstVersion, logger)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 
 			amConfigs, err := yaml.Marshal(tc.in)
@@ -5645,6 +6043,9 @@ func TestSanitizeJiraConfig(t *testing.T) {
 	logger := newNopLogger(t)
 	versionJiraAllowed := semver.Version{Major: 0, Minor: 28}
 	versionJiraNotAllowed := semver.Version{Major: 0, Minor: 27}
+
+	versionAPITypeAllowed := semver.Version{Major: 0, Minor: 29}
+	versionAPITypeNotAllowed := semver.Version{Major: 0, Minor: 28}
 	for _, tc := range []struct {
 		name           string
 		againstVersion semver.Version
@@ -5720,6 +6121,63 @@ func TestSanitizeJiraConfig(t *testing.T) {
 				},
 			},
 			golden: "jira_configs_with_send_resolved.golden",
+		},
+		{
+			name:           "jira_configs with api_type",
+			againstVersion: versionAPITypeAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						JiraConfigs: []*jiraConfig{
+							{
+								APIURL:    "http://issues.example.com",
+								Project:   "Monitoring",
+								APIType:   "datacenter",
+								IssueType: "Bug",
+							},
+						},
+					},
+				},
+			},
+			golden: "jira_config_with_api_type.golden",
+		},
+		{
+			name:           "jira_configs with api_type version not supported",
+			againstVersion: versionAPITypeNotAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						JiraConfigs: []*jiraConfig{
+							{
+								APIURL:    "http://issues.example.com",
+								Project:   "Monitoring",
+								APIType:   "datacenter",
+								IssueType: "Bug",
+							},
+						},
+					},
+				},
+			},
+			golden: "jira_config_with_api_type_version_not_supported.golden",
+		},
+		{
+			name:           "jira_configs with invalid api_type",
+			againstVersion: versionAPITypeAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						JiraConfigs: []*jiraConfig{
+							{
+								APIURL:    "http://issues.example.com",
+								Project:   "Monitoring",
+								APIType:   "onpremise",
+								IssueType: "Bug",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -5990,6 +6448,198 @@ func TestSanitizeRocketChatConfig(t *testing.T) {
 	}
 }
 
+func TestSanitizeIncidentioConfig(t *testing.T) {
+	logger := newNopLogger(t)
+	versionIncidentioAllowed := semver.Version{Major: 0, Minor: 29}
+	versionIncidentioNotAllowed := semver.Version{Major: 0, Minor: 28}
+	for _, tc := range []struct {
+		name           string
+		againstVersion semver.Version
+		in             *alertmanagerConfig
+		golden         string
+		expectErr      bool
+	}{
+		{
+			name:           "incidentio_configs returns error for unsupported versions",
+			againstVersion: versionIncidentioNotAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL:              "http://example.com",
+								AlertSourceToken: "token123",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs allows for supported versions",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL:              "http://example.com",
+								AlertSourceToken: "token123",
+							},
+						},
+					},
+				},
+			},
+			golden: "incidentio_configs_for_supported_versions.golden",
+		},
+		{
+			name:           "incidentio_configs invalid url returns error",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL:              "not-a-valid-url",
+								AlertSourceToken: "token123",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs both url and url_file set",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL:              "http://example.com",
+								URLFile:          "/var/kubernetes/secrets/url",
+								AlertSourceToken: "token123",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs both alert_source_token and alert_source_token_file set",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL:                  "http://example.com",
+								AlertSourceToken:     "token123",
+								AlertSourceTokenFile: "/var/kubernetes/secrets/token",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs missing url and url_file",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								AlertSourceToken: "token123",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs missing authentication",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL: "http://example.com",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs with http_config.authorization and alert_source_token",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL:              "http://example.com",
+								AlertSourceToken: "token123",
+								HTTPConfig: &httpClientConfig{
+									Authorization: &authorization{
+										Type:        "Bearer",
+										Credentials: "creds123",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "incidentio_configs with http_config.authorization only",
+			againstVersion: versionIncidentioAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						IncidentioConfigs: []*incidentioConfig{
+							{
+								URL: "http://example.com",
+								HTTPConfig: &httpClientConfig{
+									Authorization: &authorization{
+										Type:        "Bearer",
+										Credentials: "creds123",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "incidentio_configs_with_http_authorization.golden",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.in.sanitize(tc.againstVersion, logger)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+
+			amConfigs, err := yaml.Marshal(tc.in)
+			require.NoError(t, err)
+
+			golden.Assert(t, string(amConfigs), tc.golden)
+		})
+	}
+}
 func TestSanitizeRoute(t *testing.T) {
 	logger := newNopLogger(t)
 	matcherV2SyntaxAllowed := semver.Version{Major: 0, Minor: 22}
@@ -6314,6 +6964,130 @@ func TestConvertHTTPConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			golden.Assert(t, string(cfgBytes), tc.golden)
+		})
+	}
+}
+
+func TestSanitizeTelegramConfig(t *testing.T) {
+	logger := newNopLogger(t)
+	versionTelegramExampleAllowed := semver.Version{Major: 0, Minor: 26}
+
+	for _, tc := range []struct {
+		name           string
+		againstVersion semver.Version
+		in             *alertmanagerConfig
+		golden         string
+		expectErr      bool
+	}{
+		{
+			name:           "telegram invalid api_url returns error",
+			againstVersion: versionTelegramExampleAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						TelegramConfigs: []*telegramConfig{
+							{
+								APIUrl:   "not-a-valid-url",
+								BotToken: "token",
+								ChatID:   12345,
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "telegram valid api_url passes validation",
+			againstVersion: versionTelegramExampleAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						TelegramConfigs: []*telegramConfig{
+							{
+								APIUrl:   "http://example.com",
+								BotToken: "token",
+								ChatID:   12345,
+							},
+						},
+					},
+				},
+			},
+			golden: "telegram_valid_url_passes.golden",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.in.sanitize(tc.againstVersion, logger)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			amConfigs, err := yaml.Marshal(tc.in)
+			require.NoError(t, err)
+
+			golden.Assert(t, string(amConfigs), tc.golden)
+		})
+	}
+}
+
+func TestSanitizeMSTeamsConfig(t *testing.T) {
+	logger := newNopLogger(t)
+	versionMSTeamsExampleAllowed := semver.Version{Major: 0, Minor: 27}
+
+	for _, tc := range []struct {
+		name           string
+		againstVersion semver.Version
+		in             *alertmanagerConfig
+		golden         string
+		expectErr      bool
+	}{
+		{
+			name:           "msteams invalid webhook_url returns error",
+			againstVersion: versionMSTeamsExampleAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						MSTeamsConfigs: []*msTeamsConfig{
+							{
+								WebhookURL: "not-a-valid-url",
+							},
+						},
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name:           "msteams valid webhook_url passes validation",
+			againstVersion: versionMSTeamsExampleAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						MSTeamsConfigs: []*msTeamsConfig{
+							{
+								WebhookURL: "http://example.com/webhook",
+							},
+						},
+					},
+				},
+			},
+			golden: "msteams_valid_url_passes.golden",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.in.sanitize(tc.againstVersion, logger)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			amConfigs, err := yaml.Marshal(tc.in)
+			require.NoError(t, err)
+
+			golden.Assert(t, string(amConfigs), tc.golden)
 		})
 	}
 }

@@ -50,6 +50,8 @@ const (
 	resyncPeriod              = 5 * time.Minute
 	controllerName            = "prometheusagent-controller"
 	applicationNameLabelValue = "prometheus-agent"
+
+	noSelectedResourcesMessage = "No ServiceMonitor, PodMonitor, Probe, and ScrapeConfig have been selected."
 )
 
 // Operator manages life cycle of Prometheus agent deployments and
@@ -852,29 +854,11 @@ func (c *Operator) syncStatefulSet(ctx context.Context, key string, p *monitorin
 			"existing_hash", existingStatefulSet.Annotations[operator.InputHashAnnotationKey],
 		)
 
-		err = k8sutil.UpdateStatefulSet(ctx, ssetClient, sset)
-		sErr, ok := err.(*apierrors.StatusError)
-
-		if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+		if err = k8sutil.ForceUpdateStatefulSet(ctx, ssetClient, sset, func(reason string) {
 			c.metrics.StsDeleteCreateCounter().Inc()
-
-			// Gather only reason for failed update
-			failMsg := make([]string, len(sErr.ErrStatus.Details.Causes))
-			for i, cause := range sErr.ErrStatus.Details.Causes {
-				failMsg[i] = cause.Message
-			}
-
-			logger.Info("recreating StatefulSet because the update operation wasn't possible", "reason", strings.Join(failMsg, ", "))
-
-			propagationPolicy := metav1.DeletePropagationForeground
-			if err := ssetClient.Delete(ctx, sset.GetName(), metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
-				return fmt.Errorf("failed to delete StatefulSet to avoid forbidden action: %w", err)
-			}
-			continue
-		}
-
-		if err != nil {
-			return fmt.Errorf("updating StatefulSet failed: %w", err)
+			logger.Info("recreating StatefulSet because the update operation wasn't possible", "reason", reason)
+		}); err != nil {
+			return err
 		}
 	}
 
@@ -934,6 +918,10 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, logger
 		if err != nil {
 			return fmt.Errorf("selecting ScrapeConfigs failed: %w", err)
 		}
+	}
+
+	if len(smons)+len(pmons)+len(bmons)+len(scrapeConfigs) == 0 {
+		c.reconciliations.SetReasonAndMessage(operator.KeyForObject(p), operator.NoSelectedResourcesReason, noSelectedResourcesMessage)
 	}
 
 	if err := cg.AddRemoteWriteToStore(ctx, store, p.GetNamespace(), p.Spec.RemoteWrite); err != nil {
