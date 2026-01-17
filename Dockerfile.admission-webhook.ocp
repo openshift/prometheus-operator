@@ -6,7 +6,7 @@ ENV GO111MODULE=on
 ENV GOFLAGS="-mod=vendor"
 RUN OS=$(go env GOOS) ARCH=$(go env GOARCH) make prometheus-admission-webhook-no-deps
 
-FROM registry.ci.openshift.org/ocp/4.22:base-rhel9
+FROM registry.ci.openshift.org/ocp/4.22:base-rhel9-minimal
 LABEL io.k8s.display-name="Prometheus admission webhook" \
       io.k8s.description="This component validates PrometheusRules and AlertManagerConfigs." \
       io.openshift.tags="prometheus" \
