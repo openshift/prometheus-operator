@@ -6,7 +6,7 @@ ENV GO111MODULE=on
 ENV GOFLAGS="-mod=vendor"
 RUN OS=$(go env GOOS) ARCH=$(go env GOARCH) make operator-no-deps
 
-FROM registry.ci.openshift.org/ocp/4.22:base-rhel9
+FROM registry.ci.openshift.org/ocp/4.22:base-rhel9-minimal
 LABEL io.k8s.display-name="Prometheus Operator" \
       io.k8s.description="This component manages the lifecycle and configuration of a Prometheus monitoring server as well as Prometheus Alertmanager clusters." \
       io.openshift.tags="prometheus" \
