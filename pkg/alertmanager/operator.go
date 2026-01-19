@@ -1703,6 +1703,10 @@ func checkMSTeamsConfigs(
 			return err
 		}
 
+		if _, err := store.GetSecretKey(ctx, namespace, config.WebhookURL); err != nil {
+			return err
+		}
+
 		if err := configureHTTPConfigInStore(ctx, config.HTTPConfig, namespace, store); err != nil {
 			return err
 		}
