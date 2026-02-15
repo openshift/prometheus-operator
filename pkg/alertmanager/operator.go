@@ -39,6 +39,7 @@ import (
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/ptr"
 
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager/clustertlsconfig"
 	"github.com/prometheus-operator/prometheus-operator/pkg/alertmanager/validation"
@@ -284,17 +285,7 @@ func (c *Operator) bootstrap(ctx context.Context, config operator.Config) error 
 			c.kclient,
 			resyncPeriod,
 			func(options *metav1.ListOptions) {
-				// TODO(simonpasquier): use a more restrictive label selector
-				// selecting only Alertmanager statefulsets (e.g.
-				// "app.kubernetes.io/name in (alertmanager)").
-				//
-				// We need to wait for a couple of releases after [1] merges to
-				// ensure that the expected labels have been propagated to the
-				// Alertmanager statefulsets otherwise the informer won't
-				// select any object.
-				//
-				// [1] https://github.com/prometheus-operator/prometheus-operator/pull/7786
-				options.LabelSelector = operator.ManagedByOperatorLabelSelector()
+				options.LabelSelector = labelSelectorForStatefulSets()
 			},
 		),
 		appsv1.SchemeGroupVersion.WithResource("statefulsets"),
@@ -578,11 +569,11 @@ func (c *Operator) handleNamespaceUpdate(oldo, curo any) {
 
 // Sync implements the operator.Syncer interface.
 func (c *Operator) Sync(ctx context.Context, key string) error {
+	c.reconciliations.ResetStatus(key)
 	err := c.sync(ctx, key)
 	c.reconciliations.SetStatus(key, err)
 
 	return err
-
 }
 
 func (c *Operator) sync(ctx context.Context, key string) error {
@@ -599,17 +590,19 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 
 	// Check if the Alertmanager instance is marked for deletion.
 	if c.rr.DeletionInProgress(am) {
-		return nil
-	}
-
-	if am.Spec.Paused {
+		c.reconciliations.ForgetObject(key)
 		return nil
 	}
 
 	logger := c.logger.With("key", key)
-	logDeprecatedFields(logger, am)
-
 	logger.Info("sync alertmanager")
+
+	if am.Spec.Paused {
+		logger.Info("no action taken (the resource is paused)")
+		return nil
+	}
+
+	c.recordDeprecatedFields(key, logger, am)
 
 	if err := operator.CheckStorageClass(ctx, c.canReadStorageClass, c.kclient, am.Spec.Storage); err != nil {
 		return err
@@ -686,34 +679,17 @@ func (c *Operator) sync(ctx context.Context, key string) error {
 	if shouldCreate {
 		logger.Debug("no current statefulset found")
 		logger.Debug("creating statefulset")
-		if _, err := ssetClient.Create(ctx, sset, metav1.CreateOptions{}); err != nil {
-			return fmt.Errorf("creating statefulset failed: %w", err)
+		if _, err := k8sutil.CreateStatefulSetOrPatchLabels(ctx, ssetClient, sset); err != nil {
+			return fmt.Errorf("failed to create statefulset: %w", err)
 		}
 		return nil
 	}
 
-	err = k8sutil.UpdateStatefulSet(ctx, ssetClient, sset)
-	sErr, ok := err.(*apierrors.StatusError)
-
-	if ok && sErr.ErrStatus.Code == 422 && sErr.ErrStatus.Reason == metav1.StatusReasonInvalid {
+	if err = k8sutil.ForceUpdateStatefulSet(ctx, ssetClient, sset, func(reason string) {
 		c.metrics.StsDeleteCreateCounter().Inc()
-
-		// Gather only reason for failed update
-		failMsg := make([]string, len(sErr.ErrStatus.Details.Causes))
-		for i, cause := range sErr.ErrStatus.Details.Causes {
-			failMsg[i] = cause.Message
-		}
-
-		logger.Info("recreating Alertmanager StatefulSet because the update operation wasn't possible", "reason", strings.Join(failMsg, ", "))
-		propagationPolicy := metav1.DeletePropagationForeground
-		if err := ssetClient.Delete(ctx, sset.GetName(), metav1.DeleteOptions{PropagationPolicy: &propagationPolicy}); err != nil {
-			return fmt.Errorf("failed to delete StatefulSet to avoid forbidden action: %w", err)
-		}
-		return nil
-	}
-
-	if err != nil {
-		return fmt.Errorf("updating StatefulSet failed: %w", err)
+		logger.Info("recreating StatefulSet because the update operation wasn't possible", "reason", reason)
+	}); err != nil {
+		return err
 	}
 
 	return nil
@@ -780,10 +756,10 @@ func (c *Operator) UpdateStatus(ctx context.Context, key string) error {
 	a.Status.Conditions = operator.UpdateConditions(a.Status.Conditions, availableCondition, reconciledCondition)
 	a.Status.Paused = a.Spec.Paused
 
-	if _, err = c.mclient.MonitoringV1().Alertmanagers(a.Namespace).ApplyStatus(ctx, ApplyConfigurationFromAlertmanager(a, true), metav1.ApplyOptions{FieldManager: operator.PrometheusOperatorFieldManager, Force: true}); err != nil {
+	if _, err = c.mclient.MonitoringV1().Alertmanagers(a.Namespace).ApplyStatus(ctx, ApplyConfigurationFromAlertmanager(a, true), metav1.ApplyOptions{FieldManager: k8sutil.PrometheusOperatorFieldManager, Force: true}); err != nil {
 		c.logger.Info("failed to apply alertmanager status subresource, trying again without scale fields", "err", err)
 		// Try again, but this time does not update scale subresource.
-		if _, err = c.mclient.MonitoringV1().Alertmanagers(a.Namespace).ApplyStatus(ctx, ApplyConfigurationFromAlertmanager(a, false), metav1.ApplyOptions{FieldManager: operator.PrometheusOperatorFieldManager, Force: true}); err != nil {
+		if _, err = c.mclient.MonitoringV1().Alertmanagers(a.Namespace).ApplyStatus(ctx, ApplyConfigurationFromAlertmanager(a, false), metav1.ApplyOptions{FieldManager: k8sutil.PrometheusOperatorFieldManager, Force: true}); err != nil {
 			return fmt.Errorf("failed to apply alertmanager status subresource: %w", err)
 		}
 	}
@@ -791,6 +767,7 @@ func (c *Operator) UpdateStatus(ctx context.Context, key string) error {
 	return nil
 }
 
+// makeSelectorLabels returns the default selector for the pods of the Alertmanager statefulset.
 func makeSelectorLabels(name string) map[string]string {
 	return map[string]string{
 		operator.ApplicationNameLabelKey:     applicationNameLabelValue,
@@ -798,6 +775,16 @@ func makeSelectorLabels(name string) map[string]string {
 		operator.ApplicationInstanceLabelKey: name,
 		"alertmanager":                       name,
 	}
+}
+
+// labelSelectorForStatefulSets returns a label selector which selects
+// all Alertmanager statefulsets.
+func labelSelectorForStatefulSets() string {
+	return fmt.Sprintf(
+		"%s in (%s),%s in (%s)",
+		operator.ManagedByLabelKey, operator.ManagedByLabelValue,
+		operator.ApplicationNameLabelKey, applicationNameLabelValue,
+	)
 }
 
 func createSSetInputHash(a monitoringv1.Alertmanager, c Config, tlsAssets *operator.ShardedSecret, s appsv1.StatefulSetSpec) (string, error) {
@@ -1278,13 +1265,6 @@ func checkPagerDutyConfigs(
 			}
 		}
 
-		if config.URL != "" {
-			if _, err := validation.ValidateURL(strings.TrimSpace(config.URL)); err != nil {
-				return fmt.Errorf("failed to validate URL: %w ", err)
-			}
-
-		}
-
 		if err := configureHTTPConfigInStore(ctx, config.HTTPConfig, namespace, store); err != nil {
 			return err
 		}
@@ -1392,12 +1372,6 @@ func checkRocketChatConfigs(
 			return err
 		}
 
-		if config.APIURL != nil {
-			if _, err := validation.ValidateURL(strings.TrimSpace(string(*config.APIURL))); err != nil {
-				return fmt.Errorf("failed to validate RocketChat API URL: %w", err)
-			}
-		}
-
 		if _, err := store.GetSecretKey(ctx, namespace, config.Token); err != nil {
 			return fmt.Errorf("failed to retrieve RocketChat token: %w", err)
 		}
@@ -1457,7 +1431,8 @@ func checkWebhookConfigs(
 			if err != nil {
 				return err
 			}
-			if err := validation.ValidateSecretURL(strings.TrimSpace(url)); err != nil {
+
+			if err := validation.ValidateTemplateURL(strings.TrimSpace(url)); err != nil {
 				return fmt.Errorf("failed to validate URL: %w", err)
 			}
 		}
@@ -1606,14 +1581,14 @@ func checkPushoverConfigs(
 			return errors.New("html and monospace options are mutually exclusive")
 		}
 
-		if config.Expire != "" {
-			if _, err := model.ParseDuration(config.Expire); err != nil {
+		if ptr.Deref(config.Expire, "") != "" {
+			if _, err := model.ParseDuration(*config.Expire); err != nil {
 				return err
 			}
 		}
 
-		if config.Retry != "" {
-			if _, err := model.ParseDuration(config.Retry); err != nil {
+		if ptr.Deref(config.Retry, "") != "" {
+			if _, err := model.ParseDuration(*config.Retry); err != nil {
 				return err
 			}
 		}
@@ -1892,19 +1867,27 @@ func (c *Operator) createOrUpdateClusterTLSConfigSecret(ctx context.Context, a *
 	return nil
 }
 
-func logDeprecatedFields(logger *slog.Logger, a *monitoringv1.Alertmanager) {
+func (c *Operator) recordDeprecatedFields(key string, logger *slog.Logger, a *monitoringv1.Alertmanager) {
 	deprecationWarningf := "field %q is deprecated, field %q should be used instead"
+	var deprecations []string
 
 	if a.Spec.BaseImage != "" {
-		logger.Warn(fmt.Sprintf(deprecationWarningf, "spec.baseImage", "spec.image"))
+		deprecations = append(deprecations, fmt.Sprintf(deprecationWarningf, "spec.baseImage", "spec.image"))
 	}
 
 	if a.Spec.Tag != "" {
-		logger.Warn(fmt.Sprintf(deprecationWarningf, "spec.tag", "spec.image"))
+		deprecations = append(deprecations, fmt.Sprintf(deprecationWarningf, "spec.tag", "spec.image"))
 	}
 
 	if a.Spec.SHA != "" {
-		logger.Warn(fmt.Sprintf(deprecationWarningf, "spec.sha", "spec.image"))
+		deprecations = append(deprecations, fmt.Sprintf(deprecationWarningf, "spec.sha", "spec.image"))
+	}
+
+	if len(deprecations) > 0 {
+		for _, m := range deprecations {
+			logger.Warn(m)
+		}
+		c.reconciliations.SetReasonAndMessage(key, operator.DeprecatedFieldsInUseReason, strings.Join(deprecations, "; "))
 	}
 }
 
