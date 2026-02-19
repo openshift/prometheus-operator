@@ -408,6 +408,10 @@ func (a *Alertmanager) ExpectedReplicas() int {
 	return int(*a.Spec.Replicas)
 }
 
+func (a *Alertmanager) GetAvailableReplicas() int  { return int(a.Status.AvailableReplicas) }
+func (a *Alertmanager) GetUpdatedReplicas() int    { return int(a.Status.UpdatedReplicas) }
+func (a *Alertmanager) GetConditions() []Condition { return a.Status.Conditions }
+
 func (a *Alertmanager) SetReplicas(i int)            { a.Status.Replicas = int32(i) }
 func (a *Alertmanager) SetUpdatedReplicas(i int)     { a.Status.UpdatedReplicas = int32(i) }
 func (a *Alertmanager) SetAvailableReplicas(i int)   { a.Status.AvailableReplicas = int32(i) }

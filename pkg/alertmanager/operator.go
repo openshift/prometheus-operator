@@ -483,10 +483,9 @@ func (c *Operator) Run(ctx context.Context) error {
 }
 
 // Iterate implements the operator.StatusReconciler interface.
-func (c *Operator) Iterate(processFn func(metav1.Object, []monitoringv1.Condition)) {
+func (c *Operator) Iterate(processFn func(operator.StatusGetter)) {
 	if err := c.alrtInfs.ListAll(labels.Everything(), func(o interface{}) {
-		a := o.(*monitoringv1.Alertmanager)
-		processFn(a, a.Status.Conditions)
+		processFn(o.(*monitoringv1.Alertmanager))
 	}); err != nil {
 		c.logger.Error("failed to list Alertmanager objects", "err", err)
 	}
