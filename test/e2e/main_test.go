@@ -340,6 +340,7 @@ func testAllNSThanosRuler(t *testing.T) {
 		"ThanosRulerCheckStorageClass":                  testTRCheckStorageClass,
 		"ThanosRulerServiceName":                        testThanosRulerServiceName,
 		"ThanosRulerStateless":                          testThanosRulerStateless,
+		"ThanosRulerStatusUpdatedReplicasRollback":      testThanosRulerStatusUpdatedReplicasRollback,
 	}
 	for name, f := range testFuncs {
 		t.Run(name, f)
