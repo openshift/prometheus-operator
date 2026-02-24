@@ -1,3 +1,4 @@
+-include Makefile.ocp
 SHELL=/usr/bin/env bash -o pipefail
 
 GOOS?=$(shell go env GOOS)
