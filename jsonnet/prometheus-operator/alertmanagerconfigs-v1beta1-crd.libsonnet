@@ -107,7 +107,7 @@
                   description: 'Receiver defines one or more notification integrations.',
                   properties: {
                     discordConfigs: {
-                      description: 'discordConfigs defines the list of Slack configurations.',
+                      description: 'discordConfigs defines the list of Discord configurations.',
                       items: {
                         description: 'DiscordConfig configures notifications via Discord.\nSee https://prometheus.io/docs/alerting/latest/configuration/#discord_config',
                         properties: {
@@ -814,6 +814,7 @@
                         properties: {
                           authIdentity: {
                             description: 'authIdentity defines the identity to use for SMTP authentication.\nThis is typically used with PLAIN authentication mechanism.',
+                            minLength: 1,
                             type: 'string',
                           },
                           authPassword: {
@@ -858,10 +859,12 @@
                           },
                           authUsername: {
                             description: 'authUsername defines the username to use for SMTP authentication.\nThis is used for SMTP AUTH when the server requires authentication.',
+                            minLength: 1,
                             type: 'string',
                           },
                           from: {
                             description: 'from defines the sender address for email notifications.\nThis appears as the "From" field in the email header.',
+                            minLength: 1,
                             type: 'string',
                           },
                           headers: {
@@ -889,6 +892,7 @@
                           },
                           hello: {
                             description: 'hello defines the hostname to identify to the SMTP server.\nThis is used in the SMTP HELO/EHLO command during the connection handshake.',
+                            minLength: 1,
                             type: 'string',
                           },
                           html: {
@@ -905,10 +909,12 @@
                           },
                           smarthost: {
                             description: 'smarthost defines the SMTP host and port through which emails are sent.\nFormat should be "hostname:port", e.g. "smtp.example.com:587".',
+                            minLength: 1,
                             type: 'string',
                           },
                           text: {
                             description: "text defines the plain text body of the email notification.\nThis provides a fallback for email clients that don't support HTML.",
+                            minLength: 1,
                             type: 'string',
                           },
                           tlsConfig: {
@@ -1074,6 +1080,7 @@
                           },
                           to: {
                             description: 'to defines the email address to send notifications to.\nThis is the recipient address for alert notifications.',
+                            minLength: 1,
                             type: 'string',
                           },
                         },
@@ -2468,6 +2475,7 @@
                         properties: {
                           actions: {
                             description: 'actions defines a comma separated list of actions that will be available for the alert.\nThese appear as action buttons in the OpsGenie interface.',
+                            minLength: 1,
                             type: 'string',
                           },
                           apiKey: {
@@ -2492,10 +2500,12 @@
                           },
                           apiURL: {
                             description: 'apiURL defines the URL to send OpsGenie API requests to.\nWhen not specified, defaults to the standard OpsGenie API endpoint.',
+                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           description: {
                             description: 'description defines the detailed description of the incident.\nThis provides additional context beyond the message field.',
+                            minLength: 1,
                             type: 'string',
                           },
                           details: {
@@ -2523,6 +2533,7 @@
                           },
                           entity: {
                             description: 'entity defines an optional field that can be used to specify which domain alert is related to.\nThis helps group related alerts together in OpsGenie.',
+                            minLength: 1,
                             type: 'string',
                           },
                           httpConfig: {
@@ -3165,14 +3176,17 @@
                           },
                           message: {
                             description: 'message defines the alert text limited to 130 characters.\nThis appears as the main alert title in OpsGenie.',
+                            minLength: 1,
                             type: 'string',
                           },
                           note: {
                             description: 'note defines an additional alert note.\nThis provides supplementary information about the alert.',
+                            minLength: 1,
                             type: 'string',
                           },
                           priority: {
                             description: 'priority defines the priority level of alert.\nPossible values are P1, P2, P3, P4, and P5, where P1 is highest priority.',
+                            minLength: 1,
                             type: 'string',
                           },
                           responders: {
@@ -3182,10 +3196,12 @@
                               properties: {
                                 id: {
                                   description: "id defines the unique identifier of the responder.\nThis corresponds to the responder's ID within OpsGenie.",
+                                  minLength: 1,
                                   type: 'string',
                                 },
                                 name: {
                                   description: 'name defines the display name of the responder.\nThis is used when the responder is identified by name rather than ID.',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                                 type: {
@@ -3202,6 +3218,7 @@
                                 },
                                 username: {
                                   description: 'username defines the username of the responder.\nThis is typically used for user-type responders when identifying by username.',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                               },
@@ -3218,10 +3235,12 @@
                           },
                           source: {
                             description: 'source defines the backlink to the sender of the notification.\nThis helps identify where the alert originated from.',
+                            minLength: 1,
                             type: 'string',
                           },
                           tags: {
                             description: 'tags defines a comma separated list of tags attached to the notifications.\nThese help categorize and filter alerts within OpsGenie.',
+                            minLength: 1,
                             type: 'string',
                           },
                         },
@@ -3236,10 +3255,12 @@
                         properties: {
                           class: {
                             description: 'class defines the class/type of the event.',
+                            minLength: 1,
                             type: 'string',
                           },
                           client: {
                             description: 'client defines the client identification.',
+                            minLength: 1,
                             type: 'string',
                           },
                           clientURL: {
@@ -3248,10 +3269,12 @@
                           },
                           component: {
                             description: 'component defines the part or component of the affected system that is broken.',
+                            minLength: 1,
                             type: 'string',
                           },
                           description: {
                             description: 'description of the incident.',
+                            minLength: 1,
                             type: 'string',
                           },
                           details: {
@@ -3276,9 +3299,11 @@
                               type: 'object',
                             },
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           group: {
                             description: 'group defines a cluster or grouping of sources.',
+                            minLength: 1,
                             type: 'string',
                           },
                           httpConfig: {
@@ -3926,6 +3951,7 @@
                               properties: {
                                 alt: {
                                   description: 'alt is the optional alternative text for the image.',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                                 href: {
@@ -3934,12 +3960,14 @@
                                 },
                                 src: {
                                   description: 'src of the image being attached to the incident',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                               },
                               type: 'object',
                             },
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           pagerDutyLinkConfigs: {
                             description: 'pagerDutyLinkConfigs defines a list of link details to attach that provide further detail about an incident.',
@@ -3948,6 +3976,7 @@
                               properties: {
                                 alt: {
                                   description: "alt defines the text that describes the purpose of the link, and can be used as the link's text.",
+                                  minLength: 1,
                                   type: 'string',
                                 },
                                 href: {
@@ -3958,6 +3987,7 @@
                               type: 'object',
                             },
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           routingKey: {
                             description: "routingKey defines the secret's key that contains the PagerDuty integration key (when using\nEvents API v2). Either this field or `serviceKey` needs to be defined.\nThe secret needs to be in the same namespace as the AlertmanagerConfig\nobject and accessible by the Prometheus Operator.",
@@ -4005,14 +4035,22 @@
                           },
                           severity: {
                             description: 'severity of the incident.',
+                            minLength: 1,
                             type: 'string',
                           },
                           source: {
                             description: 'source defines the unique location of the affected system.',
+                            minLength: 1,
+                            type: 'string',
+                          },
+                          timeout: {
+                            description: 'timeout is the maximum time allowed to invoke the pagerduty\nIt requires Alertmanager >= v0.30.0.',
+                            pattern: '^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$',
                             type: 'string',
                           },
                           url: {
                             description: 'url defines the URL to send requests to.',
+                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                         },
@@ -4027,6 +4065,7 @@
                         properties: {
                           device: {
                             description: "device defines the name of a specific device to send the notification to.\nIf not specified, the notification is sent to all user's devices.",
+                            minLength: 1,
                             type: 'string',
                           },
                           expire: {
@@ -4035,7 +4074,7 @@
                             type: 'string',
                           },
                           html: {
-                            description: 'html defines whether notification message is HTML or plain text.\nWhen true, the message can include HTML formatting tags.',
+                            description: 'html defines whether notification message is HTML or plain text.\nWhen true, the message can include HTML formatting tags.\nhtml and monospace formatting are mutually exclusive.',
                             type: 'boolean',
                           },
                           httpConfig: {
@@ -4678,6 +4717,7 @@
                           },
                           message: {
                             description: 'message defines the notification message content.\nThis is the main body text of the Pushover notification.',
+                            minLength: 1,
                             type: 'string',
                           },
                           monospace: {
@@ -4686,6 +4726,7 @@
                           },
                           priority: {
                             description: 'priority defines the notification priority level.\nSee https://pushover.net/api#priority for valid values and behavior.',
+                            minLength: 1,
                             type: 'string',
                           },
                           retry: {
@@ -4699,10 +4740,12 @@
                           },
                           sound: {
                             description: "sound defines the name of one of the sounds supported by device clients.\nThis overrides the user's default sound choice for this notification.",
+                            minLength: 1,
                             type: 'string',
                           },
                           title: {
                             description: 'title defines the notification title displayed in the Pushover message.\nThis appears as the bold header text in the notification.',
+                            minLength: 1,
                             type: 'string',
                           },
                           token: {
@@ -4740,6 +4783,7 @@
                           },
                           urlTitle: {
                             description: 'urlTitle defines a title for the supplementary URL.\nIf not specified, the raw URL is shown instead.',
+                            minLength: 1,
                             type: 'string',
                           },
                           userKey: {
@@ -4793,7 +4837,6 @@
                                 },
                                 url: {
                                   description: 'url defines the URL the button links to when clicked.\nThis creates a clickable button that opens the specified URL.',
-                                  pattern: '^https?://.+$',
                                   type: 'string',
                                 },
                               },
@@ -5487,12 +5530,10 @@
                           },
                           iconURL: {
                             description: "iconURL defines the icon URL for the message avatar.\nThis displays a custom image as the message sender's avatar.",
-                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           imageURL: {
                             description: 'imageURL defines the image URL to display within the message.\nThis embeds an image directly in the message attachment.',
-                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           linkNames: {
@@ -5514,7 +5555,6 @@
                           },
                           thumbURL: {
                             description: 'thumbURL defines the thumbnail URL for the message.\nThis displays a small thumbnail image alongside the message content.',
-                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           title: {
@@ -5528,7 +5568,7 @@
                             type: 'string',
                           },
                           token: {
-                            description: 'token defines the sender token for RocketChat authentication.\nThis is the personal access token or bot token used to authenticate API requests.',
+                            description: 'token defines the sender token for RocketChat authentication.\nThis is the personal access token or bot token used to authenticate API requests.\nThe secret needs to be in the same namespace as the AlertmanagerConfig\nobject and accessible by the Prometheus Operator.',
                             properties: {
                               key: {
                                 description: 'The key of the secret to select from.  Must be a valid secret key.',
@@ -5551,7 +5591,7 @@
                             'x-kubernetes-map-type': 'atomic',
                           },
                           tokenID: {
-                            description: 'tokenID defines the sender token ID for RocketChat authentication.\nThis is the user ID associated with the token used for API requests.',
+                            description: 'tokenID defines the sender token ID for RocketChat authentication.\nThis is the user ID associated with the token used for API requests.\nThe secret needs to be in the same namespace as the AlertmanagerConfig\nobject and accessible by the Prometheus Operator.',
                             properties: {
                               key: {
                                 description: 'The key of the secret to select from.  Must be a valid secret key.',
@@ -5597,10 +5637,12 @@
                                   properties: {
                                     dismissText: {
                                       description: 'dismissText defines the label for the cancel button in the dialog.\nWhen not specified, defaults to "Cancel". This button cancels the action.',
+                                      minLength: 1,
                                       type: 'string',
                                     },
                                     okText: {
                                       description: 'okText defines the label for the confirmation button in the dialog.\nWhen not specified, defaults to "Okay". This button proceeds with the action.',
+                                      minLength: 1,
                                       type: 'string',
                                     },
                                     text: {
@@ -5610,6 +5652,7 @@
                                     },
                                     title: {
                                       description: 'title defines the title text displayed at the top of the confirmation dialog.\nWhen not specified, a default title will be used.',
+                                      minLength: 1,
                                       type: 'string',
                                     },
                                   },
@@ -5620,10 +5663,12 @@
                                 },
                                 name: {
                                   description: 'name defines a unique identifier for the action within the message.\nThis value is sent back to your application when the action is triggered.',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                                 style: {
                                   description: 'style defines the visual appearance of the action element.\nValid values include "default", "primary" (green), and "danger" (red).',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                                 text: {
@@ -5642,6 +5687,7 @@
                                 },
                                 value: {
                                   description: 'value defines the payload sent when the action is triggered.\nThis data is included in the callback sent to your application.',
+                                  minLength: 1,
                                   type: 'string',
                                 },
                               },
@@ -5651,7 +5697,9 @@
                               ],
                               type: 'object',
                             },
+                            minItems: 1,
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           apiURL: {
                             description: "apiURL defines the secret's key that contains the Slack webhook URL.\nThe secret needs to be in the same namespace as the AlertmanagerConfig\nobject and accessible by the Prometheus Operator.",
@@ -5675,18 +5723,22 @@
                           },
                           callbackId: {
                             description: 'callbackId defines an identifier for the message used in interactive components.',
+                            minLength: 1,
                             type: 'string',
                           },
                           channel: {
                             description: 'channel defines the channel or user to send notifications to.',
+                            minLength: 1,
                             type: 'string',
                           },
                           color: {
                             description: 'color defines the color of the left border of the Slack message attachment.\nCan be a hex color code (e.g., "#ff0000") or a predefined color name.',
+                            minLength: 1,
                             type: 'string',
                           },
                           fallback: {
                             description: "fallback defines a plain-text summary of the attachment for clients that don't support attachments.",
+                            minLength: 1,
                             type: 'string',
                           },
                           fields: {
@@ -5715,10 +5767,13 @@
                               ],
                               type: 'object',
                             },
+                            minItems: 1,
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           footer: {
                             description: 'footer defines small text displayed at the bottom of the message attachment.',
+                            minLength: 1,
                             type: 'string',
                           },
                           httpConfig: {
@@ -6361,6 +6416,7 @@
                           },
                           iconEmoji: {
                             description: "iconEmoji defines the emoji to use as the bot's avatar (e.g., \":ghost:\").",
+                            minLength: 1,
                             type: 'string',
                           },
                           iconURL: {
@@ -6378,12 +6434,16 @@
                           mrkdwnIn: {
                             description: 'mrkdwnIn defines which fields should be parsed as Slack markdown.\nValid values include "pretext", "text", and "fields".',
                             items: {
+                              minLength: 1,
                               type: 'string',
                             },
+                            minItems: 1,
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           pretext: {
                             description: 'pretext defines optional text that appears above the message attachment block.',
+                            minLength: 1,
                             type: 'string',
                           },
                           sendResolved: {
@@ -6396,14 +6456,21 @@
                           },
                           text: {
                             description: 'text defines the main text content of the Slack message attachment.',
+                            minLength: 1,
                             type: 'string',
                           },
                           thumbURL: {
                             description: 'thumbURL defines the URL to an image file that will be displayed as a thumbnail\non the right side of the message attachment.',
                             type: 'string',
                           },
+                          timeout: {
+                            description: 'timeout defines the maximum time to wait for a webhook request to complete,\nbefore failing the request and allowing it to be retried.\nIt requires Alertmanager >= v0.30.0.',
+                            pattern: '^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$',
+                            type: 'string',
+                          },
                           title: {
                             description: 'title defines the title text displayed in the Slack message attachment.',
+                            minLength: 1,
                             type: 'string',
                           },
                           titleLink: {
@@ -6412,6 +6479,7 @@
                           },
                           username: {
                             description: 'username defines the slack bot user name.',
+                            minLength: 1,
                             type: 'string',
                           },
                         },
@@ -7075,10 +7143,12 @@
                           },
                           message: {
                             description: 'message defines the message content of the SNS notification.\nThis is the actual notification text that will be sent to subscribers.',
+                            minLength: 1,
                             type: 'string',
                           },
                           phoneNumber: {
                             description: "phoneNumber defines the phone number if message is delivered via SMS in E.164 format.\nIf you don't specify this value, you must specify a value for the TopicARN or TargetARN.",
+                            minLength: 1,
                             type: 'string',
                           },
                           sendResolved: {
@@ -7155,14 +7225,17 @@
                           },
                           subject: {
                             description: 'subject defines the subject line when the message is delivered to email endpoints.\nThis field is only used when sending to email subscribers of an SNS topic.',
+                            minLength: 1,
                             type: 'string',
                           },
                           targetARN: {
                             description: "targetARN defines the mobile platform endpoint ARN if message is delivered via mobile notifications.\nIf you don't specify this value, you must specify a value for the TopicARN or PhoneNumber.",
+                            minLength: 1,
                             type: 'string',
                           },
                           topicARN: {
                             description: "topicARN defines the SNS topic ARN, e.g. arn:aws:sns:us-east-2:698519295917:My-Topic.\nIf you don't specify this value, you must specify a value for the PhoneNumber or TargetARN.",
+                            minLength: 1,
                             type: 'string',
                           },
                         },
@@ -7177,6 +7250,7 @@
                         properties: {
                           apiURL: {
                             description: 'apiURL defines the Telegram API URL, e.g. https://api.telegram.org.\nIf not specified, the default Telegram API URL will be used.',
+                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           botToken: {
@@ -7907,6 +7981,7 @@
                           },
                           apiUrl: {
                             description: 'apiUrl defines the VictorOps API URL.\nWhen not specified, defaults to the standard VictorOps API endpoint.',
+                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           customFields: {
@@ -7931,9 +8006,11 @@
                               type: 'object',
                             },
                             type: 'array',
+                            'x-kubernetes-list-type': 'atomic',
                           },
                           entityDisplayName: {
                             description: 'entityDisplayName contains a summary of the alerted problem.\nThis appears as the main title or identifier for the incident.',
+                            minLength: 1,
                             type: 'string',
                           },
                           httpConfig: {
@@ -8576,14 +8653,17 @@
                           },
                           messageType: {
                             description: 'messageType describes the behavior of the alert.\nValid values are "CRITICAL", "WARNING", and "INFO".',
+                            minLength: 1,
                             type: 'string',
                           },
                           monitoringTool: {
                             description: 'monitoringTool defines the monitoring tool the state message is from.\nThis helps identify the source system that generated the alert.',
+                            minLength: 1,
                             type: 'string',
                           },
                           routingKey: {
                             description: 'routingKey defines a key used to map the alert to a team.\nThis determines which VictorOps team will receive the alert notification.',
+                            minLength: 1,
                             type: 'string',
                           },
                           sendResolved: {
@@ -8592,9 +8672,13 @@
                           },
                           stateMessage: {
                             description: 'stateMessage contains a long explanation of the alerted problem.\nThis provides detailed context about the incident.',
+                            minLength: 1,
                             type: 'string',
                           },
                         },
+                        required: [
+                          'routingKey',
+                        ],
                         type: 'object',
                       },
                       type: 'array',
@@ -9962,6 +10046,7 @@
                         properties: {
                           agentID: {
                             description: 'agentID defines the application agent ID within WeChat Work.\nThis identifies which WeChat Work application will send the notifications.',
+                            minLength: 1,
                             type: 'string',
                           },
                           apiSecret: {
@@ -9986,10 +10071,12 @@
                           },
                           apiURL: {
                             description: 'apiURL defines the WeChat API URL.\nWhen not specified, defaults to the standard WeChat Work API endpoint.',
+                            pattern: '^https?://.+$',
                             type: 'string',
                           },
                           corpID: {
                             description: 'corpID defines the corp id for authentication.\nThis is the unique identifier for your WeChat Work organization.',
+                            minLength: 1,
                             type: 'string',
                           },
                           httpConfig: {
@@ -10632,10 +10719,12 @@
                           },
                           message: {
                             description: 'message defines the API request data as defined by the WeChat API.\nThis contains the actual notification content to be sent.',
+                            minLength: 1,
                             type: 'string',
                           },
                           messageType: {
                             description: 'messageType defines the type of message to send.\nValid values include "text", "markdown", and other WeChat Work supported message types.',
+                            minLength: 1,
                             type: 'string',
                           },
                           sendResolved: {
@@ -10644,14 +10733,17 @@
                           },
                           toParty: {
                             description: "toParty defines the target department(s) to receive the notification.\nCan be a single department ID or multiple department IDs separated by '|'.",
+                            minLength: 1,
                             type: 'string',
                           },
                           toTag: {
                             description: "toTag defines the target tag(s) to receive the notification.\nCan be a single tag ID or multiple tag IDs separated by '|'.",
+                            minLength: 1,
                             type: 'string',
                           },
                           toUser: {
                             description: "toUser defines the target user(s) to receive the notification.\nCan be a single user ID or multiple user IDs separated by '|'.",
+                            minLength: 1,
                             type: 'string',
                           },
                         },
@@ -10689,11 +10781,15 @@
                     type: 'array',
                   },
                   groupInterval: {
-                    description: 'groupInterval defines how long to wait before sending an updated notification.\nMust match the regular expression`^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$`\nExample: "5m"',
+                    description: 'groupInterval defines how long to wait before sending an updated notification.\nMust be greater than 0.\nExample: "5m"',
+                    minLength: 1,
+                    pattern: '^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$',
                     type: 'string',
                   },
                   groupWait: {
-                    description: 'groupWait defines how long to wait before sending the initial notification.\nMust match the regular expression`^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$`\nExample: "30s"',
+                    description: 'groupWait defines how long to wait before sending the initial notification.\nExample: "30s"',
+                    minLength: 1,
+                    pattern: '^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$',
                     type: 'string',
                   },
                   matchers: {
@@ -10740,7 +10836,9 @@
                     type: 'string',
                   },
                   repeatInterval: {
-                    description: 'repeatInterval defines how long to wait before repeating the last notification.\nMust match the regular expression`^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$`\nExample: "4h"',
+                    description: 'repeatInterval defines how long to wait before repeating the last notification.\nMust be greater than 0.\nExample: "4h"',
+                    minLength: 1,
+                    pattern: '^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$',
                     type: 'string',
                   },
                   routes: {
@@ -10852,6 +10950,112 @@
             },
             type: 'object',
           },
+          status: {
+            description: 'status defines the status subresource. It is under active development and is updated only when the\n"StatusForConfigurationResources" feature gate is enabled.\n\nMost recent observed status of the ServiceMonitor. Read-only.\nMore info:\nhttps://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status',
+            properties: {
+              bindings: {
+                description: 'bindings defines the list of workload resources (Prometheus, PrometheusAgent, ThanosRuler or Alertmanager) which select the configuration resource.',
+                items: {
+                  description: 'WorkloadBinding is a link between a configuration resource and a workload resource.',
+                  properties: {
+                    conditions: {
+                      description: 'conditions defines the current state of the configuration resource when bound to the referenced Workload object.',
+                      items: {
+                        description: 'ConfigResourceCondition describes the status of configuration resources linked to Prometheus, PrometheusAgent, Alertmanager or ThanosRuler.',
+                        properties: {
+                          lastTransitionTime: {
+                            description: 'lastTransitionTime defines the time of the last update to the current status property.',
+                            format: 'date-time',
+                            type: 'string',
+                          },
+                          message: {
+                            description: "message defines the human-readable message indicating details for the condition's last transition.",
+                            type: 'string',
+                          },
+                          observedGeneration: {
+                            description: 'observedGeneration defines the .metadata.generation that the\ncondition was set based upon. For instance, if `.metadata.generation` is\ncurrently 12, but the `.status.conditions[].observedGeneration` is 9, the\ncondition is out of date with respect to the current state of the object.',
+                            format: 'int64',
+                            type: 'integer',
+                          },
+                          reason: {
+                            description: "reason for the condition's last transition.",
+                            type: 'string',
+                          },
+                          status: {
+                            description: 'status of the condition.',
+                            minLength: 1,
+                            type: 'string',
+                          },
+                          type: {
+                            description: 'type of the condition being reported.\nCurrently, only "Accepted" is supported.',
+                            enum: [
+                              'Accepted',
+                            ],
+                            minLength: 1,
+                            type: 'string',
+                          },
+                        },
+                        required: [
+                          'lastTransitionTime',
+                          'status',
+                          'type',
+                        ],
+                        type: 'object',
+                      },
+                      type: 'array',
+                      'x-kubernetes-list-map-keys': [
+                        'type',
+                      ],
+                      'x-kubernetes-list-type': 'map',
+                    },
+                    group: {
+                      description: 'group defines the group of the referenced resource.',
+                      enum: [
+                        'monitoring.coreos.com',
+                      ],
+                      type: 'string',
+                    },
+                    name: {
+                      description: 'name defines the name of the referenced object.',
+                      minLength: 1,
+                      type: 'string',
+                    },
+                    namespace: {
+                      description: 'namespace defines the namespace of the referenced object.',
+                      minLength: 1,
+                      type: 'string',
+                    },
+                    resource: {
+                      description: 'resource defines the type of resource being referenced (e.g. Prometheus, PrometheusAgent, ThanosRuler or Alertmanager).',
+                      enum: [
+                        'prometheuses',
+                        'prometheusagents',
+                        'thanosrulers',
+                        'alertmanagers',
+                      ],
+                      type: 'string',
+                    },
+                  },
+                  required: [
+                    'group',
+                    'name',
+                    'namespace',
+                    'resource',
+                  ],
+                  type: 'object',
+                },
+                type: 'array',
+                'x-kubernetes-list-map-keys': [
+                  'group',
+                  'resource',
+                  'name',
+                  'namespace',
+                ],
+                'x-kubernetes-list-type': 'map',
+              },
+            },
+            type: 'object',
+          },
         },
         required: [
           'spec',
@@ -10861,5 +11065,8 @@
     },
     served: true,
     storage: false,
+    subresources: {
+      status: {},
+    },
   },
 ] } }

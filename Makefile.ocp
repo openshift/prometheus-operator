@@ -1,0 +1,7 @@
+# OCP CI builder images set GOFLAGS=-mod=vendor globally which breaks
+# golangci-lint's "custom" command (it creates a temp project without a
+# vendor directory). Unsetting GOFLAGS is safe here because:
+# - go test auto-detects the vendor/ directory
+# - go install calls already pass -mod=readonly explicitly
+# - operator-no-deps targets pass -mod=vendor explicitly
+unexport GOFLAGS
