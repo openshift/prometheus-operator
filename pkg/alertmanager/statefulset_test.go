@@ -1130,6 +1130,7 @@ func TestPodTemplateConfig(t *testing.T) {
 	}
 	imagePullPolicy := v1.PullAlways
 	hostUsers := true
+	hostNetwork := false
 
 	sset, err := makeStatefulSet(nil, &monitoringv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{},
@@ -1144,6 +1145,7 @@ func TestPodTemplateConfig(t *testing.T) {
 			ImagePullSecrets:   imagePullSecrets,
 			ImagePullPolicy:    imagePullPolicy,
 			HostUsers:          ptr.To(true),
+			HostNetwork:        hostNetwork,
 		},
 	}, defaultTestConfig, "", &operator.ShardedSecret{})
 	require.NoError(t, err)
@@ -1157,6 +1159,7 @@ func TestPodTemplateConfig(t *testing.T) {
 	require.Equal(t, len(sset.Spec.Template.Spec.HostAliases), len(hostAliases), "expected length of host aliases to match, want %d, got %d", len(hostAliases), len(sset.Spec.Template.Spec.HostAliases))
 	require.Equal(t, sset.Spec.Template.Spec.ImagePullSecrets, imagePullSecrets, "expected image pull secrets to match, want %s, got %s", imagePullSecrets, sset.Spec.Template.Spec.ImagePullSecrets)
 	require.Equal(t, *sset.Spec.Template.Spec.HostUsers, hostUsers, "expected host users to match, want %s, got %s", hostUsers, sset.Spec.Template.Spec.HostUsers)
+	require.Equal(t, sset.Spec.Template.Spec.HostNetwork, hostNetwork, "expected host network to match, want %v, got %v", hostNetwork, sset.Spec.Template.Spec.HostNetwork)
 
 	for _, initContainer := range sset.Spec.Template.Spec.InitContainers {
 		require.Equal(t, initContainer.ImagePullPolicy, imagePullPolicy, "expected imagePullPolicy to match, want %s, got %s", imagePullPolicy, sset.Spec.Template.Spec.Containers[0].ImagePullPolicy)
@@ -1164,6 +1167,20 @@ func TestPodTemplateConfig(t *testing.T) {
 	for _, container := range sset.Spec.Template.Spec.Containers {
 		require.Equal(t, container.ImagePullPolicy, imagePullPolicy, "expected imagePullPolicy to match, want %s, got %s", imagePullPolicy, sset.Spec.Template.Spec.Containers[0].ImagePullPolicy)
 	}
+}
+
+func TestPodHostNetworkConfig(t *testing.T) {
+	sset, err := makeStatefulSet(nil, &monitoringv1.Alertmanager{
+		ObjectMeta: metav1.ObjectMeta{},
+		Spec: monitoringv1.AlertmanagerSpec{
+			HostNetwork: true,
+		},
+	}, defaultTestConfig, "", &operator.ShardedSecret{})
+	require.NoError(t, err)
+
+	require.True(t, sset.Spec.Template.Spec.HostNetwork, "expected hostNetwork to be true")
+	require.Equal(t, v1.DNSClusterFirstWithHostNet, sset.Spec.Template.Spec.DNSPolicy,
+		"expected DNSPolicy to be ClusterFirstWithHostNet when hostNetwork is enabled")
 }
 
 func TestConfigReloader(t *testing.T) {
@@ -1523,5 +1540,149 @@ func TestStatefulSetEnableServiceLinks(t *testing.T) {
 		} else {
 			require.Nil(t, sset.Spec.Template.Spec.EnableServiceLinks, "expected enableServiceLinks is nil")
 		}
+	}
+}
+
+func TestStatefulSetPodManagementPolicy(t *testing.T) {
+	for _, tc := range []struct {
+		podManagementPolicy *monitoringv1.PodManagementPolicyType
+		exp                 appsv1.PodManagementPolicyType
+	}{
+		{
+			podManagementPolicy: nil,
+			exp:                 appsv1.ParallelPodManagement,
+		},
+		{
+			podManagementPolicy: ptr.To(monitoringv1.ParallelPodManagement),
+			exp:                 appsv1.ParallelPodManagement,
+		},
+		{
+			podManagementPolicy: ptr.To(monitoringv1.OrderedReadyPodManagement),
+			exp:                 appsv1.OrderedReadyPodManagement,
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			sset, err := makeStatefulSet(nil, &monitoringv1.Alertmanager{
+				Spec: monitoringv1.AlertmanagerSpec{
+					PodManagementPolicy: tc.podManagementPolicy,
+				},
+			}, defaultTestConfig, "", &operator.ShardedSecret{})
+
+			require.NoError(t, err)
+			require.Equal(t, tc.exp, sset.Spec.PodManagementPolicy)
+		})
+	}
+}
+
+func TestStatefulSetUpdateStrategy(t *testing.T) {
+	for _, tc := range []struct {
+		updateStrategy *monitoringv1.StatefulSetUpdateStrategy
+		exp            appsv1.StatefulSetUpdateStrategy
+	}{
+		{
+			updateStrategy: nil,
+			exp: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.RollingUpdateStatefulSetStrategyType,
+			},
+		},
+		{
+			updateStrategy: &monitoringv1.StatefulSetUpdateStrategy{
+				Type: monitoringv1.RollingUpdateStatefulSetStrategyType,
+			},
+			exp: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.RollingUpdateStatefulSetStrategyType,
+			},
+		},
+		{
+			updateStrategy: &monitoringv1.StatefulSetUpdateStrategy{
+				Type: monitoringv1.RollingUpdateStatefulSetStrategyType,
+				RollingUpdate: &monitoringv1.RollingUpdateStatefulSetStrategy{
+					MaxUnavailable: ptr.To(intstr.FromInt(1)),
+				},
+			},
+			exp: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.RollingUpdateStatefulSetStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
+					MaxUnavailable: ptr.To(intstr.FromInt(1)),
+				},
+			},
+		},
+		{
+			updateStrategy: &monitoringv1.StatefulSetUpdateStrategy{
+				Type: monitoringv1.OnDeleteStatefulSetStrategyType,
+			},
+			exp: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.OnDeleteStatefulSetStrategyType,
+			},
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			sset, err := makeStatefulSet(nil, &monitoringv1.Alertmanager{
+				Spec: monitoringv1.AlertmanagerSpec{
+					UpdateStrategy: tc.updateStrategy,
+				},
+			}, defaultTestConfig, "", &operator.ShardedSecret{})
+
+			require.NoError(t, err)
+			require.Equal(t, tc.exp, sset.Spec.UpdateStrategy)
+		})
+	}
+}
+
+func TestMakeStatefulSetSpecDispatchStartDelay(t *testing.T) {
+	for _, tc := range []struct {
+		version         string
+		minReadySeconds *int32
+		additionalArgs  []monitoringv1.Argument
+
+		expContains    string
+		expNotContains string
+	}{
+		{
+			version:        "v0.30.0",
+			expNotContains: "dispatch.start-delay",
+		},
+		{
+			version:        "v0.30.0",
+			additionalArgs: []monitoringv1.Argument{{Name: "dispatch.start-delay", Value: "1m"}},
+			expContains:    "--dispatch.start-delay=1m",
+		},
+		{
+			version:         "v0.29.0",
+			minReadySeconds: ptr.To(int32(60)),
+			expNotContains:  "dispatch.start-delay",
+		},
+		{
+			version:         "v0.30.0",
+			minReadySeconds: ptr.To(int32(60)),
+			expContains:     "--dispatch.start-delay=60s",
+		},
+		{
+			version:         "v0.30.0",
+			minReadySeconds: ptr.To(int32(60)),
+			additionalArgs:  []monitoringv1.Argument{{Name: "dispatch.start-delay", Value: "10s"}},
+			expContains:     "--dispatch.start-delay=10s",
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			a := monitoringv1.Alertmanager{
+				Spec: monitoringv1.AlertmanagerSpec{
+					Replicas:        ptr.To(int32(1)),
+					Version:         tc.version,
+					MinReadySeconds: tc.minReadySeconds,
+					AdditionalArgs:  tc.additionalArgs,
+				},
+			}
+
+			statefulSet, err := makeStatefulSetSpec(nil, &a, defaultTestConfig, &operator.ShardedSecret{})
+			require.NoError(t, err)
+
+			if tc.expContains != "" {
+				require.Contains(t, statefulSet.Template.Spec.Containers[0].Args, tc.expContains)
+			}
+			if tc.expNotContains != "" {
+				require.NotContains(t, statefulSet.Template.Spec.Containers[0].Args, tc.expNotContains)
+			}
+		})
 	}
 }
