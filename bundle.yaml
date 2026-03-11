@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -63,6 +63,7 @@ spec:
                       items:
                         type: string
                       type: array
+                      x-kubernetes-list-type: atomic
                     sourceMatch:
                       description: |-
                         sourceMatch defines matchers for which one or more alerts have to exist for the inhibition
@@ -102,6 +103,7 @@ spec:
                         - name
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     targetMatch:
                       description: |-
                         targetMatch defines matchers that have to be fulfilled in the alerts to be muted.
@@ -141,8 +143,10 @@ spec:
                         - name
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               muteTimeIntervals:
                 description: muteTimeIntervals defines the list of MuteTimeInterval
                   specifying when the routes should be muted.
@@ -176,6 +180,7 @@ spec:
                                   type: integer
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           months:
                             description: months defines a list of MonthRange
                             items:
@@ -185,6 +190,7 @@ spec:
                               pattern: ^((?i)january|february|march|april|may|june|july|august|september|october|november|december|1[0-2]|[1-9])(?:((:((?i)january|february|march|april|may|june|july|august|september|october|november|december|1[0-2]|[1-9]))$)|$)
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                           times:
                             description: times defines a list of TimeRange
                             items:
@@ -203,6 +209,7 @@ spec:
                                   type: string
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           weekdays:
                             description: weekdays defines a list of WeekdayRange
                             items:
@@ -212,6 +219,7 @@ spec:
                               pattern: ^((?i)sun|mon|tues|wednes|thurs|fri|satur)day(?:((:(sun|mon|tues|wednes|thurs|fri|satur)day)$)|$)
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                           years:
                             description: years defines a list of YearRange
                             items:
@@ -219,12 +227,15 @@ spec:
                               pattern: ^2\d{3}(?::2\d{3}|$)
                               type: string
                             type: array
+                            x-kubernetes-list-type: atomic
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                   required:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
               receivers:
                 description: receivers defines the list of receivers.
                 items:
@@ -1000,6 +1011,7 @@ spec:
                         - apiURL
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     emailConfigs:
                       description: emailConfigs defines the list of Email configurations.
                       items:
@@ -1009,6 +1021,7 @@ spec:
                             description: |-
                               authIdentity defines the identity to use for SMTP authentication.
                               This is typically used with PLAIN authentication mechanism.
+                            minLength: 1
                             type: string
                           authPassword:
                             description: |-
@@ -1069,11 +1082,13 @@ spec:
                             description: |-
                               authUsername defines the username to use for SMTP authentication.
                               This is used for SMTP AUTH when the server requires authentication.
+                            minLength: 1
                             type: string
                           from:
                             description: |-
                               from defines the sender address for email notifications.
                               This appears as the "From" field in the email header.
+                            minLength: 1
                             type: string
                           headers:
                             description: |-
@@ -1098,10 +1113,12 @@ spec:
                               - value
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           hello:
                             description: |-
                               hello defines the hostname to identify to the SMTP server.
                               This is used in the SMTP HELO/EHLO command during the connection handshake.
+                            minLength: 1
                             type: string
                           html:
                             description: |-
@@ -1121,11 +1138,13 @@ spec:
                             description: |-
                               smarthost defines the SMTP host and port through which emails are sent.
                               Format should be "hostname:port", e.g. "smtp.example.com:587".
+                            minLength: 1
                             type: string
                           text:
                             description: |-
                               text defines the plain text body of the email notification.
                               This provides a fallback for email clients that don't support HTML.
+                            minLength: 1
                             type: string
                           tlsConfig:
                             description: |-
@@ -1300,9 +1319,11 @@ spec:
                             description: |-
                               to defines the email address to send notifications to.
                               This is the recipient address for alert notifications.
+                            minLength: 1
                             type: string
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     msteamsConfigs:
                       description: |-
                         msteamsConfigs defines the list of MSTeams configurations.
@@ -2068,6 +2089,7 @@ spec:
                         - webhookUrl
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     msteamsv2Configs:
                       description: |-
                         msteamsv2Configs defines the list of MSTeamsV2 configurations.
@@ -2828,6 +2850,7 @@ spec:
                             x-kubernetes-map-type: atomic
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     name:
                       description: name defines the name of the receiver. Must be
                         unique across all items from the list.
@@ -2844,6 +2867,7 @@ spec:
                             description: |-
                               actions defines a comma separated list of actions that will be available for the alert.
                               These appear as action buttons in the OpsGenie interface.
+                            minLength: 1
                             type: string
                           apiKey:
                             description: |-
@@ -2876,11 +2900,13 @@ spec:
                             description: |-
                               apiURL defines the URL to send OpsGenie API requests to.
                               When not specified, defaults to the standard OpsGenie API endpoint.
+                            pattern: ^https?://.+$
                             type: string
                           description:
                             description: |-
                               description defines the detailed description of the incident.
                               This provides additional context beyond the message field.
+                            minLength: 1
                             type: string
                           details:
                             description: |-
@@ -2905,10 +2931,12 @@ spec:
                               - value
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           entity:
                             description: |-
                               entity defines an optional field that can be used to specify which domain alert is related to.
                               This helps group related alerts together in OpsGenie.
+                            minLength: 1
                             type: string
                           httpConfig:
                             description: httpConfig defines the HTTP client configuration
@@ -3620,16 +3648,19 @@ spec:
                             description: |-
                               message defines the alert text limited to 130 characters.
                               This appears as the main alert title in OpsGenie.
+                            minLength: 1
                             type: string
                           note:
                             description: |-
                               note defines an additional alert note.
                               This provides supplementary information about the alert.
+                            minLength: 1
                             type: string
                           priority:
                             description: |-
                               priority defines the priority level of alert.
                               Possible values are P1, P2, P3, P4, and P5, where P1 is highest priority.
+                            minLength: 1
                             type: string
                           responders:
                             description: |-
@@ -3644,11 +3675,13 @@ spec:
                                   description: |-
                                     id defines the unique identifier of the responder.
                                     This corresponds to the responder's ID within OpsGenie.
+                                  minLength: 1
                                   type: string
                                 name:
                                   description: |-
                                     name defines the display name of the responder.
                                     This is used when the responder is identified by name rather than ID.
+                                  minLength: 1
                                   type: string
                                 type:
                                   description: |-
@@ -3667,11 +3700,13 @@ spec:
                                   description: |-
                                     username defines the username of the responder.
                                     This is typically used for user-type responders when identifying by username.
+                                  minLength: 1
                                   type: string
                               required:
                               - type
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           sendResolved:
                             description: sendResolved defines whether or not to notify
                               about resolved alerts.
@@ -3680,11 +3715,13 @@ spec:
                             description: |-
                               source defines the backlink to the sender of the notification.
                               This helps identify where the alert originated from.
+                            minLength: 1
                             type: string
                           tags:
                             description: |-
                               tags defines a comma separated list of tags attached to the notifications.
                               These help categorize and filter alerts within OpsGenie.
+                            minLength: 1
                             type: string
                           updateAlerts:
                             description: |-
@@ -3693,6 +3730,7 @@ spec:
                             type: boolean
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     pagerdutyConfigs:
                       description: pagerdutyConfigs defines the List of PagerDuty
                         configurations.
@@ -3703,9 +3741,11 @@ spec:
                         properties:
                           class:
                             description: class defines the class/type of the event.
+                            minLength: 1
                             type: string
                           client:
                             description: client defines the client identification.
+                            minLength: 1
                             type: string
                           clientURL:
                             description: clientURL defines the backlink to the sender
@@ -3714,9 +3754,11 @@ spec:
                           component:
                             description: component defines the part or component of
                               the affected system that is broken.
+                            minLength: 1
                             type: string
                           description:
                             description: description of the incident.
+                            minLength: 1
                             type: string
                           details:
                             description: details defines the arbitrary key/value pairs
@@ -3740,8 +3782,10 @@ spec:
                               - value
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           group:
                             description: group defines a cluster or grouping of sources.
+                            minLength: 1
                             type: string
                           httpConfig:
                             description: httpConfig defines the HTTP client configuration.
@@ -4459,6 +4503,7 @@ spec:
                                 alt:
                                   description: alt is the optional alternative text
                                     for the image.
+                                  minLength: 1
                                   type: string
                                 href:
                                   description: href defines the optional URL; makes
@@ -4467,9 +4512,11 @@ spec:
                                 src:
                                   description: src of the image being attached to
                                     the incident
+                                  minLength: 1
                                   type: string
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           pagerDutyLinkConfigs:
                             description: pagerDutyLinkConfigs defines a list of link
                               details to attach that provide further detail about
@@ -4482,6 +4529,7 @@ spec:
                                   description: alt defines the text that describes
                                     the purpose of the link, and can be used as the
                                     link's text.
+                                  minLength: 1
                                   type: string
                                 href:
                                   description: href defines the URL of the link to
@@ -4489,6 +4537,7 @@ spec:
                                   type: string
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           routingKey:
                             description: |-
                               routingKey defines the secret's key that contains the PagerDuty integration key (when using
@@ -4552,16 +4601,26 @@ spec:
                             x-kubernetes-map-type: atomic
                           severity:
                             description: severity of the incident.
+                            minLength: 1
                             type: string
                           source:
                             description: source defines the unique location of the
                               affected system.
+                            minLength: 1
+                            type: string
+                          timeout:
+                            description: |-
+                              timeout is the maximum time allowed to invoke the pagerduty
+                              It requires Alertmanager >= v0.30.0.
+                            pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                             type: string
                           url:
                             description: url defines the URL to send requests to.
+                            pattern: ^https?://.+$
                             type: string
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     pushoverConfigs:
                       description: pushoverConfigs defines the list of Pushover configurations.
                       items:
@@ -4573,6 +4632,7 @@ spec:
                             description: |-
                               device defines the name of a specific device to send the notification to.
                               If not specified, the notification is sent to all user's devices.
+                            minLength: 1
                             type: string
                           expire:
                             description: |-
@@ -4584,6 +4644,7 @@ spec:
                             description: |-
                               html defines whether notification message is HTML or plain text.
                               When true, the message can include HTML formatting tags.
+                              html and monospace formatting are mutually exclusive.
                             type: boolean
                           httpConfig:
                             description: httpConfig defines the HTTP client configuration
@@ -5295,6 +5356,7 @@ spec:
                             description: |-
                               message defines the notification message content.
                               This is the main body text of the Pushover notification.
+                            minLength: 1
                             type: string
                           monospace:
                             description: |-
@@ -5305,6 +5367,7 @@ spec:
                             description: |-
                               priority defines the notification priority level.
                               See https://pushover.net/api#priority for valid values and behavior.
+                            minLength: 1
                             type: string
                           retry:
                             description: |-
@@ -5320,11 +5383,13 @@ spec:
                             description: |-
                               sound defines the name of one of the sounds supported by device clients.
                               This overrides the user's default sound choice for this notification.
+                            minLength: 1
                             type: string
                           title:
                             description: |-
                               title defines the notification title displayed in the Pushover message.
                               This appears as the bold header text in the notification.
+                            minLength: 1
                             type: string
                           token:
                             description: |-
@@ -5361,6 +5426,7 @@ spec:
                               See https://pushover.net/apps for application registration.
                               Either `token` or `tokenFile` is required.
                               It requires Alertmanager >= v0.26.0.
+                            minLength: 1
                             type: string
                           ttl:
                             description: |-
@@ -5377,6 +5443,7 @@ spec:
                             description: |-
                               urlTitle defines a title for the supplementary URL.
                               If not specified, the raw URL is shown instead.
+                            minLength: 1
                             type: string
                           userKey:
                             description: |-
@@ -5411,9 +5478,11 @@ spec:
                               userKeyFile defines the user key file that contains the recipient user's user key.
                               Either `userKey` or `userKeyFile` is required.
                               It requires Alertmanager >= v0.26.0.
+                            minLength: 1
                             type: string
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     rocketchatConfigs:
                       description: |-
                         rocketchatConfigs defines the list of RocketChat configurations.
@@ -5447,11 +5516,11 @@ spec:
                                   description: |-
                                     url defines the URL the button links to when clicked.
                                     This creates a clickable button that opens the specified URL.
-                                  pattern: ^https?://.+$
                                   type: string
                               type: object
                             minItems: 1
                             type: array
+                            x-kubernetes-list-type: atomic
                           apiURL:
                             description: |-
                               apiURL defines the API URL for RocketChat.
@@ -5504,6 +5573,7 @@ spec:
                               type: object
                             minItems: 1
                             type: array
+                            x-kubernetes-list-type: atomic
                           httpConfig:
                             description: httpConfig defines the HTTP client configuration
                               for RocketChat API requests.
@@ -6214,13 +6284,11 @@ spec:
                             description: |-
                               iconURL defines the icon URL for the message avatar.
                               This displays a custom image as the message sender's avatar.
-                            pattern: ^https?://.+$
                             type: string
                           imageURL:
                             description: |-
                               imageURL defines the image URL to display within the message.
                               This embeds an image directly in the message attachment.
-                            pattern: ^https?://.+$
                             type: string
                           linkNames:
                             description: |-
@@ -6246,7 +6314,6 @@ spec:
                             description: |-
                               thumbURL defines the thumbnail URL for the message.
                               This displays a small thumbnail image alongside the message content.
-                            pattern: ^https?://.+$
                             type: string
                           title:
                             description: |-
@@ -6264,6 +6331,8 @@ spec:
                             description: |-
                               token defines the sender token for RocketChat authentication.
                               This is the personal access token or bot token used to authenticate API requests.
+                              The secret needs to be in the same namespace as the AlertmanagerConfig
+                              object and accessible by the Prometheus Operator.
                             properties:
                               key:
                                 description: The key of the secret to select from.  Must
@@ -6290,6 +6359,8 @@ spec:
                             description: |-
                               tokenID defines the sender token ID for RocketChat authentication.
                               This is the user ID associated with the token used for API requests.
+                              The secret needs to be in the same namespace as the AlertmanagerConfig
+                              object and accessible by the Prometheus Operator.
                             properties:
                               key:
                                 description: The key of the secret to select from.  Must
@@ -6317,6 +6388,7 @@ spec:
                         - tokenID
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     slackConfigs:
                       description: slackConfigs defines the list of Slack configurations.
                       items:
@@ -6343,11 +6415,13 @@ spec:
                                       description: |-
                                         dismissText defines the label for the cancel button in the dialog.
                                         When not specified, defaults to "Cancel". This button cancels the action.
+                                      minLength: 1
                                       type: string
                                     okText:
                                       description: |-
                                         okText defines the label for the confirmation button in the dialog.
                                         When not specified, defaults to "Okay". This button proceeds with the action.
+                                      minLength: 1
                                       type: string
                                     text:
                                       description: |-
@@ -6359,6 +6433,7 @@ spec:
                                       description: |-
                                         title defines the title text displayed at the top of the confirmation dialog.
                                         When not specified, a default title will be used.
+                                      minLength: 1
                                       type: string
                                   required:
                                   - text
@@ -6367,11 +6442,13 @@ spec:
                                   description: |-
                                     name defines a unique identifier for the action within the message.
                                     This value is sent back to your application when the action is triggered.
+                                  minLength: 1
                                   type: string
                                 style:
                                   description: |-
                                     style defines the visual appearance of the action element.
                                     Valid values include "default", "primary" (green), and "danger" (red).
+                                  minLength: 1
                                   type: string
                                 text:
                                   description: |-
@@ -6394,12 +6471,15 @@ spec:
                                   description: |-
                                     value defines the payload sent when the action is triggered.
                                     This data is included in the callback sent to your application.
+                                  minLength: 1
                                   type: string
                               required:
                               - text
                               - type
                               type: object
+                            minItems: 1
                             type: array
+                            x-kubernetes-list-type: atomic
                           apiURL:
                             description: |-
                               apiURL defines the secret's key that contains the Slack webhook URL.
@@ -6430,19 +6510,23 @@ spec:
                           callbackId:
                             description: callbackId defines an identifier for the
                               message used in interactive components.
+                            minLength: 1
                             type: string
                           channel:
                             description: channel defines the channel or user to send
                               notifications to.
+                            minLength: 1
                             type: string
                           color:
                             description: |-
                               color defines the color of the left border of the Slack message attachment.
                               Can be a hex color code (e.g., "#ff0000") or a predefined color name.
+                            minLength: 1
                             type: string
                           fallback:
                             description: fallback defines a plain-text summary of
                               the attachment for clients that don't support attachments.
+                            minLength: 1
                             type: string
                           fields:
                             description: fields defines a list of Slack fields that
@@ -6476,10 +6560,13 @@ spec:
                               - title
                               - value
                               type: object
+                            minItems: 1
                             type: array
+                            x-kubernetes-list-type: atomic
                           footer:
                             description: footer defines small text displayed at the
                               bottom of the message attachment.
+                            minLength: 1
                             type: string
                           httpConfig:
                             description: httpConfig defines the HTTP client configuration.
@@ -7189,6 +7276,7 @@ spec:
                           iconEmoji:
                             description: iconEmoji defines the emoji to use as the
                               bot's avatar (e.g., ":ghost:").
+                            minLength: 1
                             type: string
                           iconURL:
                             description: iconURL defines the URL to an image to use
@@ -7208,11 +7296,15 @@ spec:
                               mrkdwnIn defines which fields should be parsed as Slack markdown.
                               Valid values include "pretext", "text", and "fields".
                             items:
+                              minLength: 1
                               type: string
+                            minItems: 1
                             type: array
+                            x-kubernetes-list-type: atomic
                           pretext:
                             description: pretext defines optional text that appears
                               above the message attachment block.
+                            minLength: 1
                             type: string
                           sendResolved:
                             description: sendResolved defines whether or not to notify
@@ -7226,15 +7318,24 @@ spec:
                           text:
                             description: text defines the main text content of the
                               Slack message attachment.
+                            minLength: 1
                             type: string
                           thumbURL:
                             description: |-
                               thumbURL defines the URL to an image file that will be displayed as a thumbnail
                               on the right side of the message attachment.
                             type: string
+                          timeout:
+                            description: |-
+                              timeout defines the maximum time to wait for a webhook request to complete,
+                              before failing the request and allowing it to be retried.
+                              It requires Alertmanager >= v0.30.0.
+                            pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                            type: string
                           title:
                             description: title defines the title text displayed in
                               the Slack message attachment.
+                            minLength: 1
                             type: string
                           titleLink:
                             description: titleLink defines the URL that the title
@@ -7242,9 +7343,11 @@ spec:
                             type: string
                           username:
                             description: username defines the slack bot user name.
+                            minLength: 1
                             type: string
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     snsConfigs:
                       description: snsConfigs defines the list of SNS configurations
                       items:
@@ -7974,11 +8077,13 @@ spec:
                             description: |-
                               message defines the message content of the SNS notification.
                               This is the actual notification text that will be sent to subscribers.
+                            minLength: 1
                             type: string
                           phoneNumber:
                             description: |-
                               phoneNumber defines the phone number if message is delivered via SMS in E.164 format.
                               If you don't specify this value, you must specify a value for the TopicARN or TargetARN.
+                            minLength: 1
                             type: string
                           sendResolved:
                             description: sendResolved defines whether or not to notify
@@ -8063,19 +8168,23 @@ spec:
                             description: |-
                               subject defines the subject line when the message is delivered to email endpoints.
                               This field is only used when sending to email subscribers of an SNS topic.
+                            minLength: 1
                             type: string
                           targetARN:
                             description: |-
                               targetARN defines the mobile platform endpoint ARN if message is delivered via mobile notifications.
                               If you don't specify this value, you must specify a value for the TopicARN or PhoneNumber.
+                            minLength: 1
                             type: string
                           topicARN:
                             description: |-
                               topicARN defines the SNS topic ARN, e.g. arn:aws:sns:us-east-2:698519295917:My-Topic.
                               If you don't specify this value, you must specify a value for the PhoneNumber or TargetARN.
+                            minLength: 1
                             type: string
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     telegramConfigs:
                       description: telegramConfigs defines the list of Telegram configurations.
                       items:
@@ -8087,6 +8196,7 @@ spec:
                             description: |-
                               apiURL defines the Telegram API URL, e.g. https://api.telegram.org.
                               If not specified, the default Telegram API URL will be used.
+                            pattern: ^https?://.+$
                             type: string
                           botToken:
                             description: |-
@@ -8870,6 +8980,7 @@ spec:
                         - chatID
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     victoropsConfigs:
                       description: victoropsConfigs defines the list of VictorOps
                         configurations.
@@ -8909,6 +9020,7 @@ spec:
                             description: |-
                               apiUrl defines the VictorOps API URL.
                               When not specified, defaults to the standard VictorOps API endpoint.
+                            pattern: ^https?://.+$
                             type: string
                           customFields:
                             description: |-
@@ -8933,10 +9045,12 @@ spec:
                               - value
                               type: object
                             type: array
+                            x-kubernetes-list-type: atomic
                           entityDisplayName:
                             description: |-
                               entityDisplayName contains a summary of the alerted problem.
                               This appears as the main title or identifier for the incident.
+                            minLength: 1
                             type: string
                           httpConfig:
                             description: httpConfig defines the HTTP client's configuration
@@ -9648,16 +9762,19 @@ spec:
                             description: |-
                               messageType describes the behavior of the alert.
                               Valid values are "CRITICAL", "WARNING", and "INFO".
+                            minLength: 1
                             type: string
                           monitoringTool:
                             description: |-
                               monitoringTool defines the monitoring tool the state message is from.
                               This helps identify the source system that generated the alert.
+                            minLength: 1
                             type: string
                           routingKey:
                             description: |-
                               routingKey defines a key used to map the alert to a team.
                               This determines which VictorOps team will receive the alert notification.
+                            minLength: 1
                             type: string
                           sendResolved:
                             description: sendResolved defines whether or not to notify
@@ -9667,9 +9784,13 @@ spec:
                             description: |-
                               stateMessage contains a long explanation of the alerted problem.
                               This provides detailed context about the incident.
+                            minLength: 1
                             type: string
+                        required:
+                        - routingKey
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     webexConfigs:
                       description: webexConfigs defines the list of Webex configurations.
                       items:
@@ -10403,6 +10524,7 @@ spec:
                         - roomID
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     webhookConfigs:
                       description: webhookConfigs defines the List of webhook configurations.
                       items:
@@ -11169,6 +11291,7 @@ spec:
                             x-kubernetes-map-type: atomic
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                     wechatConfigs:
                       description: wechatConfigs defines the list of WeChat configurations.
                       items:
@@ -11180,6 +11303,7 @@ spec:
                             description: |-
                               agentID defines the application agent ID within WeChat Work.
                               This identifies which WeChat Work application will send the notifications.
+                            minLength: 1
                             type: string
                           apiSecret:
                             description: |-
@@ -11212,11 +11336,13 @@ spec:
                             description: |-
                               apiURL defines the WeChat API URL.
                               When not specified, defaults to the standard WeChat Work API endpoint.
+                            pattern: ^https?://.+$
                             type: string
                           corpID:
                             description: |-
                               corpID defines the corp id for authentication.
                               This is the unique identifier for your WeChat Work organization.
+                            minLength: 1
                             type: string
                           httpConfig:
                             description: httpConfig defines the HTTP client configuration
@@ -11928,11 +12054,13 @@ spec:
                             description: |-
                               message defines the API request data as defined by the WeChat API.
                               This contains the actual notification content to be sent.
+                            minLength: 1
                             type: string
                           messageType:
                             description: |-
                               messageType defines the type of message to send.
                               Valid values include "text", "markdown", and other WeChat Work supported message types.
+                            minLength: 1
                             type: string
                           sendResolved:
                             description: sendResolved defines whether or not to notify
@@ -11942,23 +12070,30 @@ spec:
                             description: |-
                               toParty defines the target department(s) to receive the notification.
                               Can be a single department ID or multiple department IDs separated by '|'.
+                            minLength: 1
                             type: string
                           toTag:
                             description: |-
                               toTag defines the target tag(s) to receive the notification.
                               Can be a single tag ID or multiple tag IDs separated by '|'.
+                            minLength: 1
                             type: string
                           toUser:
                             description: |-
                               toUser defines the target user(s) to receive the notification.
                               Can be a single user ID or multiple user IDs separated by '|'.
+                            minLength: 1
                             type: string
                         type: object
                       type: array
+                      x-kubernetes-list-type: atomic
                   required:
                   - name
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
               route:
                 description: |-
                   route defines the Alertmanager route definition for alerts matching the resource's
@@ -11971,6 +12106,7 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: set
                   continue:
                     description: |-
                       continue defines the boolean indicating whether an alert should continue matching subsequent
@@ -11985,17 +12121,21 @@ spec:
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: set
                   groupInterval:
                     description: |-
                       groupInterval defines how long to wait before sending an updated notification.
-                      Must match the regular expression`^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$`
+                      Must be greater than 0.
                       Example: "5m"
+                    minLength: 1
+                    pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
                   groupWait:
                     description: |-
                       groupWait defines how long to wait before sending the initial notification.
-                      Must match the regular expression`^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$`
                       Example: "30s"
+                    minLength: 1
+                    pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
                   matchers:
                     description: |-
@@ -12037,12 +12177,14 @@ spec:
                       - name
                       type: object
                     type: array
+                    x-kubernetes-list-type: atomic
                   muteTimeIntervals:
                     description: muteTimeIntervals is a list of MuteTimeInterval names
                       that will mute this route when matched,
                     items:
                       type: string
                     type: array
+                    x-kubernetes-list-type: set
                   receiver:
                     description: |-
                       receiver defines the name of the receiver for this route. If not empty, it should be listed in
@@ -12051,21 +12193,129 @@ spec:
                   repeatInterval:
                     description: |-
                       repeatInterval defines how long to wait before repeating the last notification.
-                      Must match the regular expression`^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$`
+                      Must be greater than 0.
                       Example: "4h"
+                    minLength: 1
+                    pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
                   routes:
                     description: routes defines the child routes.
                     items:
                       x-kubernetes-preserve-unknown-fields: true
                     type: array
+                    x-kubernetes-list-type: atomic
                 type: object
+            type: object
+          status:
+            description: |-
+              status defines the status subresource. It is under active development and is updated only when the
+              "StatusForConfigurationResources" feature gate is enabled.
+
+              Most recent observed status of the ServiceMonitor. Read-only.
+              More info:
+              https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+            properties:
+              bindings:
+                description: bindings defines the list of workload resources (Prometheus,
+                  PrometheusAgent, ThanosRuler or Alertmanager) which select the configuration
+                  resource.
+                items:
+                  description: WorkloadBinding is a link between a configuration resource
+                    and a workload resource.
+                  properties:
+                    conditions:
+                      description: conditions defines the current state of the configuration
+                        resource when bound to the referenced Workload object.
+                      items:
+                        description: ConfigResourceCondition describes the status
+                          of configuration resources linked to Prometheus, PrometheusAgent,
+                          Alertmanager or ThanosRuler.
+                        properties:
+                          lastTransitionTime:
+                            description: lastTransitionTime defines the time of the
+                              last update to the current status property.
+                            format: date-time
+                            type: string
+                          message:
+                            description: message defines the human-readable message
+                              indicating details for the condition's last transition.
+                            type: string
+                          observedGeneration:
+                            description: |-
+                              observedGeneration defines the .metadata.generation that the
+                              condition was set based upon. For instance, if `.metadata.generation` is
+                              currently 12, but the `.status.conditions[].observedGeneration` is 9, the
+                              condition is out of date with respect to the current state of the object.
+                            format: int64
+                            type: integer
+                          reason:
+                            description: reason for the condition's last transition.
+                            type: string
+                          status:
+                            description: status of the condition.
+                            minLength: 1
+                            type: string
+                          type:
+                            description: |-
+                              type of the condition being reported.
+                              Currently, only "Accepted" is supported.
+                            enum:
+                            - Accepted
+                            minLength: 1
+                            type: string
+                        required:
+                        - lastTransitionTime
+                        - status
+                        - type
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - type
+                      x-kubernetes-list-type: map
+                    group:
+                      description: group defines the group of the referenced resource.
+                      enum:
+                      - monitoring.coreos.com
+                      type: string
+                    name:
+                      description: name defines the name of the referenced object.
+                      minLength: 1
+                      type: string
+                    namespace:
+                      description: namespace defines the namespace of the referenced
+                        object.
+                      minLength: 1
+                      type: string
+                    resource:
+                      description: resource defines the type of resource being referenced
+                        (e.g. Prometheus, PrometheusAgent, ThanosRuler or Alertmanager).
+                      enum:
+                      - prometheuses
+                      - prometheusagents
+                      - thanosrulers
+                      - alertmanagers
+                      type: string
+                  required:
+                  - group
+                  - name
+                  - namespace
+                  - resource
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - group
+                - resource
+                - name
+                - namespace
+                x-kubernetes-list-type: map
             type: object
         required:
         - spec
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 ---
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -12073,7 +12323,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -14388,7 +14638,7 @@ spec:
                             type: string
                         type: object
                       webex:
-                        description: webex defines the default configuration for Jira.
+                        description: webex defines the default configuration for Webex.
                         properties:
                           apiURL:
                             description: |-
@@ -16588,6 +16838,17 @@ spec:
                 x-kubernetes-list-map-keys:
                 - ip
                 x-kubernetes-list-type: map
+              hostNetwork:
+                description: |-
+                  hostNetwork controls whether the pod may use the node network namespace.
+
+                  Make sure to understand the security implications if you want to enable
+                  it (https://kubernetes.io/docs/concepts/configuration/overview/).
+
+                  When hostNetwork is enabled, this will set the DNS policy to
+                  `ClusterFirstWithHostNet` automatically (unless `.spec.dnsPolicy` is set
+                  to a different value).
+                type: boolean
               hostUsers:
                 description: |-
                   hostUsers supports the user space in Kubernetes.
@@ -18210,10 +18471,18 @@ spec:
                 type: string
               minReadySeconds:
                 description: |-
-                  minReadySeconds defines the minimum number of seconds for which a newly created pod should be ready
-                  without any of its container crashing for it to be considered available.
+                  minReadySeconds defines the minimum number of seconds for which a newly
+                  created pod should be ready without any of its container crashing for it
+                  to be considered available.
 
                   If unset, pods will be considered available as soon as they are ready.
+
+                  When the Alertmanager version is greater than or equal to v0.30.0, the
+                  duration is also used to delay the first flush of the aggregation
+                  groups. This delay helps ensuring that all alerts have been resent by
+                  the Prometheus instances to Alertmanager after a roll-out. It is
+                  possible to override this behavior passing a custom value via
+                  `.spec.additionalArgs`.
                 format: int32
                 minimum: 0
                 type: integer
@@ -18251,6 +18520,21 @@ spec:
                       the replica count to be deleted.
                     type: string
                 type: object
+              podManagementPolicy:
+                description: |-
+                  podManagementPolicy defines the policy for creating/deleting pods when
+                  scaling up and down.
+
+                  Unlike the default StatefulSet behavior, the default policy is
+                  `Parallel` to avoid manual intervention in case a pod gets stuck during
+                  a rollout.
+
+                  Note that updating this value implies the recreation of the StatefulSet
+                  which incurs a service outage.
+                enum:
+                - OrderedReady
+                - Parallel
+                type: string
               podMetadata:
                 description: |-
                   podMetadata defines labels and annotations which are propagated to the Alertmanager pods.
@@ -19590,6 +19874,48 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              updateStrategy:
+                description: |-
+                  updateStrategy indicates the strategy that will be employed to update
+                  Pods in the StatefulSet when a revision is made to statefulset's Pod
+                  Template.
+
+                  The default strategy is RollingUpdate.
+                properties:
+                  rollingUpdate:
+                    description: rollingUpdate is used to communicate parameters when
+                      type is RollingUpdate.
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          maxUnavailable is the maximum number of pods that can be unavailable
+                          during the update. The value can be an absolute number (ex: 5) or a
+                          percentage of desired pods (ex: 10%). Absolute number is calculated from
+                          percentage by rounding up. This can not be 0.  Defaults to 1. This field
+                          is alpha-level and is only honored by servers that enable the
+                          MaxUnavailableStatefulSet feature. The field applies to all pods in the
+                          range 0 to Replicas-1.  That means if there is any unavailable pod in
+                          the range 0 to Replicas-1, it will be counted towards MaxUnavailable.
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: |-
+                      type indicates the type of the StatefulSetUpdateStrategy.
+
+                      Default is RollingUpdate.
+                    enum:
+                    - OnDelete
+                    - RollingUpdate
+                    type: string
+                required:
+                - type
+                type: object
+                x-kubernetes-validations:
+                - message: rollingUpdate requires type to be RollingUpdate
+                  rule: '!(self.type != ''RollingUpdate'' && has(self.rollingUpdate))'
               version:
                 description: version the cluster should be on.
                 type: string
@@ -21936,7 +22262,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: podmonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23119,6 +23445,11 @@ spec:
 
                   Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
                 type: boolean
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
@@ -23330,7 +23661,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23379,7 +23710,11 @@ spec:
               for target discovery by Prometheus.
             properties:
               authorization:
-                description: authorization section for this endpoint
+                description: |-
+                  authorization configures the Authorization header credentials used by
+                  the client.
+
+                  Cannot be set at the same time as `basicAuth`, `bearerTokenSecret` or `oauth2`.
                 properties:
                   credentials:
                     description: credentials defines a key of a Secret in the namespace
@@ -23417,8 +23752,10 @@ spec:
                 type: object
               basicAuth:
                 description: |-
-                  basicAuth allow an endpoint to authenticate over basic authentication.
-                  More info: https://prometheus.io/docs/operating/configuration/#endpoint
+                  basicAuth defines the Basic Authentication credentials used by the
+                  client.
+
+                  Cannot be set at the same time as `authorization`, `bearerTokenSecret` or `oauth2`.
                 properties:
                   password:
                     description: |-
@@ -23475,9 +23812,14 @@ spec:
                 type: object
               bearerTokenSecret:
                 description: |-
-                  bearerTokenSecret defines the secret to mount to read bearer token for scraping targets. The secret
-                  needs to be in the same namespace as the probe and accessible by
-                  the Prometheus Operator.
+                  bearerTokenSecret defines a key of a Secret containing the bearer token
+                  used by the client for authentication. The secret needs to be in the
+                  same namespace as the custom resource and readable by the Prometheus
+                  Operator.
+
+                  Cannot be set at the same time as `authorization`, `basicAuth` or `oauth2`.
+
+                  Deprecated: use `authorization` instead.
                 properties:
                   key:
                     description: The key of the secret to select from.  Must be a
@@ -23504,6 +23846,9 @@ spec:
                   convertClassicHistogramsToNHCB defines whether to convert all scraped classic histograms into a native histogram with custom buckets.
                   It requires Prometheus >= v3.0.0.
                 type: boolean
+              enableHttp2:
+                description: enableHttp2 can be used to disable HTTP2.
+                type: boolean
               fallbackScrapeProtocol:
                 description: |-
                   fallbackScrapeProtocol defines the protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.
@@ -23516,6 +23861,11 @@ spec:
                 - PrometheusText0.0.4
                 - PrometheusText1.0.0
                 type: string
+              followRedirects:
+                description: |-
+                  followRedirects defines whether the client should follow HTTP 3xx
+                  redirects.
+                type: boolean
               interval:
                 description: |-
                   interval at which targets are probed using the configured prober.
@@ -23663,8 +24013,12 @@ spec:
                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                 x-kubernetes-int-or-string: true
               oauth2:
-                description: oauth2 for the URL. Only valid in Prometheus versions
-                  2.27.0 and newer.
+                description: |-
+                  oauth2 defines the OAuth2 settings used by the client.
+
+                  It requires Prometheus >= 2.27.0.
+
+                  Cannot be set at the same time as `authorization`, `basicAuth` or `bearerTokenSecret`.
                 properties:
                   clientId:
                     description: |-
@@ -24118,6 +24472,11 @@ spec:
 
                   Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
                 type: boolean
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
@@ -24434,8 +24793,7 @@ spec:
                     type: object
                 type: object
               tlsConfig:
-                description: tlsConfig defines the TLS configuration to use when scraping
-                  the endpoint.
+                description: tlsConfig defines the TLS configuration used by the client.
                 properties:
                   ca:
                     description: ca defines the Certificate authority used when verifying
@@ -24719,7 +25077,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: prometheusagents.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -29851,6 +30209,21 @@ spec:
                       the replica count to be deleted.
                     type: string
                 type: object
+              podManagementPolicy:
+                description: |-
+                  podManagementPolicy defines the policy for creating/deleting pods when
+                  scaling up and down.
+
+                  Unlike the default StatefulSet behavior, the default policy is
+                  `Parallel` to avoid manual intervention in case a pod gets stuck during
+                  a rollout.
+
+                  Note that updating this value implies the recreation of the StatefulSet
+                  which incurs a service outage.
+                enum:
+                - OrderedReady
+                - Parallel
+                type: string
               podMetadata:
                 description: |-
                   podMetadata defines labels and annotations which are propagated to the Prometheus pods.
@@ -30209,7 +30582,7 @@ spec:
                         managedIdentity:
                           description: |-
                             managedIdentity defines the Azure User-assigned Managed identity.
-                            Cannot be set at the same time as `oauth` or `sdk`.
+                            Cannot be set at the same time as `oauth`, `sdk` or `workloadIdentity`.
                           properties:
                             clientId:
                               description: |-
@@ -30222,7 +30595,7 @@ spec:
                         oauth:
                           description: |-
                             oauth defines the oauth config that is being used to authenticate.
-                            Cannot be set at the same time as `managedIdentity` or `sdk`.
+                            Cannot be set at the same time as `managedIdentity`, `sdk` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.48.0 or Thanos >= v0.31.0.
                           properties:
@@ -30270,11 +30643,17 @@ spec:
                           - clientSecret
                           - tenantId
                           type: object
+                        scope:
+                          description: |-
+                            scope is the custom OAuth 2.0 scope to request when acquiring tokens.
+                            It requires Prometheus >= 3.9.0. Currently not supported by Thanos.
+                          pattern: ^[\w\s:/.\\-]+$
+                          type: string
                         sdk:
                           description: |-
                             sdk defines the Azure SDK config that is being used to authenticate.
                             See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
-                            Cannot be set at the same time as `oauth` or `managedIdentity`.
+                            Cannot be set at the same time as `oauth`, `managedIdentity` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.52.0 or Thanos >= v0.36.0.
                           properties:
@@ -30284,6 +30663,27 @@ spec:
                                 authenticate.
                               pattern: ^[0-9a-zA-Z-.]+$
                               type: string
+                          type: object
+                        workloadIdentity:
+                          description: |-
+                            workloadIdentity defines the Azure Workload Identity authentication.
+                            Cannot be set at the same time as `oauth`, `managedIdentity`, or `sdk`.
+
+                            It requires Prometheus >= 3.7.0. Currently not supported by Thanos.
+                          properties:
+                            clientId:
+                              description: clientId is the clientID of the Azure Active
+                                Directory application.
+                              minLength: 1
+                              type: string
+                            tenantId:
+                              description: tenantId is the tenant ID of the Azure
+                                Active Directory application.
+                              minLength: 1
+                              type: string
+                          required:
+                          - clientId
+                          - tenantId
                           type: object
                       type: object
                     basicAuth:
@@ -31980,6 +32380,11 @@ spec:
                   Default: "30s"
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
@@ -33381,16 +33786,19 @@ spec:
                 properties:
                   clientType:
                     description: clientType defines the client used to export the
-                      traces. Supported values are `http` or `grpc`.
+                      traces. Supported values are `HTTP` and `GRPC`.
                     enum:
                     - http
                     - grpc
+                    - HTTP
+                    - GRPC
                     type: string
                   compression:
                     description: compression key for supported compression types.
-                      The only supported value is `gzip`.
+                      The only supported value is `Gzip`.
                     enum:
                     - gzip
+                    - Gzip
                     type: string
                   endpoint:
                     description: endpoint to send the traces to. Should be provided
@@ -33622,6 +34030,48 @@ spec:
                     pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
                 type: object
+              updateStrategy:
+                description: |-
+                  updateStrategy indicates the strategy that will be employed to update
+                  Pods in the StatefulSet when a revision is made to statefulset's Pod
+                  Template.
+
+                  The default strategy is RollingUpdate.
+                properties:
+                  rollingUpdate:
+                    description: rollingUpdate is used to communicate parameters when
+                      type is RollingUpdate.
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          maxUnavailable is the maximum number of pods that can be unavailable
+                          during the update. The value can be an absolute number (ex: 5) or a
+                          percentage of desired pods (ex: 10%). Absolute number is calculated from
+                          percentage by rounding up. This can not be 0.  Defaults to 1. This field
+                          is alpha-level and is only honored by servers that enable the
+                          MaxUnavailableStatefulSet feature. The field applies to all pods in the
+                          range 0 to Replicas-1.  That means if there is any unavailable pod in
+                          the range 0 to Replicas-1, it will be counted towards MaxUnavailable.
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: |-
+                      type indicates the type of the StatefulSetUpdateStrategy.
+
+                      Default is RollingUpdate.
+                    enum:
+                    - OnDelete
+                    - RollingUpdate
+                    type: string
+                required:
+                - type
+                type: object
+                x-kubernetes-validations:
+                - message: rollingUpdate requires type to be RollingUpdate
+                  rule: '!(self.type != ''RollingUpdate'' && has(self.rollingUpdate))'
               version:
                 description: |-
                   version of Prometheus being deployed. The operator uses this information
@@ -35892,6 +36342,17 @@ spec:
               rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.scrapeConfigSelector))'
             - message: probeSelector cannot be set when mode is DaemonSet
               rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.probeSelector))'
+            - message: scrapeConfigNamespaceSelector cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.scrapeConfigNamespaceSelector))'
+            - message: probeNamespaceSelector cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.probeNamespaceSelector))'
+            - message: serviceMonitorSelector cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.serviceMonitorSelector))'
+            - message: serviceMonitorNamespaceSelector cannot be set when mode is
+                DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.serviceMonitorNamespaceSelector))'
+            - message: additionalScrapeConfigs cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.additionalScrapeConfigs))'
           status:
             description: |-
               status defines the most recent observed status of the Prometheus cluster. Read-only.
@@ -36040,7 +36501,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: prometheuses.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -41956,6 +42417,21 @@ spec:
                       the replica count to be deleted.
                     type: string
                 type: object
+              podManagementPolicy:
+                description: |-
+                  podManagementPolicy defines the policy for creating/deleting pods when
+                  scaling up and down.
+
+                  Unlike the default StatefulSet behavior, the default policy is
+                  `Parallel` to avoid manual intervention in case a pod gets stuck during
+                  a rollout.
+
+                  Note that updating this value implies the recreation of the StatefulSet
+                  which incurs a service outage.
+                enum:
+                - OrderedReady
+                - Parallel
+                type: string
               podMetadata:
                 description: |-
                   podMetadata defines labels and annotations which are propagated to the Prometheus pods.
@@ -43120,7 +43596,7 @@ spec:
                         managedIdentity:
                           description: |-
                             managedIdentity defines the Azure User-assigned Managed identity.
-                            Cannot be set at the same time as `oauth` or `sdk`.
+                            Cannot be set at the same time as `oauth`, `sdk` or `workloadIdentity`.
                           properties:
                             clientId:
                               description: |-
@@ -43133,7 +43609,7 @@ spec:
                         oauth:
                           description: |-
                             oauth defines the oauth config that is being used to authenticate.
-                            Cannot be set at the same time as `managedIdentity` or `sdk`.
+                            Cannot be set at the same time as `managedIdentity`, `sdk` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.48.0 or Thanos >= v0.31.0.
                           properties:
@@ -43181,11 +43657,17 @@ spec:
                           - clientSecret
                           - tenantId
                           type: object
+                        scope:
+                          description: |-
+                            scope is the custom OAuth 2.0 scope to request when acquiring tokens.
+                            It requires Prometheus >= 3.9.0. Currently not supported by Thanos.
+                          pattern: ^[\w\s:/.\\-]+$
+                          type: string
                         sdk:
                           description: |-
                             sdk defines the Azure SDK config that is being used to authenticate.
                             See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
-                            Cannot be set at the same time as `oauth` or `managedIdentity`.
+                            Cannot be set at the same time as `oauth`, `managedIdentity` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.52.0 or Thanos >= v0.36.0.
                           properties:
@@ -43195,6 +43677,27 @@ spec:
                                 authenticate.
                               pattern: ^[0-9a-zA-Z-.]+$
                               type: string
+                          type: object
+                        workloadIdentity:
+                          description: |-
+                            workloadIdentity defines the Azure Workload Identity authentication.
+                            Cannot be set at the same time as `oauth`, `managedIdentity`, or `sdk`.
+
+                            It requires Prometheus >= 3.7.0. Currently not supported by Thanos.
+                          properties:
+                            clientId:
+                              description: clientId is the clientID of the Azure Active
+                                Directory application.
+                              minLength: 1
+                              type: string
+                            tenantId:
+                              description: tenantId is the tenant ID of the Azure
+                                Active Directory application.
+                              minLength: 1
+                              type: string
+                          required:
+                          - clientId
+                          - tenantId
                           type: object
                       type: object
                     basicAuth:
@@ -45036,6 +45539,11 @@ spec:
                   Default: "30s"
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
@@ -46999,16 +47507,19 @@ spec:
                 properties:
                   clientType:
                     description: clientType defines the client used to export the
-                      traces. Supported values are `http` or `grpc`.
+                      traces. Supported values are `HTTP` and `GRPC`.
                     enum:
                     - http
                     - grpc
+                    - HTTP
+                    - GRPC
                     type: string
                   compression:
                     description: compression key for supported compression types.
-                      The only supported value is `gzip`.
+                      The only supported value is `Gzip`.
                     enum:
                     - gzip
+                    - Gzip
                     type: string
                   endpoint:
                     description: endpoint to send the traces to. Should be provided
@@ -47240,6 +47751,48 @@ spec:
                     pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
                 type: object
+              updateStrategy:
+                description: |-
+                  updateStrategy indicates the strategy that will be employed to update
+                  Pods in the StatefulSet when a revision is made to statefulset's Pod
+                  Template.
+
+                  The default strategy is RollingUpdate.
+                properties:
+                  rollingUpdate:
+                    description: rollingUpdate is used to communicate parameters when
+                      type is RollingUpdate.
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          maxUnavailable is the maximum number of pods that can be unavailable
+                          during the update. The value can be an absolute number (ex: 5) or a
+                          percentage of desired pods (ex: 10%). Absolute number is calculated from
+                          percentage by rounding up. This can not be 0.  Defaults to 1. This field
+                          is alpha-level and is only honored by servers that enable the
+                          MaxUnavailableStatefulSet feature. The field applies to all pods in the
+                          range 0 to Replicas-1.  That means if there is any unavailable pod in
+                          the range 0 to Replicas-1, it will be counted towards MaxUnavailable.
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: |-
+                      type indicates the type of the StatefulSetUpdateStrategy.
+
+                      Default is RollingUpdate.
+                    enum:
+                    - OnDelete
+                    - RollingUpdate
+                    type: string
+                required:
+                - type
+                type: object
+                x-kubernetes-validations:
+                - message: rollingUpdate requires type to be RollingUpdate
+                  rule: '!(self.type != ''RollingUpdate'' && has(self.rollingUpdate))'
               version:
                 description: |-
                   version of Prometheus being deployed. The operator uses this information
@@ -49643,7 +50196,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: prometheusrules.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -49910,7 +50463,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -50788,6 +51341,15 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              bodySizeLimit:
+                description: |-
+                  bodySizeLimit defines a per-scrape limit on the size of the uncompressed
+                  response body that will be accepted by Prometheus. Targets responding with
+                  a body larger than this many bytes will cause the scrape to fail.
+
+                  It requires Prometheus >= v2.28.0.
+                pattern: (^0|([0-9]*[.])?[0-9]+((K|M|G|T|E|P)i?)?B)$
+                type: string
               consulSDConfigs:
                 description: consulSDConfigs defines a list of Consul service discovery
                   configurations.
@@ -62443,6 +63005,11 @@ spec:
                   scrapes.
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
@@ -62804,7 +63371,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -62895,10 +63462,10 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization configures the Authorization header credentials to use when
-                        scraping the target.
+                        authorization configures the Authorization header credentials used by
+                        the client.
 
-                        Cannot be set at the same time as `basicAuth`, or `oauth2`.
+                        Cannot be set at the same time as `basicAuth`, `bearerTokenSecret` or `oauth2`.
                       properties:
                         credentials:
                           description: credentials defines a key of a Secret in the
@@ -62936,10 +63503,10 @@ spec:
                       type: object
                     basicAuth:
                       description: |-
-                        basicAuth defines the Basic Authentication credentials to use when
-                        scraping the target.
+                        basicAuth defines the Basic Authentication credentials used by the
+                        client.
 
-                        Cannot be set at the same time as `authorization`, or `oauth2`.
+                        Cannot be set at the same time as `authorization`, `bearerTokenSecret` or `oauth2`.
                       properties:
                         password:
                           description: |-
@@ -63002,9 +63569,12 @@ spec:
                       type: string
                     bearerTokenSecret:
                       description: |-
-                        bearerTokenSecret defines a key of a Secret containing the bearer
-                        token for scraping targets. The secret needs to be in the same namespace
-                        as the ServiceMonitor object and readable by the Prometheus Operator.
+                        bearerTokenSecret defines a key of a Secret containing the bearer token
+                        used by the client for authentication. The secret needs to be in the
+                        same namespace as the custom resource and readable by the Prometheus
+                        Operator.
+
+                        Cannot be set at the same time as `authorization`, `basicAuth` or `oauth2`.
 
                         Deprecated: use `authorization` instead.
                       properties:
@@ -63030,8 +63600,7 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     enableHttp2:
-                      description: enableHttp2 can be used to disable HTTP2 when scraping
-                        the target.
+                      description: enableHttp2 can be used to disable HTTP2.
                       type: boolean
                     filterRunning:
                       description: |-
@@ -63044,8 +63613,8 @@ spec:
                       type: boolean
                     followRedirects:
                       description: |-
-                        followRedirects defines whether the scrape requests should follow HTTP
-                        3xx redirects.
+                        followRedirects defines whether the client should follow HTTP 3xx
+                        redirects.
                       type: boolean
                     honorLabels:
                       description: |-
@@ -63163,11 +63732,11 @@ spec:
                       type: string
                     oauth2:
                       description: |-
-                        oauth2 defines the OAuth2 settings to use when scraping the target.
+                        oauth2 defines the OAuth2 settings used by the client.
 
                         It requires Prometheus >= 2.27.0.
 
-                        Cannot be set at the same time as `authorization`, or `basicAuth`.
+                        Cannot be set at the same time as `authorization`, `basicAuth` or `bearerTokenSecret`.
                       properties:
                         clientId:
                           description: |-
@@ -63679,8 +64248,8 @@ spec:
                         Service. The port must be specified with the container's port property.
                       x-kubernetes-int-or-string: true
                     tlsConfig:
-                      description: tlsConfig defines the TLS configuration to use
-                        when scraping the target.
+                      description: tlsConfig defines TLS configuration used by the
+                        client.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -63980,6 +64549,11 @@ spec:
 
                   Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
                 type: boolean
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
@@ -64210,7 +64784,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.87.1
+    operator.prometheus.io/version: 0.89.0
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -68850,6 +69424,21 @@ spec:
                   paused defines when a ThanosRuler deployment is paused, no actions except for deletion
                   will be performed on the underlying objects.
                 type: boolean
+              podManagementPolicy:
+                description: |-
+                  podManagementPolicy defines the policy for creating/deleting pods when
+                  scaling up and down.
+
+                  Unlike the default StatefulSet behavior, the default policy is
+                  `Parallel` to avoid manual intervention in case a pod gets stuck during
+                  a rollout.
+
+                  Note that updating this value implies the recreation of the StatefulSet
+                  which incurs a service outage.
+                enum:
+                - OrderedReady
+                - Parallel
+                type: string
               podMetadata:
                 description: |-
                   podMetadata defines labels and annotations which are propagated to the ThanosRuler pods.
@@ -69043,7 +69632,7 @@ spec:
                         managedIdentity:
                           description: |-
                             managedIdentity defines the Azure User-assigned Managed identity.
-                            Cannot be set at the same time as `oauth` or `sdk`.
+                            Cannot be set at the same time as `oauth`, `sdk` or `workloadIdentity`.
                           properties:
                             clientId:
                               description: |-
@@ -69056,7 +69645,7 @@ spec:
                         oauth:
                           description: |-
                             oauth defines the oauth config that is being used to authenticate.
-                            Cannot be set at the same time as `managedIdentity` or `sdk`.
+                            Cannot be set at the same time as `managedIdentity`, `sdk` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.48.0 or Thanos >= v0.31.0.
                           properties:
@@ -69104,11 +69693,17 @@ spec:
                           - clientSecret
                           - tenantId
                           type: object
+                        scope:
+                          description: |-
+                            scope is the custom OAuth 2.0 scope to request when acquiring tokens.
+                            It requires Prometheus >= 3.9.0. Currently not supported by Thanos.
+                          pattern: ^[\w\s:/.\\-]+$
+                          type: string
                         sdk:
                           description: |-
                             sdk defines the Azure SDK config that is being used to authenticate.
                             See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
-                            Cannot be set at the same time as `oauth` or `managedIdentity`.
+                            Cannot be set at the same time as `oauth`, `managedIdentity` or `workloadIdentity`.
 
                             It requires Prometheus >= v2.52.0 or Thanos >= v0.36.0.
                           properties:
@@ -69118,6 +69713,27 @@ spec:
                                 authenticate.
                               pattern: ^[0-9a-zA-Z-.]+$
                               type: string
+                          type: object
+                        workloadIdentity:
+                          description: |-
+                            workloadIdentity defines the Azure Workload Identity authentication.
+                            Cannot be set at the same time as `oauth`, `managedIdentity`, or `sdk`.
+
+                            It requires Prometheus >= 3.7.0. Currently not supported by Thanos.
+                          properties:
+                            clientId:
+                              description: clientId is the clientID of the Azure Active
+                                Directory application.
+                              minLength: 1
+                              type: string
+                            tenantId:
+                              description: tenantId is the tenant ID of the Azure
+                                Active Directory application.
+                              minLength: 1
+                              type: string
+                          required:
+                          - clientId
+                          - tenantId
                           type: object
                       type: object
                     basicAuth:
@@ -71525,6 +72141,48 @@ spec:
 
                   This field takes precedence over `tracingConfig`.
                 type: string
+              updateStrategy:
+                description: |-
+                  updateStrategy indicates the strategy that will be employed to update
+                  Pods in the StatefulSet when a revision is made to statefulset's Pod
+                  Template.
+
+                  The default strategy is RollingUpdate.
+                properties:
+                  rollingUpdate:
+                    description: rollingUpdate is used to communicate parameters when
+                      type is RollingUpdate.
+                    properties:
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: |-
+                          maxUnavailable is the maximum number of pods that can be unavailable
+                          during the update. The value can be an absolute number (ex: 5) or a
+                          percentage of desired pods (ex: 10%). Absolute number is calculated from
+                          percentage by rounding up. This can not be 0.  Defaults to 1. This field
+                          is alpha-level and is only honored by servers that enable the
+                          MaxUnavailableStatefulSet feature. The field applies to all pods in the
+                          range 0 to Replicas-1.  That means if there is any unavailable pod in
+                          the range 0 to Replicas-1, it will be counted towards MaxUnavailable.
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  type:
+                    description: |-
+                      type indicates the type of the StatefulSetUpdateStrategy.
+
+                      Default is RollingUpdate.
+                    enum:
+                    - OnDelete
+                    - RollingUpdate
+                    type: string
+                required:
+                - type
+                type: object
+                x-kubernetes-validations:
+                - message: rollingUpdate requires type to be RollingUpdate
+                  rule: '!(self.type != ''RollingUpdate'' && has(self.rollingUpdate))'
               version:
                 description: version of Thanos to be deployed.
                 type: string
@@ -73850,7 +74508,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.87.1
+    app.kubernetes.io/version: 0.89.0
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -73867,7 +74525,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.87.1
+    app.kubernetes.io/version: 0.89.0
   name: prometheus-operator
 rules:
 - apiGroups:
@@ -73980,7 +74638,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.87.1
+    app.kubernetes.io/version: 0.89.0
   name: prometheus-operator
   namespace: default
 spec:
@@ -73996,19 +74654,21 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: 0.87.1
+        app.kubernetes.io/version: 0.89.0
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.87.1
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0
+        - --watch-referenced-objects-in-all-namespaces=true
+        - --disable-unmanaged-prometheus-configuration=true
         - --kubelet-endpoints=true
         - --kubelet-endpointslice=false
         env:
         - name: GOGC
           value: "30"
-        image: quay.io/prometheus-operator/prometheus-operator:v0.87.1
+        image: quay.io/prometheus-operator/prometheus-operator:v0.89.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -74042,7 +74702,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.87.1
+    app.kubernetes.io/version: 0.89.0
   name: prometheus-operator
   namespace: default
 ---
@@ -74052,7 +74712,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.87.1
+    app.kubernetes.io/version: 0.89.0
   name: prometheus-operator
   namespace: default
 spec:

@@ -3,9 +3,6 @@ global:
   external_labels:
     prometheus: default/test
     prometheus_replica: $(POD_NAME)
+  scrape_native_histograms: false
   evaluation_interval: 30s
 scrape_configs: []
-remote_write:
-- url: http://example.com
-  azuread:
-    cloud: AzureGovernment

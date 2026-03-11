@@ -23,6 +23,16 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
 
+const (
+	// NoSelectedResourcesReason is used in status conditions to indicate that
+	// a workload resource selected no configuration resources.
+	NoSelectedResourcesReason = "NoSelectedResources"
+
+	// DeprecatedFieldsInUseReason is used in status conditions to indicate that
+	// the resource uses deprecated fields.
+	DeprecatedFieldsInUseReason = "DeprecatedFieldsInUse"
+)
+
 // StatusGetter represents a workload resource implementing the interface
 // required by StatusPoller.
 type StatusGetter interface {
