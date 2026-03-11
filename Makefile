@@ -398,7 +398,7 @@ check-docs: $(MDOX_BINARY)
 test: test-unit test-long test-e2e
 
 .PHONY: test-unit
-test-unit: test-prometheus-goldenfiles
+test-unit:
 	go test -race $(TEST_RUN_ARGS) -short $(pkgs) -count=1 -v
 
 .PHONY: test-long
