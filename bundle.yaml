@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -1084,6 +1084,14 @@ spec:
                               This is used for SMTP AUTH when the server requires authentication.
                             minLength: 1
                             type: string
+                          forceImplicitTLS:
+                            description: |-
+                              forceImplicitTLS defines whether to force use of implicit TLS (direct TLS connection) for better security.
+                              true: force use of implicit TLS (direct TLS connection on any port)
+                              false: force disable implicit TLS (use explicit TLS/STARTTLS if required)
+                              nil (default): auto-detect based on port (465=implicit, other=explicit) for backward compatibility
+                              It requires Alertmanager >= v0.31.0.
+                            type: boolean
                           from:
                             description: |-
                               from defines the sender address for email notifications.
@@ -7291,6 +7299,13 @@ spec:
                               linkNames enables automatic linking of channel names and usernames in the message.
                               When true, @channel and @username will be converted to clickable links.
                             type: boolean
+                          messageText:
+                            description: |-
+                              messageText defines text content of the Slack message.
+                              If set, this is sent as the top-level 'text' field in the Slack payload.
+                              It requires Alertmanager >= v0.31.0.
+                            minLength: 1
+                            type: string
                           mrkdwnIn:
                             description: |-
                               mrkdwnIn defines which fields should be parsed as Slack markdown.
@@ -12323,7 +12338,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -14391,6 +14406,14 @@ spec:
                               LOGIN and PLAIN. If empty, Alertmanager doesn't authenticate
                               to the SMTP server.
                             type: string
+                          forceImplicitTLS:
+                            description: |-
+                              forceImplicitTLS defines whether to force use of implicit TLS (direct TLS connection) for better security.
+                              true: force use of implicit TLS (direct TLS connection on any port)
+                              false: force disable implicit TLS (use explicit TLS/STARTTLS if required)
+                              nil (default): auto-detect based on port (465=implicit, other=explicit) for backward compatibility
+                              It requires Alertmanager >= v0.31.0.
+                            type: boolean
                           from:
                             description: from defines the default SMTP From header
                               field.
@@ -15208,14 +15231,20 @@ spec:
                 type: string
               containers:
                 description: |-
-                  containers allows injecting additional containers. This is meant to
-                  allow adding an authentication proxy to an Alertmanager pod.
-                  Containers described here modify an operator generated container if they
-                  share the same name and modifications are done via a strategic merge
-                  patch. The current container names are: `alertmanager` and
-                  `config-reloader`. Overriding containers is entirely outside the scope
-                  of what the maintainers will support and by doing so, you accept that
-                  this behaviour may break at any time without notice.
+                  containers allows injecting additional containers or modifying operator
+                  generated containers. This can be used to allow adding an authentication
+                  proxy to the Pods or to change the behavior of an operator generated
+                  container. Containers described here modify an operator generated
+                  container if they share the same name and modifications are done via a
+                  strategic merge patch.
+
+                  The names of containers managed by the operator are:
+                  * `alertmanager`
+                  * `config-reloader`
+                  * `thanos-sidecar`
+
+                  Overriding containers which are managed by the operator require careful
+                  testing, especially when upgrading to a new version of the operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -16083,7 +16112,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -16899,15 +16930,21 @@ spec:
                 type: array
               initContainers:
                 description: |-
-                  initContainers allows adding initContainers to the pod definition. Those can be used to e.g.
-                  fetch secrets for injection into the Alertmanager configuration from external sources. Any
-                  errors during the execution of an initContainer will lead to a restart of the Pod. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-                  InitContainers described here modify an operator
-                  generated init containers if they share the same name and modifications are
-                  done via a strategic merge patch. The current init container name is:
-                  `init-config-reloader`. Overriding init containers is entirely outside the
-                  scope of what the maintainers will support and by doing so, you accept that
-                  this behaviour may break at any time without notice.
+                  initContainers allows injecting initContainers to the Pod definition. Those
+                  can be used to e.g.  fetch secrets for injection into the Prometheus
+                  configuration from external sources. Any errors during the execution of
+                  an initContainer will lead to a restart of the Pod. More info:
+                  https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+                  InitContainers described here modify an operator generated init
+                  containers if they share the same name and modifications are done via a
+                  strategic merge patch.
+
+                  The names of init container name managed by the operator are:
+                  * `init-config-reloader`.
+
+                  Overriding init containers which are managed by the operator require
+                  careful testing, especially when upgrading to a new version of the
+                  operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -17775,7 +17812,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -18665,6 +18704,11 @@ spec:
                   and the actual ExternalURL is still true, but the server serves requests
                   under a different route prefix. For example for use with `kubectl proxy`.
                 type: string
+              schedulerName:
+                description: schedulerName defines the scheduler to use for Pod scheduling.
+                  If not specified, the default scheduler is used.
+                minLength: 1
+                type: string
               secrets:
                 description: |-
                   secrets is a list of Secrets in the same namespace as the Alertmanager
@@ -19100,7 +19144,7 @@ spec:
                               resources:
                                 description: |-
                                   resources represents the minimum resources the volume should have.
-                                  If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                  Users are allowed to specify resource requirements
                                   that are lower than previous value but must still be higher than capacity recorded in the
                                   status field of the claim.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -19355,7 +19399,7 @@ spec:
                           resources:
                             description: |-
                               resources represents the minimum resources the volume should have.
-                              If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                              Users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
                               More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -19511,9 +19555,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                             x-kubernetes-map-type: granular
                           allocatedResources:
@@ -19545,9 +19587,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                           capacity:
                             additionalProperties:
@@ -19680,9 +19720,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-
@@ -20574,7 +20615,7 @@ spec:
                                 resources:
                                   description: |-
                                     resources represents the minimum resources the volume should have.
-                                    If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                    Users are allowed to specify resource requirements
                                     that are lower than previous value but must still be higher than capacity recorded in the
                                     status field of the claim.
                                     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -21453,6 +21494,24 @@ spec:
                                     description: Kubelet's generated CSRs will be
                                       addressed to this signer.
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    description: |-
+                                      userAnnotations allow pod authors to pass additional information to
+                                      the signer implementation.  Kubernetes does not restrict or validate this
+                                      metadata in any way.
+
+                                      These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+                                      the PodCertificateRequest objects that Kubelet creates.
+
+                                      Entries are subject to the same validation as object metadata annotations,
+                                      with the addition that all keys must be domain-prefixed. No restrictions
+                                      are placed on values, except an overall size limitation on the entire field.
+
+                                      Signers should document the keys and values they support. Signers should
+                                      deny requests that contain keys they do not recognize.
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName
@@ -22262,7 +22321,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: podmonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23661,7 +23720,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -25077,7 +25136,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: prometheusagents.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -26550,9 +26609,8 @@ spec:
                   * `config-reloader`
                   * `thanos-sidecar`
 
-                  Overriding containers is entirely outside the scope of what the
-                  maintainers will support and by doing so, you accept that this behaviour
-                  may break at any time without notice.
+                  Overriding containers which are managed by the operator require careful
+                  testing, especially when upgrading to a new version of the operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -27420,7 +27478,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -28458,7 +28518,7 @@ spec:
               initContainers:
                 description: |-
                   initContainers allows injecting initContainers to the Pod definition. Those
-                  can be used to e.g.  fetch secrets for injection into the Prometheus
+                  can be used to e.g. fetch secrets for injection into the Prometheus
                   configuration from external sources. Any errors during the execution of
                   an initContainer will lead to a restart of the Pod. More info:
                   https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
@@ -28469,9 +28529,9 @@ spec:
                   The names of init container name managed by the operator are:
                   * `init-config-reloader`.
 
-                  Overriding init containers is entirely outside the scope of what the
-                  maintainers will support and by doing so, you accept that this behaviour
-                  may break at any time without notice.
+                  Overriding init containers which are managed by the operator require
+                  careful testing, especially when upgrading to a new version of the
+                  operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -29339,7 +29399,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -31554,9 +31616,11 @@ spec:
                           type: string
                       type: object
                     url:
-                      description: url defines the URL of the endpoint to send samples
-                        to.
-                      minLength: 1
+                      description: |-
+                        url defines the URL of the endpoint to send samples to.
+
+                        It must use the HTTP or HTTPS scheme.
+                      pattern: ^(http|https)://.+$
                       type: string
                     writeRelabelConfigs:
                       description: writeRelabelConfigs defines the list of remote
@@ -31771,6 +31835,11 @@ spec:
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedSampleLimit.
                 format: int64
                 type: integer
+              schedulerName:
+                description: schedulerName defines the scheduler to use for Pod scheduling.
+                  If not specified, the default scheduler is used.
+                minLength: 1
+                type: string
               scrapeClasses:
                 description: |-
                   scrapeClasses defines the list of scrape classes to expose to scraping objects such as
@@ -32994,7 +33063,7 @@ spec:
                               resources:
                                 description: |-
                                   resources represents the minimum resources the volume should have.
-                                  If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                  Users are allowed to specify resource requirements
                                   that are lower than previous value but must still be higher than capacity recorded in the
                                   status field of the claim.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -33249,7 +33318,7 @@ spec:
                           resources:
                             description: |-
                               resources represents the minimum resources the volume should have.
-                              If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                              Users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
                               More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -33405,9 +33474,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                             x-kubernetes-map-type: granular
                           allocatedResources:
@@ -33439,9 +33506,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                           capacity:
                             additionalProperties:
@@ -33577,9 +33642,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-
@@ -34737,7 +34803,7 @@ spec:
                                 resources:
                                   description: |-
                                     resources represents the minimum resources the volume should have.
-                                    If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                    Users are allowed to specify resource requirements
                                     that are lower than previous value but must still be higher than capacity recorded in the
                                     status field of the claim.
                                     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -35616,6 +35682,24 @@ spec:
                                     description: Kubelet's generated CSRs will be
                                       addressed to this signer.
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    description: |-
+                                      userAnnotations allow pod authors to pass additional information to
+                                      the signer implementation.  Kubernetes does not restrict or validate this
+                                      metadata in any way.
+
+                                      These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+                                      the PodCertificateRequest objects that Kubelet creates.
+
+                                      Entries are subject to the same validation as object metadata annotations,
+                                      with the addition that all keys must be domain-prefixed. No restrictions
+                                      are placed on values, except an overall size limitation on the entire field.
+
+                                      Signers should document the keys and values they support. Signers should
+                                      deny requests that contain keys they do not recognize.
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName
@@ -36501,7 +36585,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: prometheuses.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -38725,9 +38809,8 @@ spec:
                   * `config-reloader`
                   * `thanos-sidecar`
 
-                  Overriding containers is entirely outside the scope of what the
-                  maintainers will support and by doing so, you accept that this behaviour
-                  may break at any time without notice.
+                  Overriding containers which are managed by the operator require careful
+                  testing, especially when upgrading to a new version of the operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -39595,7 +39678,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -40675,7 +40760,7 @@ spec:
               initContainers:
                 description: |-
                   initContainers allows injecting initContainers to the Pod definition. Those
-                  can be used to e.g.  fetch secrets for injection into the Prometheus
+                  can be used to e.g. fetch secrets for injection into the Prometheus
                   configuration from external sources. Any errors during the execution of
                   an initContainer will lead to a restart of the Pod. More info:
                   https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
@@ -40686,9 +40771,9 @@ spec:
                   The names of init container name managed by the operator are:
                   * `init-config-reloader`.
 
-                  Overriding init containers is entirely outside the scope of what the
-                  maintainers will support and by doing so, you accept that this behaviour
-                  may break at any time without notice.
+                  Overriding init containers which are managed by the operator require
+                  careful testing, especially when upgrading to a new version of the
+                  operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -41556,7 +41641,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -44568,9 +44655,11 @@ spec:
                           type: string
                       type: object
                     url:
-                      description: url defines the URL of the endpoint to send samples
-                        to.
-                      minLength: 1
+                      description: |-
+                        url defines the URL of the endpoint to send samples to.
+
+                        It must use the HTTP or HTTPS scheme.
+                      pattern: ^(http|https)://.+$
                       type: string
                     writeRelabelConfigs:
                       description: writeRelabelConfigs defines the list of remote
@@ -44930,6 +45019,11 @@ spec:
                   If you want to enforce a maximum limit for all scrape objects, refer to enforcedSampleLimit.
                 format: int64
                 type: integer
+              schedulerName:
+                description: schedulerName defines the scheduler to use for Pod scheduling.
+                  If not specified, the default scheduler is used.
+                minLength: 1
+                type: string
               scrapeClasses:
                 description: |-
                   scrapeClasses defines the list of scrape classes to expose to scraping objects such as
@@ -46191,7 +46285,7 @@ spec:
                               resources:
                                 description: |-
                                   resources represents the minimum resources the volume should have.
-                                  If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                  Users are allowed to specify resource requirements
                                   that are lower than previous value but must still be higher than capacity recorded in the
                                   status field of the claim.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -46446,7 +46540,7 @@ spec:
                           resources:
                             description: |-
                               resources represents the minimum resources the volume should have.
-                              If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                              Users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
                               More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -46602,9 +46696,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                             x-kubernetes-map-type: granular
                           allocatedResources:
@@ -46636,9 +46728,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                           capacity:
                             additionalProperties:
@@ -46822,7 +46912,7 @@ spec:
                     description: |-
                       grpcServerTlsConfig defines the TLS parameters for the gRPC server providing the StoreAPI.
 
-                      Note: Currently only the `caFile`, `certFile`, and `keyFile` fields are supported.
+                      Note: Currently only the `minVersion`, `caFile`, `certFile`, and `keyFile` fields are supported.
                     properties:
                       ca:
                         description: ca defines the Certificate authority used when
@@ -47298,9 +47388,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-
@@ -48458,7 +48549,7 @@ spec:
                                 resources:
                                   description: |-
                                     resources represents the minimum resources the volume should have.
-                                    If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                    Users are allowed to specify resource requirements
                                     that are lower than previous value but must still be higher than capacity recorded in the
                                     status field of the claim.
                                     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -49337,6 +49428,24 @@ spec:
                                     description: Kubelet's generated CSRs will be
                                       addressed to this signer.
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    description: |-
+                                      userAnnotations allow pod authors to pass additional information to
+                                      the signer implementation.  Kubernetes does not restrict or validate this
+                                      metadata in any way.
+
+                                      These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+                                      the PodCertificateRequest objects that Kubelet creates.
+
+                                      Entries are subject to the same validation as object metadata annotations,
+                                      with the addition that all keys must be domain-prefixed. No restrictions
+                                      are placed on values, except an overall size limitation on the entire field.
+
+                                      Signers should document the keys and values they support. Signers should
+                                      deny requests that contain keys they do not recognize.
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName
@@ -50196,7 +50305,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: prometheusrules.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -50463,7 +50572,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -52143,7 +52252,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the DigitalOcean API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -52583,7 +52692,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the DigitalOcean API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -52812,7 +52921,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Docker daemon.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -52918,6 +53027,7 @@ spec:
                         properties:
                           name:
                             description: name of the Filter.
+                            minLength: 1
                             type: string
                           values:
                             description: values defines values to filter on.
@@ -52940,8 +53050,9 @@ spec:
                         HTTP 3xx redirects.
                       type: boolean
                     host:
-                      description: host defines the address of the docker daemon
+                      description: host defines the address of the docker daemon.
                       minLength: 1
+                      pattern: ^[a-zA-Z][a-zA-Z0-9+.-]*://.+$
                       type: string
                     hostNetworkingHost:
                       description: hostNetworkingHost defines the host to use if the
@@ -53350,7 +53461,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Docker daemon.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -53530,7 +53641,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Docker Swarm API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -53641,6 +53752,7 @@ spec:
                         properties:
                           name:
                             description: name of the Filter.
+                            minLength: 1
                             type: string
                           values:
                             description: values defines values to filter on.
@@ -54072,7 +54184,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Docker Swarm daemon.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -54298,6 +54410,7 @@ spec:
                         properties:
                           name:
                             description: name of the Filter.
+                            minLength: 1
                             type: string
                           values:
                             description: values defines values to filter on.
@@ -54421,7 +54534,7 @@ spec:
                       x-kubernetes-map-type: atomic
                     tlsConfig:
                       description: |-
-                        tlsConfig defines the TLS configuration to connect to the Consul API.
+                        tlsConfig defines the TLS configuration to connect to the EC2 API.
                         It requires Prometheus >= v2.41.0
                       properties:
                         ca:
@@ -54612,7 +54725,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Eureka server.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -55103,12 +55216,11 @@ spec:
                     server:
                       description: server defines the URL to connect to the Eureka
                         server.
-                      minLength: 1
-                      pattern: ^http(s)?://.+$
+                      pattern: ^https?://.+$
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Eureka server.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -55391,7 +55503,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Hetzner API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -55903,7 +56015,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Hetzner API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -56755,8 +56867,7 @@ spec:
                     url:
                       description: url defines the URL from which the targets are
                         fetched.
-                      minLength: 1
-                      pattern: ^http(s)?://.+$
+                      pattern: ^https?://.+$
                       type: string
                   required:
                   - url
@@ -56772,7 +56883,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the IONOS.
+                        authorization defines the header configuration to authenticate against the IONOS API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -57217,7 +57328,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the IONOS API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -58171,7 +58282,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Kuma control plane.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -58677,7 +58788,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Kuma control plane.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -58899,7 +59010,7 @@ spec:
                       x-kubernetes-map-type: atomic
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Lightsail API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -59434,7 +59545,7 @@ spec:
                       x-kubernetes-map-type: atomic
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Lightsail API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -59612,7 +59723,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Linode API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -60062,7 +60173,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Linode API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -60384,7 +60495,7 @@ spec:
                       type: boolean
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the Nomad API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -60886,7 +60997,7 @@ spec:
                       description: |-
                         server defines the Nomad server address to connect to for service discovery.
                         This should be the full URL including protocol (e.g., "https://nomad.example.com:4646").
-                      minLength: 1
+                      pattern: ^https?://.+$
                       type: string
                     tagSeparator:
                       description: |-
@@ -60895,7 +61006,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Nomad API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -61468,7 +61579,7 @@ spec:
                       description: |-
                         identityEndpoint defines the HTTP endpoint that is required to work with
                         the Identity API of the appropriate version.
-                      pattern: ^http(s)?:\/\/.+$
+                      pattern: ^https?://.+$
                       type: string
                     password:
                       description: |-
@@ -61876,7 +61987,7 @@ spec:
                   properties:
                     authorization:
                       description: |-
-                        authorization defines the  header configuration to authenticate against the DigitalOcean API.
+                        authorization defines the header configuration to authenticate against the PuppetDB API.
                         Cannot be set at the same time as `oauth2`.
                       properties:
                         credentials:
@@ -62387,7 +62498,7 @@ spec:
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the PuppetDB server.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -62556,8 +62667,7 @@ spec:
                     url:
                       description: url defines the URL of the PuppetDB root query
                         endpoint.
-                      minLength: 1
-                      pattern: ^http(s)?://.+$
+                      pattern: ^https?://.+$
                       type: string
                   required:
                   - query
@@ -62676,7 +62786,7 @@ spec:
                     apiURL:
                       description: apiURL defines the API URL to use when doing the
                         server listing requests.
-                      pattern: ^http(s)?://.+$
+                      pattern: ^https?://.+$
                       type: string
                     enableHTTP2:
                       description: enableHTTP2 defines whether to enable HTTP2.
@@ -62803,7 +62913,7 @@ spec:
                       x-kubernetes-list-type: set
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
-                        to the Consul API.
+                        to the Scaleway API.
                       properties:
                         ca:
                           description: ca defines the Certificate authority used when
@@ -63062,9 +63172,9 @@ spec:
                       description: targets defines the list of targets for this static
                         configuration.
                       items:
-                        description: |-
-                          Target represents a target for Prometheus to scrape
-                          kubebuilder:validation:MinLength:=1
+                        description: Target represents a target for Prometheus to
+                          scrape
+                        minLength: 1
                         type: string
                       minItems: 1
                       type: array
@@ -63371,7 +63481,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -64784,7 +64894,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.89.0
+    operator.prometheus.io/version: 0.90.0
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -65899,13 +66009,19 @@ spec:
                 type: array
               containers:
                 description: |-
-                  containers allows injecting additional containers or modifying operator generated
-                  containers. This can be used to allow adding an authentication proxy to a ThanosRuler pod or
-                  to change the behavior of an operator generated container. Containers described here modify
-                  an operator generated container if they share the same name and modifications are done via a
-                  strategic merge patch. The current container names are: `thanos-ruler` and `config-reloader`.
-                  Overriding containers is entirely outside the scope of what the maintainers will support and by doing
-                  so, you accept that this behaviour may break at any time without notice.
+                  containers allows injecting additional containers or modifying operator
+                  generated containers. This can be used to allow adding an authentication
+                  proxy to the Pods or to change the behavior of an operator generated
+                  container. Containers described here modify an operator generated
+                  container if they share the same name and modifications are done via a
+                  strategic merge patch.
+
+                  The names of containers managed by the operator are:
+                  * `thanos-ruler`
+                  * `config-reloader`
+
+                  Overriding containers which are managed by the operator require careful
+                  testing, especially when upgrading to a new version of the operator.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -66773,7 +66889,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -67562,8 +67680,8 @@ spec:
                 description: |-
                   grpcServerTlsConfig defines the gRPC server from which Thanos Querier reads
                   recorded rule data.
-                  Note: Currently only the CAFile, CertFile, and KeyFile fields are supported.
-                  Maps to the '--grpc-server-tls-*' CLI args.
+
+                  Note: Currently only the `minVersion`, `caFile`, `certFile`, and `keyFile` fields are supported.
                 properties:
                   ca:
                     description: ca defines the Certificate authority used when verifying
@@ -67810,13 +67928,11 @@ spec:
                 type: array
               initContainers:
                 description: |-
-                  initContainers allows adding initContainers to the pod definition. Those can be used to e.g.
-                  fetch secrets for injection into the ThanosRuler configuration from external sources. Any
-                  errors during the execution of an initContainer will lead to a restart of the Pod.
-                  More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
-                  Using initContainers for any use case other then secret fetching is entirely outside the scope
-                  of what the maintainers will support and by doing so, you accept that this behaviour may break
-                  at any time without notice.
+                  initContainers allows injecting initContainers to the Pod definition.
+                  Those can be used to e.g. fetch secrets for injection into the
+                  configuration from external sources. Any errors during the execution of
+                  an initContainer will lead to a restart of the Pod. More info:
+                  https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -68684,7 +68800,9 @@ spec:
                           type: integer
                       type: object
                     resizePolicy:
-                      description: Resources resize policy for the container.
+                      description: |-
+                        Resources resize policy for the container.
+                        This field cannot be set on ephemeral containers.
                       items:
                         description: ContainerResizePolicy represents resource resize
                           policy for the container.
@@ -70604,9 +70722,11 @@ spec:
                           type: string
                       type: object
                     url:
-                      description: url defines the URL of the endpoint to send samples
-                        to.
-                      minLength: 1
+                      description: |-
+                        url defines the URL of the endpoint to send samples to.
+
+                        It must use the HTTP or HTTPS scheme.
+                      pattern: ^(http|https)://.+$
                       type: string
                     writeRelabelConfigs:
                       description: writeRelabelConfigs defines the list of remote
@@ -70909,6 +71029,11 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              schedulerName:
+                description: schedulerName defines the scheduler to use for Pod scheduling.
+                  If not specified, the default scheduler is used.
+                minLength: 1
+                type: string
               securityContext:
                 description: |-
                   securityContext defines the pod-level security attributes and common container settings.
@@ -71327,7 +71452,7 @@ spec:
                               resources:
                                 description: |-
                                   resources represents the minimum resources the volume should have.
-                                  If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                  Users are allowed to specify resource requirements
                                   that are lower than previous value but must still be higher than capacity recorded in the
                                   status field of the claim.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -71582,7 +71707,7 @@ spec:
                           resources:
                             description: |-
                               resources represents the minimum resources the volume should have.
-                              If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                              Users are allowed to specify resource requirements
                               that are lower than previous value but must still be higher than capacity recorded in the
                               status field of the claim.
                               More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -71738,9 +71863,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                             x-kubernetes-map-type: granular
                           allocatedResources:
@@ -71772,9 +71895,7 @@ spec:
                               ignore the update for the purpose it was designed. For
                               example - a controller that\nonly is responsible for
                               resizing capacity of the volume, should ignore PVC updates
-                              that change other valid\nresources associated with PVC.\n\nThis
-                              is an alpha field and requires enabling RecoverVolumeExpansionFailure
-                              feature."
+                              that change other valid\nresources associated with PVC."
                             type: object
                           capacity:
                             additionalProperties:
@@ -71901,9 +72022,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-
@@ -72840,7 +72962,7 @@ spec:
                                 resources:
                                   description: |-
                                     resources represents the minimum resources the volume should have.
-                                    If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+                                    Users are allowed to specify resource requirements
                                     that are lower than previous value but must still be higher than capacity recorded in the
                                     status field of the claim.
                                     More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
@@ -73719,6 +73841,24 @@ spec:
                                     description: Kubelet's generated CSRs will be
                                       addressed to this signer.
                                     type: string
+                                  userAnnotations:
+                                    additionalProperties:
+                                      type: string
+                                    description: |-
+                                      userAnnotations allow pod authors to pass additional information to
+                                      the signer implementation.  Kubernetes does not restrict or validate this
+                                      metadata in any way.
+
+                                      These values are copied verbatim into the `spec.unverifiedUserAnnotations` field of
+                                      the PodCertificateRequest objects that Kubelet creates.
+
+                                      Entries are subject to the same validation as object metadata annotations,
+                                      with the addition that all keys must be domain-prefixed. No restrictions
+                                      are placed on values, except an overall size limitation on the entire field.
+
+                                      Signers should document the keys and values they support. Signers should
+                                      deny requests that contain keys they do not recognize.
+                                    type: object
                                 required:
                                 - keyType
                                 - signerName
@@ -74508,7 +74648,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.89.0
+    app.kubernetes.io/version: 0.90.0
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -74525,7 +74665,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.89.0
+    app.kubernetes.io/version: 0.90.0
   name: prometheus-operator
 rules:
 - apiGroups:
@@ -74638,7 +74778,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.89.0
+    app.kubernetes.io/version: 0.90.0
   name: prometheus-operator
   namespace: default
 spec:
@@ -74654,13 +74794,13 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: 0.89.0
+        app.kubernetes.io/version: 0.90.0
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.89.0
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.90.0
         - --watch-referenced-objects-in-all-namespaces=true
         - --disable-unmanaged-prometheus-configuration=true
         - --kubelet-endpoints=true
@@ -74668,7 +74808,7 @@ spec:
         env:
         - name: GOGC
           value: "30"
-        image: quay.io/prometheus-operator/prometheus-operator:v0.89.0
+        image: quay.io/prometheus-operator/prometheus-operator:v0.90.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -74702,7 +74842,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.89.0
+    app.kubernetes.io/version: 0.90.0
   name: prometheus-operator
   namespace: default
 ---
@@ -74712,7 +74852,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.89.0
+    app.kubernetes.io/version: 0.90.0
   name: prometheus-operator
   namespace: default
 spec:
