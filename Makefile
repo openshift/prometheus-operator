@@ -418,8 +418,12 @@ test-long: test-prometheus-goldenfiles ## Run all tests (including long-running)
 test-unit-update-golden: ## Update golden files for unit tests.
 	./scripts/update-golden-files.sh
 
+.PHONY: install-promtool
+install-promtool: $(TOOLS_BIN_DIR) ## Install promtool binary.
+	@GOBIN=$(TOOLS_BIN_DIR) go install -mod=readonly -modfile=scripts/go.mod github.com/prometheus/prometheus/cmd/promtool
+
 .PHONY: test-prometheus-goldenfiles
-test-prometheus-goldenfiles: $(PROMTOOL_BINARY) ## Validate Prometheus golden files.
+test-prometheus-goldenfiles: install-promtool ## Validate Prometheus golden files.
 	$(PROMTOOL_BINARY) check config --syntax-only pkg/prometheus/testdata/*.golden
 
 test/instrumented-sample-app/certs/cert.pem test/instrumented-sample-app/certs/key.pem:
