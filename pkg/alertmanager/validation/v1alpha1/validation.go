@@ -50,7 +50,7 @@ func validateReceivers(receivers []monitoringv1alpha1.Receiver) (map[string]stru
 
 	for _, receiver := range receivers {
 		if _, found := receiverNames[receiver.Name]; found {
-			return nil, fmt.Errorf("%q receiver is not unique: %w", receiver.Name, err)
+			return nil, fmt.Errorf("%q receiver is not unique", receiver.Name)
 		}
 		receiverNames[receiver.Name] = struct{}{}
 
