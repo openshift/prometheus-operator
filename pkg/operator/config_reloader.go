@@ -1,4 +1,4 @@
-// Copyright 2020 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"path/filepath"
+	"slices"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +42,16 @@ const (
 	// NodeNameEnvVar is the name of the environment variable injected in the
 	// config-reloader container that contains the node name.
 	NodeNameEnvVar = "NODE_NAME"
+
+	// TopologyZoneEnvVar is the name of the environment variable injected into
+	// the config-reloader container that contains the topology zone assigned to
+	// the shard.
+	TopologyZoneEnvVar = "TOPOLOGY_ZONE"
+
+	// InzoneShardEnvVar is the name of the environment variable injected into
+	// the config-reloader container that contains the in-zone shard position
+	// (floor(shardIndex / numZones)) when topology sharding is active.
+	InzoneShardEnvVar = "INZONE_SHARD"
 )
 
 // ConfigReloader contains the options to configure
@@ -59,6 +71,8 @@ type ConfigReloader struct {
 	runtimeInfoURL     url.URL
 	initContainer      bool
 	shard              *int32
+	zone               string
+	inzoneShard        *int32
 	volumeMounts       []corev1.VolumeMount
 	watchedDirectories []string
 	useSignal          bool
@@ -189,6 +203,25 @@ func WithDaemonSetMode() ReloaderOption {
 	}
 }
 
+// Zone sets the topology zone for the config-reloader container.
+// When set to a non-empty value, a TOPOLOGY_ZONE environment variable with the
+// zone value is injected into the container.
+func Zone(zone string) ReloaderOption {
+	return func(c *ConfigReloader) {
+		c.zone = zone
+	}
+}
+
+// InzoneShard sets the in-zone shard position for the config-reloader container.
+// When set to a non-nil value, an INZONE_SHARD environment variable is
+// injected into the container.
+// It should only be called when topology sharding is active.
+func InzoneShard(isp *int32) ReloaderOption {
+	return func(c *ConfigReloader) {
+		c.inzoneShard = isp
+	}
+}
+
 // CreateConfigReloader returns the definition of the config-reloader
 // container.
 func CreateConfigReloader(name string, options ...ReloaderOption) corev1.Container {
@@ -268,6 +301,19 @@ func CreateConfigReloader(name string, options ...ReloaderOption) corev1.Contain
 
 	if len(configReloader.configFile) > 0 {
 		args = append(args, fmt.Sprintf("--config-file=%s", configReloader.configFile))
+		// HACK: Watch the config file's parent directory to speed up config reloads.
+		// Without this, reloads are gated on the reloader's defaultWatchInterval (every ~3 minutes).
+		// By watching the directory, reloads are instead driven by kubelet's config sync frequency only.
+		//
+		// Note: watching the directory rather than the file directly is also the fsnotify recommended
+		// approach, as atomic file writes (used by kubelet) can silently break file watchers:
+		// https://github.com/fsnotify/fsnotify/blob/a9bc2e01792f868516acf80817f7d7d7b3315409/README.md?plain=1#L128
+		//
+		// Hack applied here as all reloader configurations should flow through this path.
+		confDir := filepath.Dir(configReloader.configFile)
+		if !slices.Contains(configReloader.watchedDirectories, confDir) {
+			configReloader.watchedDirectories = append(configReloader.watchedDirectories, confDir)
+		}
 	}
 
 	if len(configReloader.configEnvsubstFile) > 0 {
@@ -292,6 +338,20 @@ func CreateConfigReloader(name string, options ...ReloaderOption) corev1.Contain
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  ShardEnvVar,
 			Value: strconv.Itoa(int(*configReloader.shard)),
+		})
+	}
+
+	if configReloader.zone != "" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  TopologyZoneEnvVar,
+			Value: configReloader.zone,
+		})
+	}
+
+	if configReloader.inzoneShard != nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  InzoneShardEnvVar,
+			Value: strconv.Itoa(int(*configReloader.inzoneShard)),
 		})
 	}
 

@@ -1,4 +1,4 @@
-// Copyright 2017 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -358,6 +358,107 @@ func TestGlobalSettings(t *testing.T) {
 			}
 
 			golden.Assert(t, string(cfg), tc.Golden)
+		})
+	}
+}
+
+func TestTopologyZoneExternalLabel(t *testing.T) {
+	for _, tc := range []struct {
+		scenario         string
+		shardingStrategy *monitoringv1.ShardingStrategy
+		topologySharding bool
+		golden           string
+	}{
+		{
+			scenario: "default label name",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{
+					Values: []string{"zone-a", "zone-b"},
+				},
+			},
+			topologySharding: true,
+			golden:           "topology_zone_external_label_default_name.golden",
+		},
+		{
+			scenario: "custom label name",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{
+					ExternalLabelName: ptr.To("topology_zone"),
+					Values:            []string{"zone-a", "zone-b"},
+				},
+			},
+			topologySharding: true,
+			golden:           "topology_zone_external_label_custom_name.golden",
+		},
+		{
+			scenario: "label disabled",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{
+					ExternalLabelName: ptr.To(""),
+					Values:            []string{"zone-a", "zone-b"},
+				},
+			},
+			topologySharding: true,
+			golden:           "topology_zone_external_label_disabled.golden",
+		},
+		{
+			scenario: "feature gate disabled",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{
+					Values: []string{"zone-a", "zone-b"},
+				},
+			},
+			topologySharding: false,
+			golden:           "topology_zone_external_label_no_feature_gate.golden",
+		},
+		{
+			scenario: "address mode",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode: ptr.To(monitoringv1.AddressShardingStrategyMode),
+			},
+			topologySharding: true,
+			golden:           "topology_zone_external_label_address_mode.golden",
+		},
+	} {
+		t.Run(tc.scenario, func(t *testing.T) {
+			p := &monitoringv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "example",
+					Namespace: "test",
+				},
+				Spec: monitoringv1.PrometheusSpec{
+					CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+						ScrapeInterval:   "30s",
+						ShardingStrategy: tc.shardingStrategy,
+					},
+					EvaluationInterval: "30s",
+				},
+			}
+
+			var opts []ConfigGeneratorOption
+			if tc.topologySharding {
+				opts = append(opts, WithPrometheusTopologySharding())
+			}
+			cg := mustNewConfigGenerator(t, p, opts...)
+
+			cfg, err := cg.GenerateServerConfiguration(
+				p,
+				map[string]*monitoringv1.ServiceMonitor{},
+				nil,
+				nil,
+				nil,
+				&assets.StoreBuilder{},
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			require.NoError(t, err)
+			golden.Assert(t, string(cfg), tc.golden)
 		})
 	}
 }
@@ -4220,6 +4321,84 @@ func TestRemoteWriteConfig(t *testing.T) {
 			golden: "RemoteWriteConfig_3.golden",
 		},
 		{
+			version: "v3.11.0",
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL: "http://example.com",
+				Sigv4: &monitoringv1.Sigv4{
+					Profile:    "profilename",
+					RoleArn:    "arn:aws:iam::123456789012:instance-profile/prometheus",
+					ExternalID: "abc",
+					AccessKey: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "access-key",
+					},
+					SecretKey: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "secret-key",
+					},
+					Region: "us-central-0",
+				},
+				QueueConfig: &monitoringv1.QueueConfig{
+					Capacity:          1000,
+					MinShards:         1,
+					MaxShards:         10,
+					MaxSamplesPerSend: 100,
+					BatchSendDeadline: ptr.To(monitoringv1.Duration("20s")),
+					MaxRetries:        3,
+					MinBackoff:        ptr.To(monitoringv1.Duration("1s")),
+					MaxBackoff:        ptr.To(monitoringv1.Duration("10s")),
+				},
+				MetadataConfig: &monitoringv1.MetadataConfig{
+					Send:         false,
+					SendInterval: "1m",
+				},
+			},
+			golden: "RemoteWriteConfig_3.11.0.golden",
+		},
+		{
+			version: "v3.10.0",
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL: "http://example.com",
+				Sigv4: &monitoringv1.Sigv4{
+					Profile:    "profilename",
+					RoleArn:    "arn:aws:iam::123456789012:instance-profile/prometheus",
+					ExternalID: "abc",
+					AccessKey: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "access-key",
+					},
+					SecretKey: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "sigv4-secret",
+						},
+						Key: "secret-key",
+					},
+					Region: "us-central-0",
+				},
+				QueueConfig: &monitoringv1.QueueConfig{
+					Capacity:          1000,
+					MinShards:         1,
+					MaxShards:         10,
+					MaxSamplesPerSend: 100,
+					BatchSendDeadline: ptr.To(monitoringv1.Duration("20s")),
+					MaxRetries:        3,
+					MinBackoff:        ptr.To(monitoringv1.Duration("1s")),
+					MaxBackoff:        ptr.To(monitoringv1.Duration("10s")),
+				},
+				MetadataConfig: &monitoringv1.MetadataConfig{
+					Send:         false,
+					SendInterval: "1m",
+				},
+			},
+			golden: "RemoteWriteConfig_3.10.0.golden",
+		},
+		{
 			version: "v2.26.0",
 			remoteWrite: monitoringv1.RemoteWriteSpec{
 				URL:           "http://example.com",
@@ -7743,6 +7922,18 @@ func TestScrapeConfigSpecConfigWithConsulSD(t *testing.T) {
 			},
 			golden: "ConsulScrapeConfigWithFilter.golden",
 		}, {
+			name:    "consul_scrape_config_with_health_filter",
+			version: "3.11.2",
+			scSpec: monitoringv1alpha1.ScrapeConfigSpec{
+				ConsulSDConfigs: []monitoringv1alpha1.ConsulSDConfig{
+					{
+						Server:       "localhost",
+						HealthFilter: ptr.To("Service.Meta.env == \"prod\""),
+					},
+				},
+			},
+			golden: "ConsulScrapeConfigWithHealthFilter.golden",
+		}, {
 			name: "consul_scrape_config_basic_auth",
 			scSpec: monitoringv1alpha1.ScrapeConfigSpec{
 				ConsulSDConfigs: []monitoringv1alpha1.ConsulSDConfig{
@@ -8478,6 +8669,19 @@ func TestScrapeConfigSpecConfigWithAzureSD(t *testing.T) {
 				EC2SDConfigs: []monitoringv1alpha1.EC2SDConfig{},
 			},
 			golden: "ScrapeConfigSpecConfig_AzureSDConfigEmpty.golden",
+		},
+		{
+			name: "azure_sd_config_valid_workloadidendity_auth",
+			scSpec: monitoringv1alpha1.ScrapeConfigSpec{
+				AzureSDConfigs: []monitoringv1alpha1.AzureSDConfig{
+					{
+						Environment:          ptr.To("AzurePublicCloud"),
+						AuthenticationMethod: ptr.To(monitoringv1alpha1.AuthMethodTypeWorkloadIdentity),
+						SubscriptionID:       "11AAAA11-A11A-111A-A111-1111A1111A11",
+					},
+				},
+			},
+			golden: "ScrapeConfigSpecConfig_AzureSDConfigValid_WorkloadIdentityAuth.golden",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -14217,6 +14421,374 @@ func TestAppendScrapeNativeHistograms(t *testing.T) {
 			require.NoError(t, err)
 
 			golden.Assert(t, string(cfg), tc.expectedCfg)
+		})
+	}
+}
+
+func TestTopologyShardingRelabeling(t *testing.T) {
+	topologyMode := monitoringv1.TopologyShardingStrategyMode
+
+	basicServiceMonitor := func() map[string]*monitoringv1.ServiceMonitor {
+		return map[string]*monitoringv1.ServiceMonitor{
+			"test": {
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: monitoringv1.ServiceMonitorSpec{
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{"foo": "bar"},
+					},
+					Endpoints: []monitoringv1.Endpoint{
+						{Port: "web", Interval: "30s"},
+					},
+				},
+			},
+		}
+	}
+
+	basicPodMonitor := func() map[string]*monitoringv1.PodMonitor {
+		return map[string]*monitoringv1.PodMonitor{
+			"test": {
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+				},
+				Spec: monitoringv1.PodMonitorSpec{
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{"foo": "bar"},
+					},
+					PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{
+						{Port: ptr.To("web"), Interval: "30s"},
+					},
+				},
+			},
+		}
+	}
+
+	for _, tc := range []struct {
+		name           string
+		shards         int32
+		zones          []string
+		serviceMonitor map[string]*monitoringv1.ServiceMonitor
+		podMonitor     map[string]*monitoringv1.PodMonitor
+		attachMetadata *monitoringv1.AttachMetadata
+		golden         string
+	}{
+		{
+			name:           "service_monitor_4shards_2zones",
+			shards:         4,
+			zones:          []string{"zone-a", "zone-b"},
+			serviceMonitor: basicServiceMonitor(),
+			golden:         "TopologySharding_ServiceMonitor_4shards_2zones.golden",
+		},
+		{
+			name:       "pod_monitor_4shards_2zones",
+			shards:     4,
+			zones:      []string{"zone-a", "zone-b"},
+			podMonitor: basicPodMonitor(),
+			golden:     "TopologySharding_PodMonitor_4shards_2zones.golden",
+		},
+		{
+			name:   "service_monitor_6shards_3zones",
+			shards: 6,
+			zones:  []string{"zone-a", "zone-b", "zone-c"},
+			serviceMonitor: func() map[string]*monitoringv1.ServiceMonitor {
+				sm := basicServiceMonitor()
+				return sm
+			}(),
+			golden: "TopologySharding_ServiceMonitor_6shards_3zones.golden",
+		},
+		{
+			name:   "service_monitor_force_attach_metadata_nil",
+			shards: 4,
+			zones:  []string{"zone-a", "zone-b"},
+			serviceMonitor: func() map[string]*monitoringv1.ServiceMonitor {
+				sm := basicServiceMonitor()
+				sm["test"].Spec.AttachMetadata = nil
+				return sm
+			}(),
+			golden: "TopologySharding_ServiceMonitor_force_attach_metadata_nil.golden",
+		},
+		{
+			name:   "service_monitor_force_attach_metadata_false",
+			shards: 4,
+			zones:  []string{"zone-a", "zone-b"},
+			serviceMonitor: func() map[string]*monitoringv1.ServiceMonitor {
+				sm := basicServiceMonitor()
+				sm["test"].Spec.AttachMetadata = &monitoringv1.AttachMetadata{Node: ptr.To(false)}
+				return sm
+			}(),
+			golden: "TopologySharding_ServiceMonitor_force_attach_metadata_false.golden",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := defaultPrometheus()
+			p.Spec.Shards = ptr.To(tc.shards)
+			p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: tc.zones},
+			}
+
+			cg := mustNewConfigGenerator(t, p, WithPrometheusTopologySharding())
+			cfg, err := cg.GenerateServerConfiguration(
+				p,
+				tc.serviceMonitor,
+				tc.podMonitor,
+				nil,
+				nil,
+				&assets.StoreBuilder{},
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			require.NoError(t, err)
+			golden.Assert(t, string(cfg), tc.golden)
+		})
+	}
+}
+
+func TestShardingRelabelConfigsWithRetention(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		shards           int32
+		retentionEnabled bool
+		golden           string
+	}{
+		{
+			name:             "without_retention",
+			shards:           2,
+			retentionEnabled: false,
+			golden:           "ShardingRelabelConfigs_without_retention.golden",
+		},
+		{
+			name:             "with_retention_2_shards",
+			shards:           2,
+			retentionEnabled: true,
+			golden:           "ShardingRelabelConfigs_with_retention_2_shards.golden",
+		},
+		{
+			name:             "with_retention_3_shards",
+			shards:           3,
+			retentionEnabled: true,
+			golden:           "ShardingRelabelConfigs_with_retention_3_shards.golden",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := defaultPrometheus()
+			p.Spec.Shards = ptr.To(tc.shards)
+
+			opts := []ConfigGeneratorOption{}
+			if tc.retentionEnabled {
+				opts = append(opts, WithPrometheusRetentionPolicies())
+			}
+
+			cg := mustNewConfigGenerator(t, p, opts...)
+			cfg, err := cg.GenerateServerConfiguration(
+				p,
+				map[string]*monitoringv1.ServiceMonitor{
+					"test": {
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test",
+							Namespace: "default",
+						},
+						Spec: monitoringv1.ServiceMonitorSpec{
+							Selector: metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"foo": "bar",
+								},
+							},
+							Endpoints: []monitoringv1.Endpoint{
+								{
+									Port:     "web",
+									Interval: "30s",
+								},
+							},
+						},
+					},
+				},
+				nil,
+				nil,
+				nil,
+				&assets.StoreBuilder{},
+				nil,
+				nil,
+				nil,
+				nil,
+			)
+			require.NoError(t, err)
+			golden.Assert(t, string(cfg), tc.golden)
+		})
+	}
+}
+
+func TestTopologyZoneForShard(t *testing.T) {
+	topologyMode := monitoringv1.TopologyShardingStrategyMode
+	addressMode := monitoringv1.AddressShardingStrategyMode
+
+	for _, tc := range []struct {
+		name                       string
+		shardingStrategy           *monitoringv1.ShardingStrategy
+		prometheusTopologySharding bool
+		shardIndex                 int32
+		expectedZone               string
+	}{
+		{
+			name:                       "prometheusTopologySharding=false returns empty",
+			prometheusTopologySharding: false,
+			expectedZone:               "",
+		},
+		{
+			name: "address mode returns empty",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode: ptr.To(addressMode),
+			},
+			prometheusTopologySharding: true,
+			shardIndex:                 0,
+			expectedZone:               "",
+		},
+		{
+			name: "topology mode with no values returns empty",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{}},
+			},
+			prometheusTopologySharding: true,
+			shardIndex:                 0,
+			expectedZone:               "",
+		},
+		{
+			name: "shard 0 gets first zone",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b"}},
+			},
+			prometheusTopologySharding: true,
+			shardIndex:                 0,
+			expectedZone:               "zone-a",
+		},
+		{
+			name: "shard 1 gets second zone",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b"}},
+			},
+			prometheusTopologySharding: true,
+			shardIndex:                 1,
+			expectedZone:               "zone-b",
+		},
+		{
+			name: "shard 2 wraps around to first zone",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b"}},
+			},
+			prometheusTopologySharding: true,
+			shardIndex:                 2,
+			expectedZone:               "zone-a",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &monitoringv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
+				Spec: monitoringv1.PrometheusSpec{
+					CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+						ShardingStrategy: tc.shardingStrategy,
+					},
+				},
+			}
+			opts := []ConfigGeneratorOption{}
+			if tc.prometheusTopologySharding {
+				opts = append(opts, WithPrometheusTopologySharding())
+			}
+			cg, err := NewConfigGenerator(nil, p, opts...)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedZone, cg.TopologyZoneForShard(tc.shardIndex))
+		})
+	}
+}
+
+func TestInzoneShardForShard(t *testing.T) {
+	topologyMode := monitoringv1.TopologyShardingStrategyMode
+
+	for _, tc := range []struct {
+		name                       string
+		shardingStrategy           *monitoringv1.ShardingStrategy
+		prometheusTopologySharding bool
+		// expected[i] is the expected inzone shard for shard index i.
+		expected []int32
+	}{
+		{
+			name:                       "topology not active returns shard index",
+			prometheusTopologySharding: false,
+			expected:                   []int32{0, 1, 2, 3},
+		},
+		{
+			name: "2 shards 2 zones",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b"}},
+			},
+			prometheusTopologySharding: true,
+			expected:                   []int32{0, 0},
+		},
+		{
+			name: "2 shards 1 zone",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a"}},
+			},
+			prometheusTopologySharding: true,
+			expected:                   []int32{0, 1},
+		},
+		{
+			name: "3 shards 2 zones",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b"}},
+			},
+			prometheusTopologySharding: true,
+			expected:                   []int32{0, 0, 1},
+		},
+		{
+			name: "4 shards 2 zones",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b"}},
+			},
+			prometheusTopologySharding: true,
+			expected:                   []int32{0, 0, 1, 1},
+		},
+		{
+			name: "6 shards 3 zones",
+			shardingStrategy: &monitoringv1.ShardingStrategy{
+				Mode:     ptr.To(topologyMode),
+				Topology: &monitoringv1.TopologyShardingStrategy{Values: []string{"zone-a", "zone-b", "zone-c"}},
+			},
+			prometheusTopologySharding: true,
+			expected:                   []int32{0, 0, 0, 1, 1, 1},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &monitoringv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"},
+				Spec: monitoringv1.PrometheusSpec{
+					CommonPrometheusFields: monitoringv1.CommonPrometheusFields{
+						ShardingStrategy: tc.shardingStrategy,
+					},
+				},
+			}
+			opts := []ConfigGeneratorOption{}
+			if tc.prometheusTopologySharding {
+				opts = append(opts, WithPrometheusTopologySharding())
+			}
+			cg, err := NewConfigGenerator(nil, p, opts...)
+			require.NoError(t, err)
+
+			for i, exp := range tc.expected {
+				require.Equal(t, exp, cg.InzoneShardForShard(int32(i)))
+			}
 		})
 	}
 }
