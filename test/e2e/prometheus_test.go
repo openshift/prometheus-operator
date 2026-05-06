@@ -1,4 +1,4 @@
-// Copyright 2016 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -5460,67 +5460,8 @@ func testPrometheusServiceName(t *testing.T) {
 	require.Equal(t, svcList.Items[0].Name, svc.Name)
 }
 
-// testPrometheusRetentionPolicies tests the shard retention policies for Prometheus.
-// ShardRetentionPolicy requires the ShardRetention feature gate to be enabled,
-// therefore, it runs in the feature-gated test suite.
-func testPrometheusRetentionPolicies(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-	testCtx := framework.NewTestCtx(t)
-	defer testCtx.Cleanup(t)
-
-	ns := framework.CreateNamespace(ctx, t, testCtx)
-	framework.SetupPrometheusRBAC(ctx, t, testCtx, ns)
-	_, err := framework.CreateOrUpdatePrometheusOperatorWithOpts(
-		ctx, testFramework.PrometheusOperatorOpts{
-			Namespace:           ns,
-			AllowedNamespaces:   []string{ns},
-			EnabledFeatureGates: []operator.FeatureGateName{operator.PrometheusShardRetentionPolicyFeature},
-		},
-	)
-	require.NoError(t, err)
-
-	testCases := []struct {
-		name                 string
-		whenScaledDown       *monitoringv1.WhenScaledRetentionType
-		expectedRemainingSts int
-	}{
-		{
-			name:                 "delete",
-			whenScaledDown:       ptr.To(monitoringv1.DeleteWhenScaledRetentionType),
-			expectedRemainingSts: 1,
-		},
-		{
-			name:                 "retain",
-			whenScaledDown:       ptr.To(monitoringv1.RetainWhenScaledRetentionType),
-			expectedRemainingSts: 2,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			p := framework.MakeBasicPrometheus(ns, tc.name, tc.name, 1)
-			p.Spec.ShardRetentionPolicy = &monitoringv1.ShardRetentionPolicy{
-				WhenScaled: tc.whenScaledDown,
-			}
-			p.Spec.Shards = ptr.To(int32(2))
-			_, err := framework.CreatePrometheusAndWaitUntilReady(ctx, ns, p)
-			require.NoError(t, err, "failed to create Prometheus")
-
-			p, err = framework.ScalePrometheusAndWaitUntilReady(ctx, tc.name, ns, 1)
-			require.NoError(t, err, "failed to scale down Prometheus")
-			require.Equal(t, int32(1), p.Status.Shards, "expected scale of 1 shard")
-
-			podList, err := framework.KubeClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: p.Status.Selector})
-			require.NoError(t, err, "failed to list statefulsets")
-
-			require.Len(t, podList.Items, tc.expectedRemainingSts)
-		})
-	}
-}
-
 // testPrometheusReconciliationOnSecretChanges ensures that the operator
-// reconciles the configureation whenever a secret referenced by a service
+// reconciles the configuration whenever a secret referenced by a service
 // monitor gets added/deleted in another namespace than the workload.
 func testPrometheusReconciliationOnSecretChanges(t *testing.T) {
 	t.Parallel()
@@ -6120,4 +6061,105 @@ func testPromScaleUpWithoutLabels(t *testing.T) {
 	sts, err := stsClient.Get(ctx, stsName, metav1.GetOptions{})
 	require.NoError(t, err)
 	require.NotEmpty(t, sts.GetLabels(), "expected labels to be restored on the StatefulSet by the operator")
+}
+
+func testPrometheusShardingStrategyCELValidations(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	testCtx := framework.NewTestCtx(t)
+	defer testCtx.Cleanup(t)
+
+	ns := framework.CreateNamespace(ctx, t, testCtx)
+	framework.SetupPrometheusRBAC(ctx, t, testCtx, ns)
+	_, err := framework.CreateOrUpdatePrometheusOperatorWithOpts(
+		ctx, testFramework.PrometheusOperatorOpts{
+			Namespace:           ns,
+			AllowedNamespaces:   []string{ns},
+			EnabledFeatureGates: []operator.FeatureGateName{operator.PrometheusAgentDaemonSetFeature},
+		},
+	)
+	require.NoError(t, err)
+
+	for i, tc := range []struct {
+		name     string
+		updateFn func(p *monitoringv1.Prometheus)
+		expErr   bool
+	}{
+		{
+			name: "address sharding without topology",
+			updateFn: func(p *monitoringv1.Prometheus) {
+				p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+					Mode: ptr.To(monitoringv1.AddressShardingStrategyMode),
+				}
+			},
+		},
+		{
+			name: "default sharding with topology",
+			updateFn: func(p *monitoringv1.Prometheus) {
+				p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+					Topology: &monitoringv1.TopologyShardingStrategy{},
+				}
+			},
+			expErr: true,
+		},
+		{
+			name: "address sharding with topology",
+			updateFn: func(p *monitoringv1.Prometheus) {
+				p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+					Mode:     ptr.To(monitoringv1.AddressShardingStrategyMode),
+					Topology: &monitoringv1.TopologyShardingStrategy{},
+				}
+			},
+			expErr: true,
+		},
+		{
+			name: "topology sharding with default shards < values",
+			updateFn: func(p *monitoringv1.Prometheus) {
+				p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+					Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+					Topology: &monitoringv1.TopologyShardingStrategy{
+						Values: []string{"zone1", "zone2"},
+					},
+				}
+			},
+			expErr: true,
+		},
+		{
+			name: "topology sharding with shards < values",
+			updateFn: func(p *monitoringv1.Prometheus) {
+				p.Spec.Shards = ptr.To(int32(2))
+				p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+					Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+					Topology: &monitoringv1.TopologyShardingStrategy{
+						Values: []string{"zone1", "zone2", "zone3"},
+					},
+				}
+			},
+			expErr: true,
+		},
+		{
+			name: "topology sharding with shards >= values",
+			updateFn: func(p *monitoringv1.Prometheus) {
+				p.Spec.Shards = ptr.To(int32(2))
+				p.Spec.ShardingStrategy = &monitoringv1.ShardingStrategy{
+					Mode: ptr.To(monitoringv1.TopologyShardingStrategyMode),
+					Topology: &monitoringv1.TopologyShardingStrategy{
+						Values: []string{"zone1", "zone2"},
+					},
+				}
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := framework.MakeBasicPrometheus(ns, "test-sharding-strategy"+strconv.Itoa(i), "", 1)
+			tc.updateFn(p)
+
+			_, err = framework.CreatePrometheusAndWaitUntilReady(ctx, ns, p)
+			if tc.expErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
 }

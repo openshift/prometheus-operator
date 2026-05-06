@@ -1,4 +1,4 @@
-// Copyright 2023 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -206,6 +206,14 @@ func makeStatefulSetSpec(
 
 	var watchedDirectories []string
 
+	topologyZone := cg.TopologyZoneForShard(shard)
+	reloaderOpts := []operator.ReloaderOption{
+		operator.Shard(shard),
+		operator.Zone(topologyZone),
+	}
+	if topologyZone != "" {
+		reloaderOpts = append(reloaderOpts, operator.InzoneShard(ptr.To(cg.InzoneShardForShard(shard))))
+	}
 	operatorInitContainers = append(operatorInitContainers,
 		prompkg.BuildConfigReloader(
 			p,
@@ -213,7 +221,7 @@ func makeStatefulSetSpec(
 			true,
 			configReloaderVolumeMounts,
 			watchedDirectories,
-			operator.Shard(shard),
+			reloaderOpts...,
 		),
 	)
 
@@ -254,8 +262,7 @@ func makeStatefulSetSpec(
 			false,
 			configReloaderVolumeMounts,
 			watchedDirectories,
-			operator.Shard(shard),
-			operator.WebConfigFile(configReloaderWebConfigFile),
+			append(reloaderOpts, operator.WebConfigFile(configReloaderWebConfigFile))...,
 		),
 	}, additionalContainers...)
 
@@ -271,7 +278,7 @@ func makeStatefulSetSpec(
 		SecurityContext:               cpf.SecurityContext,
 		ServiceAccountName:            cpf.ServiceAccountName,
 		AutomountServiceAccountToken:  ptr.To(ptr.Deref(cpf.AutomountServiceAccountToken, true)),
-		NodeSelector:                  cpf.NodeSelector,
+		NodeSelector:                  cg.NodeSelectorWithTopologyZone(shard),
 		SchedulerName:                 cpf.SchedulerName,
 		PriorityClassName:             cpf.PriorityClassName,
 		TerminationGracePeriodSeconds: ptr.To(ptr.Deref(cpf.TerminationGracePeriodSeconds, prompkg.DefaultTerminationGracePeriodSeconds)),

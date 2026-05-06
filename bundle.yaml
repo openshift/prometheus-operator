@@ -3,8 +3,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: alertmanagerconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -1154,6 +1154,22 @@ spec:
                               This provides a fallback for email clients that don't support HTML.
                             minLength: 1
                             type: string
+                          threading:
+                            description: |-
+                              threading defines the threading configuration for email receiver.
+                              It requires Alertmanager >= v0.30.0.
+                            properties:
+                              threadByDate:
+                                description: |-
+                                  threadByDate defines what granularity of current date to thread by. Accepted values: Daily, None.
+                                  (None means group by alert group key, no date).
+                                enum:
+                                - Daily
+                                - None
+                                type: string
+                            required:
+                            - threadByDate
+                            type: object
                           tlsConfig:
                             description: |-
                               tlsConfig defines the TLS configuration for SMTP connections.
@@ -8135,6 +8151,12 @@ spec:
                                 - key
                                 type: object
                                 x-kubernetes-map-type: atomic
+                              externalId:
+                                description: |-
+                                  externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                                  It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                                minLength: 1
+                                type: string
                               profile:
                                 description: profile defines the named AWS profile
                                   used to authenticate.
@@ -8179,6 +8201,10 @@ spec:
                                   It requires Prometheus >= v2.54.0.
                                 type: boolean
                             type: object
+                            x-kubernetes-validations:
+                            - message: externalId can only be used when roleArn is
+                                specified
+                              rule: '!has(self.externalId) || has(self.roleArn)'
                           subject:
                             description: |-
                               subject defines the subject line when the message is delivered to email endpoints.
@@ -12337,8 +12363,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: alertmanagers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -14194,6 +14220,37 @@ spec:
                               It requires Alertmanager >= v0.28.0.
                             pattern: ^(http|https)://.+$
                             type: string
+                        type: object
+                      mattermost:
+                        description: mattermost defines the default Mattermost Config
+                        properties:
+                          webhookURL:
+                            description: |-
+                              webhookURL defines the default Mattermost Webhook URL.
+
+                              It requires Alertmanager >= v0.32.0.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       opsGenieApiKey:
                         description: opsGenieApiKey defines the default OpsGenie API
@@ -22320,8 +22377,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: podmonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -23719,8 +23776,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: probes.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -25135,8 +25192,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: prometheusagents.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -31392,6 +31449,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -31436,6 +31499,9 @@ spec:
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -32325,7 +32391,8 @@ spec:
                   matches all namespaces. A null label selector matches the current
                   namespace only.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -32384,7 +32451,8 @@ spec:
                   of the custom resource definition. It is recommended to use
                   `spec.additionalScrapeConfigs` instead.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -32864,6 +32932,54 @@ spec:
                   See https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id for more details.
                 minLength: 1
                 type: string
+              shardingStrategy:
+                description: |-
+                  shardingStrategy defines the sharding strategy for distributing scraped targets across Prometheus shards.
+
+                  When not defined, the operator defaults to the 'Address' mode which distributes
+                  targets based on a hash of the target address.
+                properties:
+                  mode:
+                    description: |-
+                      mode defines the sharding mode. Can be 'Address' or 'Topology'.
+
+                      'Address' is the default mode and distributes targets across shards
+                      based on a hash of the target address.
+
+                      'Topology' enables zone-aware sharding where each shard is assigned to a
+                      specific topology zone and only scrapes targets in that zone.
+                      (Alpha) Using the 'Topology' mode requires the `PrometheusTopologySharding`
+                      feature gate to be enabled.
+                    enum:
+                    - Address
+                    - Topology
+                    type: string
+                  topology:
+                    description: |-
+                      topology defines the configuration for topology-aware sharding.
+                      This field is only valid when mode is set to 'Topology'.
+                    properties:
+                      externalLabelName:
+                        description: |-
+                          externalLabelName defines the name of the Prometheus external label used
+                          to communicate the topology zone assigned to the Prometheus instance.
+                          If not defined, it defaults to "zone".
+                          If set to the empty string, no external label is added to the Prometheus configuration.
+                        type: string
+                      values:
+                        description: |-
+                          values defines the list of topology values (e.g. zone names) to be used
+                          for sharding. The configured number of shards must be greater than or
+                          equal to the number of values.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: topology can only be defined when mode is set to 'Topology'
+                  rule: '!has(self.topology) || (has(self.mode) && self.mode == ''Topology'')'
               shards:
                 description: |-
                   shards defines the number of shards to distribute the scraped targets onto.
@@ -36437,6 +36553,14 @@ spec:
               rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.serviceMonitorNamespaceSelector))'
             - message: additionalScrapeConfigs cannot be set when mode is DaemonSet
               rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.additionalScrapeConfigs))'
+            - message: shardingStrategy cannot be set when mode is DaemonSet
+              rule: '!(has(self.mode) && self.mode == ''DaemonSet'' && has(self.shardingStrategy))'
+            - message: shards must be greater than or equal to the number of topology
+                values when sharding strategy mode is Topology
+              rule: '!has(self.shardingStrategy) || !has(self.shardingStrategy.mode)
+                || self.shardingStrategy.mode != ''Topology'' || !has(self.shardingStrategy.topology)
+                || !has(self.shardingStrategy.topology.values) || self.shardingStrategy.topology.values.size()
+                == 0 || (has(self.shards) ? self.shards : 1) >= self.shardingStrategy.topology.values.size()'
           status:
             description: |-
               status defines the most recent observed status of the Prometheus cluster. Read-only.
@@ -36584,8 +36708,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: prometheuses.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -38136,6 +38260,12 @@ spec:
                               - key
                               type: object
                               x-kubernetes-map-type: atomic
+                            externalId:
+                              description: |-
+                                externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                                It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                              minLength: 1
+                              type: string
                             profile:
                               description: profile defines the named AWS profile used
                                 to authenticate.
@@ -38180,6 +38310,9 @@ spec:
                                 It requires Prometheus >= v2.54.0.
                               type: boolean
                           type: object
+                          x-kubernetes-validations:
+                          - message: externalId can only be used when roleArn is specified
+                            rule: '!has(self.externalId) || has(self.roleArn)'
                         timeout:
                           description: timeout defines a per-target Alertmanager timeout
                             when pushing alerts.
@@ -44431,6 +44564,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -44475,6 +44614,9 @@ spec:
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -45509,7 +45651,8 @@ spec:
                   matches all namespaces. A null label selector matches the current
                   namespace only.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -45568,7 +45711,8 @@ spec:
                   of the custom resource definition. It is recommended to use
                   `spec.additionalScrapeConfigs` instead.
 
-                  Note that the ScrapeConfig custom resource definition is currently at Alpha level.
+                  Note that the ScrapeConfig custom resource definition is currently at Alpha level
+                  and will be graduated to Beta in a future release.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -46063,12 +46207,17 @@ spec:
                 properties:
                   retain:
                     description: |-
-                      retain defines the config for retention when the retention policy is set to `Retain`.
-                      This field is ineffective as of now.
+                      retain defines the config for retention when the retention policy is set
+                      to `Retain`.
+
+                      If not defined, the operator will use the retention duration configured
+                      for the Prometheus data. If the resource uses size-based retention, the
+                      shard(s) are kept forever (unless manually deleted).
                     properties:
                       retentionPeriod:
-                        description: retentionPeriod defines the retentionPeriod for
-                          shard retention policy.
+                        description: |-
+                          retentionPeriod defines how long the scaled-down shard(s) need to be
+                          kept before being deleted.
                         pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                         type: string
                     required:
@@ -46086,6 +46235,54 @@ spec:
                     - Delete
                     type: string
                 type: object
+              shardingStrategy:
+                description: |-
+                  shardingStrategy defines the sharding strategy for distributing scraped targets across Prometheus shards.
+
+                  When not defined, the operator defaults to the 'Address' mode which distributes
+                  targets based on a hash of the target address.
+                properties:
+                  mode:
+                    description: |-
+                      mode defines the sharding mode. Can be 'Address' or 'Topology'.
+
+                      'Address' is the default mode and distributes targets across shards
+                      based on a hash of the target address.
+
+                      'Topology' enables zone-aware sharding where each shard is assigned to a
+                      specific topology zone and only scrapes targets in that zone.
+                      (Alpha) Using the 'Topology' mode requires the `PrometheusTopologySharding`
+                      feature gate to be enabled.
+                    enum:
+                    - Address
+                    - Topology
+                    type: string
+                  topology:
+                    description: |-
+                      topology defines the configuration for topology-aware sharding.
+                      This field is only valid when mode is set to 'Topology'.
+                    properties:
+                      externalLabelName:
+                        description: |-
+                          externalLabelName defines the name of the Prometheus external label used
+                          to communicate the topology zone assigned to the Prometheus instance.
+                          If not defined, it defaults to "zone".
+                          If set to the empty string, no external label is added to the Prometheus configuration.
+                        type: string
+                      values:
+                        description: |-
+                          values defines the list of topology values (e.g. zone names) to be used
+                          for sharding. The configured number of shards must be greater than or
+                          equal to the number of values.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: topology can only be defined when mode is set to 'Topology'
+                  rule: '!has(self.topology) || (has(self.mode) && self.mode == ''Topology'')'
               shards:
                 description: |-
                   shards defines the number of shards to distribute the scraped targets onto.
@@ -46912,7 +47109,7 @@ spec:
                     description: |-
                       grpcServerTlsConfig defines the TLS parameters for the gRPC server providing the StoreAPI.
 
-                      Note: Currently only the `minVersion`, `caFile`, `certFile`, and `keyFile` fields are supported.
+                      Note: Currently only the `minVersion`, `caFile`, `certFile`, `keyFile`, `cipherSuites` and `curves` fields are supported.
                     properties:
                       ca:
                         description: ca defines the Certificate authority used when
@@ -47030,6 +47227,38 @@ spec:
                         description: certFile defines the path to the client cert
                           file in the Prometheus container for the targets.
                         type: string
+                      cipherSuites:
+                        description: |-
+                          cipherSuites defines the list of supported cipher suites for TLS
+                          versions up to TLS 1.2.
+
+                          If not defined, the Go default cipher suites are used.
+                          Available cipher suites are documented in the Go documentation:
+                          https://golang.org/pkg/crypto/tls/#pkg-constants
+
+                          It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                          the Thanos version supports the provided values.
+                        items:
+                          type: string
+                        minItems: 1
+                        type: array
+                        x-kubernetes-list-type: set
+                      curves:
+                        description: |-
+                          curves defines the list of preferred elliptic curves for
+                          TLS handshakes.
+
+                          If not defined, the Go default curves are used.
+                          Available curves are documented in the Go documentation:
+                          https://golang.org/pkg/crypto/tls/#CurveID
+
+                          It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                          the Thanos version supports the provided values.
+                        items:
+                          type: string
+                        minItems: 1
+                        type: array
+                        x-kubernetes-list-type: set
                       insecureSkipVerify:
                         description: insecureSkipVerify defines how to disable target
                           certificate validation.
@@ -50157,6 +50386,13 @@ spec:
                     type: object
                 type: object
             type: object
+            x-kubernetes-validations:
+            - message: shards must be greater than or equal to the number of topology
+                values when sharding strategy mode is Topology
+              rule: '!has(self.shardingStrategy) || !has(self.shardingStrategy.mode)
+                || self.shardingStrategy.mode != ''Topology'' || !has(self.shardingStrategy.topology)
+                || !has(self.shardingStrategy.topology.values) || self.shardingStrategy.topology.values.size()
+                == 0 || (has(self.shards) ? self.shards : 1) >= self.shardingStrategy.topology.values.size()'
           status:
             description: |-
               status defines the most recent observed status of the Prometheus cluster. Read-only.
@@ -50304,8 +50540,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: prometheusrules.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -50571,8 +50807,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: scrapeconfigs.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -50670,6 +50906,7 @@ spec:
                       - OAuth
                       - ManagedIdentity
                       - SDK
+                      - WorkloadIdentity
                       type: string
                     authorization:
                       description: |-
@@ -51222,7 +51459,7 @@ spec:
                       minLength: 1
                       type: string
                     tlsConfig:
-                      description: tlsConfig defies the TLS configuration applying
+                      description: tlsConfig defines the TLS configuration applying
                         to the target HTTP endpoint.
                       properties:
                         ca:
@@ -51581,7 +51818,7 @@ spec:
                     filter:
                       description: |-
                         filter defines the filter expression used to filter the catalog results.
-                        See https://www.consul.io/api-docs/catalog#list-services
+                        See https://developer.hashicorp.com/consul/api-docs/catalog#filtering
                         It requires Prometheus >= 3.0.0.
                       minLength: 1
                       type: string
@@ -51589,6 +51826,13 @@ spec:
                       description: followRedirects defines whether HTTP requests follow
                         HTTP 3xx redirects.
                       type: boolean
+                    healthFilter:
+                      description: |-
+                        healthFilter defines the filter expression used to filter the health results.
+                        See https://developer.hashicorp.com/consul/api-docs/health#filtering
+                        It requires Prometheus >= 3.11.2.
+                      minLength: 1
+                      type: string
                     namespace:
                       description: |-
                         namespace are only supported in Consul Enterprise.
@@ -59518,6 +59762,7 @@ spec:
                     roleARN:
                       description: roleARN defines the AWS Role ARN, an alternative
                         to using AWS API keys.
+                      minLength: 1
                       type: string
                     secretKey:
                       description: secretKey defines the AWS API secret.
@@ -60600,6 +60845,7 @@ spec:
                       description: |-
                         namespace defines the Nomad namespace to query for service discovery.
                         When specified, only resources within this namespace will be discovered.
+                      minLength: 1
                       type: string
                     noProxy:
                       description: |-
@@ -60992,6 +61238,7 @@ spec:
                       description: |-
                         region defines the Nomad region to query for service discovery.
                         When specified, only resources within this region will be discovered.
+                      minLength: 1
                       type: string
                     server:
                       description: |-
@@ -61003,6 +61250,7 @@ spec:
                       description: |-
                         tagSeparator defines the separator used to join multiple tags.
                         This determines how Nomad service tags are concatenated into Prometheus labels.
+                      minLength: 1
                       type: string
                     tlsConfig:
                       description: tlsConfig defines the TLS configuration to connect
@@ -61519,6 +61767,7 @@ spec:
                       type: boolean
                     applicationCredentialId:
                       description: applicationCredentialId defines the OpenStack applicationCredentialId.
+                      minLength: 1
                       type: string
                     applicationCredentialName:
                       description: |-
@@ -62778,6 +63027,9 @@ spec:
                   description: |-
                     ScalewaySDConfig configurations allow retrieving scrape targets from Scaleway instances and baremetal services.
                     See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scaleway_sd_config
+
+                    Note: The `_file` variants of credential fields (e.g. `secret_key_file`)
+                    from the Prometheus configuration are not supported. Use Kubernetes secrets via `secretKey` instead.
                   properties:
                     accessKey:
                       description: accessKey defines the access key to use. https://console.scaleway.com/project/credentials
@@ -63364,6 +63616,10 @@ spec:
                   It requires Prometheus >= v2.48.0.
                 type: boolean
             type: object
+            x-kubernetes-validations:
+            - message: at most one of basicAuth, authorization, or oauth2 can be configured
+              rule: '[has(self.basicAuth), has(self.authorization), has(self.oauth2)].filter(x,
+                x).size() <= 1'
           status:
             description: |-
               status defines the status subresource. It is under active development and is updated only when the
@@ -63480,8 +63736,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: servicemonitors.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -64893,8 +65149,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
-    operator.prometheus.io/version: 0.90.1
+    controller-gen.kubebuilder.io/version: v0.20.1
+    operator.prometheus.io/version: 0.91.0
   name: thanosrulers.monitoring.coreos.com
 spec:
   group: monitoring.coreos.com
@@ -67681,7 +67937,7 @@ spec:
                   grpcServerTlsConfig defines the gRPC server from which Thanos Querier reads
                   recorded rule data.
 
-                  Note: Currently only the `minVersion`, `caFile`, `certFile`, and `keyFile` fields are supported.
+                  Note: Currently only the `minVersion`, `caFile`, `certFile`, `keyFile`, `cipherSuites` and `curves` fields are supported.
                 properties:
                   ca:
                     description: ca defines the Certificate authority used when verifying
@@ -67799,6 +68055,38 @@ spec:
                     description: certFile defines the path to the client cert file
                       in the Prometheus container for the targets.
                     type: string
+                  cipherSuites:
+                    description: |-
+                      cipherSuites defines the list of supported cipher suites for TLS
+                      versions up to TLS 1.2.
+
+                      If not defined, the Go default cipher suites are used.
+                      Available cipher suites are documented in the Go documentation:
+                      https://golang.org/pkg/crypto/tls/#pkg-constants
+
+                      It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                      the Thanos version supports the provided values.
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                    x-kubernetes-list-type: set
+                  curves:
+                    description: |-
+                      curves defines the list of preferred elliptic curves for
+                      TLS handshakes.
+
+                      If not defined, the Go default curves are used.
+                      Available curves are documented in the Go documentation:
+                      https://golang.org/pkg/crypto/tls/#CurveID
+
+                      It requires Thanos >= v0.42.0. Note that the operator doesn't verify if
+                      the Thanos version supports the provided values.
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                    x-kubernetes-list-type: set
                   insecureSkipVerify:
                     description: insecureSkipVerify defines how to disable target
                       certificate validation.
@@ -70498,6 +70786,12 @@ spec:
                           - key
                           type: object
                           x-kubernetes-map-type: atomic
+                        externalId:
+                          description: |-
+                            externalId defines the external ID used when assuming an AWS role. Can only be used with roleArn.
+                            It requires Prometheus >= v3.11.0 or Alertmanager >= v0.33.0. Currently not supported by Thanos.
+                          minLength: 1
+                          type: string
                         profile:
                           description: profile defines the named AWS profile used
                             to authenticate.
@@ -70542,6 +70836,9 @@ spec:
                             It requires Prometheus >= v2.54.0.
                           type: boolean
                       type: object
+                      x-kubernetes-validations:
+                      - message: externalId can only be used when roleArn is specified
+                        rule: '!has(self.externalId) || has(self.roleArn)'
                     tlsConfig:
                       description: tlsConfig to use for the URL.
                       properties:
@@ -74648,7 +74945,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.90.1
+    app.kubernetes.io/version: 0.91.0
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -74665,7 +74962,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.90.1
+    app.kubernetes.io/version: 0.91.0
   name: prometheus-operator
 rules:
 - apiGroups:
@@ -74778,7 +75075,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.90.1
+    app.kubernetes.io/version: 0.91.0
   name: prometheus-operator
   namespace: default
 spec:
@@ -74794,13 +75091,13 @@ spec:
       labels:
         app.kubernetes.io/component: controller
         app.kubernetes.io/name: prometheus-operator
-        app.kubernetes.io/version: 0.90.1
+        app.kubernetes.io/version: 0.91.0
     spec:
       automountServiceAccountToken: true
       containers:
       - args:
         - --kubelet-service=kube-system/kubelet
-        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.90.1
+        - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.91.0
         - --watch-referenced-objects-in-all-namespaces=true
         - --disable-unmanaged-prometheus-configuration=true
         - --kubelet-endpoints=true
@@ -74808,7 +75105,7 @@ spec:
         env:
         - name: GOGC
           value: "30"
-        image: quay.io/prometheus-operator/prometheus-operator:v0.90.1
+        image: quay.io/prometheus-operator/prometheus-operator:v0.91.0
         name: prometheus-operator
         ports:
         - containerPort: 8080
@@ -74842,7 +75139,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.90.1
+    app.kubernetes.io/version: 0.91.0
   name: prometheus-operator
   namespace: default
 ---
@@ -74852,7 +75149,7 @@ metadata:
   labels:
     app.kubernetes.io/component: controller
     app.kubernetes.io/name: prometheus-operator
-    app.kubernetes.io/version: 0.90.1
+    app.kubernetes.io/version: 0.91.0
   name: prometheus-operator
   namespace: default
 spec:

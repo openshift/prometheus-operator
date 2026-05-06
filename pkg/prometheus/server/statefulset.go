@@ -1,4 +1,4 @@
-// Copyright 2016 The prometheus-operator Authors
+// Copyright The prometheus-operator Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"maps"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/blang/semver/v4"
 	appsv1 "k8s.io/api/apps/v1"
@@ -260,6 +261,14 @@ func makeStatefulSetSpec(
 		}
 	}
 
+	topologyZone := cg.TopologyZoneForShard(shard)
+	reloaderOpts := []operator.ReloaderOption{
+		operator.Shard(shard),
+		operator.Zone(topologyZone),
+	}
+	if topologyZone != "" {
+		reloaderOpts = append(reloaderOpts, operator.InzoneShard(ptr.To(cg.InzoneShardForShard(shard))))
+	}
 	operatorInitContainers = append(operatorInitContainers,
 		prompkg.BuildConfigReloader(
 			p,
@@ -267,7 +276,7 @@ func makeStatefulSetSpec(
 			true,
 			configReloaderVolumeMounts,
 			watchedDirectories,
-			operator.Shard(shard),
+			reloaderOpts...,
 		),
 	)
 
@@ -315,8 +324,7 @@ func makeStatefulSetSpec(
 			false,
 			configReloaderVolumeMounts,
 			watchedDirectories,
-			operator.Shard(shard),
-			operator.WebConfigFile(configReloaderWebConfigFile),
+			append(reloaderOpts, operator.WebConfigFile(configReloaderWebConfigFile))...,
 		),
 	}, additionalContainers...)
 
@@ -352,7 +360,7 @@ func makeStatefulSetSpec(
 				SecurityContext:               cpf.SecurityContext,
 				ServiceAccountName:            cpf.ServiceAccountName,
 				AutomountServiceAccountToken:  ptr.To(ptr.Deref(cpf.AutomountServiceAccountToken, true)),
-				NodeSelector:                  cpf.NodeSelector,
+				NodeSelector:                  cg.NodeSelectorWithTopologyZone(shard),
 				SchedulerName:                 cpf.SchedulerName,
 				PriorityClassName:             cpf.PriorityClassName,
 				TerminationGracePeriodSeconds: ptr.To(ptr.Deref(cpf.TerminationGracePeriodSeconds, prompkg.DefaultTerminationGracePeriodSeconds)),
@@ -552,6 +560,14 @@ func createThanosContainer(p *monitoringv1.Prometheus, c prompkg.Config) (*corev
 
 		if tlsMinVersion := operator.TLSVersionForThanos(ptr.Deref(tls.MinVersion, "")); tlsMinVersion != "" && thanosVersion.GTE(semver.MustParse("0.37.0")) {
 			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "grpc-server-tls-min-version", Value: tlsMinVersion})
+		}
+
+		if len(tls.CipherSuites) > 0 && thanosVersion.GTE(semver.MustParse("0.42.0")) {
+			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "grpc-server-tls-ciphers", Value: strings.Join(tls.CipherSuites, ",")})
+		}
+
+		if len(tls.Curves) > 0 && thanosVersion.GTE(semver.MustParse("0.42.0")) {
+			thanosArgs = append(thanosArgs, monitoringv1.Argument{Name: "grpc-server-tls-curves", Value: strings.Join(tls.Curves, ",")})
 		}
 	}
 
