@@ -34,7 +34,6 @@ import (
 )
 
 const (
-	defaultRetention                     = "24h"
 	prometheusMode                       = "server"
 	governingServiceName                 = "prometheus-operated"
 	thanosSupportedVersionHTTPClientFlag = "0.24.0"
@@ -267,7 +266,7 @@ func makeStatefulSetSpec(
 		operator.Zone(topologyZone),
 	}
 	if topologyZone != "" {
-		reloaderOpts = append(reloaderOpts, operator.InzoneShard(ptr.To(cg.InzoneShardForShard(shard))))
+		reloaderOpts = append(reloaderOpts, operator.InzoneShard(new(cg.InzoneShardForShard(shard))))
 	}
 	operatorInitContainers = append(operatorInitContainers,
 		prompkg.BuildConfigReloader(
@@ -311,8 +310,8 @@ func makeStatefulSetSpec(
 			Resources:                cpf.Resources,
 			TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 			SecurityContext: &corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   ptr.To(true),
-				AllowPrivilegeEscalation: ptr.To(false),
+				ReadOnlyRootFilesystem:   new(true),
+				AllowPrivilegeEscalation: new(false),
 				Capabilities: &corev1.Capabilities{
 					Drop: []corev1.Capability{"ALL"},
 				},
@@ -359,11 +358,11 @@ func makeStatefulSetSpec(
 				InitContainers:                initContainers,
 				SecurityContext:               cpf.SecurityContext,
 				ServiceAccountName:            cpf.ServiceAccountName,
-				AutomountServiceAccountToken:  ptr.To(ptr.Deref(cpf.AutomountServiceAccountToken, true)),
+				AutomountServiceAccountToken:  new(ptr.Deref(cpf.AutomountServiceAccountToken, true)),
 				NodeSelector:                  cg.NodeSelectorWithTopologyZone(shard),
 				SchedulerName:                 cpf.SchedulerName,
 				PriorityClassName:             cpf.PriorityClassName,
-				TerminationGracePeriodSeconds: ptr.To(ptr.Deref(cpf.TerminationGracePeriodSeconds, prompkg.DefaultTerminationGracePeriodSeconds)),
+				TerminationGracePeriodSeconds: new(ptr.Deref(cpf.TerminationGracePeriodSeconds, prompkg.DefaultTerminationGracePeriodSeconds)),
 				Volumes:                       volumes,
 				Tolerations:                   cpf.Tolerations,
 				Affinity:                      cpf.Affinity,
@@ -396,17 +395,18 @@ func buildServerArgs(cg *prompkg.ConfigGenerator, p *monitoringv1.Prometheus) []
 	if cg.WithMaximumVersion("2.7.0").IsCompatible() {
 		retentionTimeFlagName = "storage.tsdb.retention"
 		if p.Spec.Retention == "" {
-			retentionTimeFlagValue = defaultRetention
+			retentionTimeFlagValue = prompkg.DefaultRetention
 		}
-	} else if p.Spec.Retention == "" && p.Spec.RetentionSize == "" {
-		retentionTimeFlagValue = defaultRetention
+	} else {
+		retentionTimeFlagValue = string(prompkg.RetentionTimeOrDefault(p.Spec.Retention, p.Spec.RetentionSize))
 	}
 
-	if retentionTimeFlagValue != "" {
+	// Starting with Prometheus v3.11.0, retention settings are populated in the configuration file.
+	if retentionTimeFlagValue != "" && cg.Version().LT(semver.MustParse("3.11.0")) {
 		promArgs = append(promArgs, monitoringv1.Argument{Name: retentionTimeFlagName, Value: retentionTimeFlagValue})
 	}
 
-	if p.Spec.RetentionSize != "" {
+	if p.Spec.RetentionSize != "" && cg.Version().LT(semver.MustParse("3.11.0")) {
 		retentionSizeFlag := monitoringv1.Argument{Name: "storage.tsdb.retention.size", Value: string(p.Spec.RetentionSize)}
 		promArgs = cg.WithMinimumVersion("2.7.0").AppendCommandlineArgument(promArgs, retentionSizeFlag)
 	}
@@ -480,7 +480,7 @@ func appendServerVolumes(p *monitoringv1.Prometheus, volumes []corev1.Volume, vo
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: name,
 					},
-					Optional: ptr.To(true),
+					Optional: new(true),
 				},
 			},
 		})
@@ -577,8 +577,8 @@ func createThanosContainer(p *monitoringv1.Prometheus, c prompkg.Config) (*corev
 		ImagePullPolicy:          cpf.ImagePullPolicy,
 		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
+			AllowPrivilegeEscalation: new(false),
+			ReadOnlyRootFilesystem:   new(true),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{"ALL"},
 			},
