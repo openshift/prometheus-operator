@@ -109,12 +109,12 @@ func TestGlobalSettings(t *testing.T) {
 	var (
 		expectedBodySizeLimit         monitoringv1.ByteSize = "1000MB"
 		expectedRuleQueryOffset       monitoringv1.Duration = "30s"
-		expectedSampleLimit           uint64                = 10000
-		expectedTargetLimit           uint64                = 1000
-		expectedLabelLimit            uint64                = 50
-		expectedLabelNameLengthLimit  uint64                = 40
-		expectedLabelValueLengthLimit uint64                = 30
-		expectedkeepDroppedTargets    uint64                = 50
+		expectedSampleLimit           int64                 = 10000
+		expectedTargetLimit           int64                 = 1000
+		expectedLabelLimit            int64                 = 50
+		expectedLabelNameLengthLimit  int64                 = 40
+		expectedLabelValueLengthLimit int64                 = 30
+		expectedkeepDroppedTargets    int64                 = 50
 	)
 
 	for _, tc := range []struct {
@@ -131,12 +131,12 @@ func TestGlobalSettings(t *testing.T) {
 		ScrapeFailureLogFile        *string
 		Version                     string
 		BodySizeLimit               *monitoringv1.ByteSize
-		SampleLimit                 *uint64
-		TargetLimit                 *uint64
-		LabelLimit                  *uint64
-		LabelNameLengthLimit        *uint64
-		LabelValueLengthLimit       *uint64
-		KeepDroppedTargets          *uint64
+		SampleLimit                 *int64
+		TargetLimit                 *int64
+		LabelLimit                  *int64
+		LabelNameLengthLimit        *int64
+		LabelValueLengthLimit       *int64
+		KeepDroppedTargets          *int64
 		ExpectError                 bool
 		Golden                      string
 	}{
@@ -3627,9 +3627,9 @@ func TestTrackTimestampsStaleness(t *testing.T) {
 
 func TestSampleLimits(t *testing.T) {
 	for _, tc := range []struct {
-		globalLimit   int
-		enforcedLimit int
-		limit         int
+		globalLimit   int64
+		enforcedLimit int64
+		limit         int64
 		golden        string
 		version       string
 	}{
@@ -3694,7 +3694,7 @@ func TestSampleLimits(t *testing.T) {
 			p := defaultPrometheus()
 			p.Spec.CommonPrometheusFields.Version = tc.version
 			if tc.globalLimit >= 0 {
-				p.Spec.SampleLimit = new(uint64(tc.globalLimit))
+				p.Spec.SampleLimit = new(tc.globalLimit)
 			}
 
 			if tc.golden == "SampleLimits_GlobalLimit1000_Enforce2000.golden" {
@@ -3702,8 +3702,7 @@ func TestSampleLimits(t *testing.T) {
 			}
 
 			if tc.enforcedLimit >= 0 {
-				i := uint64(tc.enforcedLimit)
-				p.Spec.EnforcedSampleLimit = &i
+				p.Spec.EnforcedSampleLimit = new(tc.enforcedLimit)
 			}
 
 			serviceMonitor := monitoringv1.ServiceMonitor{
@@ -3724,8 +3723,7 @@ func TestSampleLimits(t *testing.T) {
 				},
 			}
 			if tc.limit >= 0 {
-				sampleLimit := uint64(tc.limit)
-				serviceMonitor.Spec.SampleLimit = &sampleLimit
+				serviceMonitor.Spec.SampleLimit = new(tc.limit)
 			}
 
 			cg := mustNewConfigGenerator(t, p)
@@ -3752,8 +3750,8 @@ func TestSampleLimits(t *testing.T) {
 func TestTargetLimits(t *testing.T) {
 	for _, tc := range []struct {
 		version       string
-		enforcedLimit int
-		limit         int
+		enforcedLimit int64
+		limit         int64
 		expected      string
 		golden        string
 	}{
@@ -3811,8 +3809,7 @@ func TestTargetLimits(t *testing.T) {
 			p.Spec.CommonPrometheusFields.Version = tc.version
 
 			if tc.enforcedLimit >= 0 {
-				i := uint64(tc.enforcedLimit)
-				p.Spec.EnforcedTargetLimit = &i
+				p.Spec.EnforcedTargetLimit = new(tc.enforcedLimit)
 			}
 
 			serviceMonitor := monitoringv1.ServiceMonitor{
@@ -3833,8 +3830,7 @@ func TestTargetLimits(t *testing.T) {
 				},
 			}
 			if tc.limit >= 0 {
-				limit := uint64(tc.limit)
-				serviceMonitor.Spec.TargetLimit = &limit
+				serviceMonitor.Spec.TargetLimit = new(tc.limit)
 			}
 
 			cg := mustNewConfigGenerator(t, p)
@@ -4726,6 +4722,28 @@ func TestRemoteWriteConfig(t *testing.T) {
 			},
 			golden: "RemoteWriteConfig_AzureADScope_v3.9.0.golden",
 		},
+		{
+			// Using message version v1 honors the metadata config.
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL:            "http://example.com",
+				MessageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion1_0),
+				MetadataConfig: &monitoringv1.MetadataConfig{
+					Send: true,
+				},
+			},
+			golden: "RemoteWriteConfig_MessageVersion1_with_metadata.golden",
+		},
+		{
+			// Using message version v2 automatically disables metadata sending.
+			remoteWrite: monitoringv1.RemoteWriteSpec{
+				URL:            "http://example.com",
+				MessageVersion: ptr.To(monitoringv1.RemoteWriteMessageVersion2_0),
+				MetadataConfig: &monitoringv1.MetadataConfig{
+					Send: true,
+				},
+			},
+			golden: "RemoteWriteConfig_MessageVersion2_with_metadata.golden",
+		},
 	} {
 		t.Run(fmt.Sprintf("i=%d,version=%s", i, tc.version), func(t *testing.T) {
 			p := defaultPrometheus()
@@ -4828,8 +4846,8 @@ func TestRemoteWriteConfig(t *testing.T) {
 func TestLabelLimits(t *testing.T) {
 	for _, tc := range []struct {
 		version            string
-		enforcedLabelLimit int
-		labelLimit         int
+		enforcedLabelLimit int64
+		labelLimit         int64
 		golden             string
 	}{
 		{
@@ -4890,7 +4908,7 @@ func TestLabelLimits(t *testing.T) {
 			p.Spec.CommonPrometheusFields.Version = tc.version
 
 			if tc.enforcedLabelLimit >= 0 {
-				p.Spec.EnforcedLabelLimit = new(uint64(tc.enforcedLabelLimit))
+				p.Spec.EnforcedLabelLimit = new(tc.enforcedLabelLimit)
 			}
 
 			serviceMonitor := monitoringv1.ServiceMonitor{
@@ -4911,8 +4929,7 @@ func TestLabelLimits(t *testing.T) {
 				},
 			}
 			if tc.labelLimit >= 0 {
-				labelLimit := uint64(tc.labelLimit)
-				serviceMonitor.Spec.LabelLimit = &labelLimit
+				serviceMonitor.Spec.LabelLimit = new(tc.labelLimit)
 			}
 
 			cg := mustNewConfigGenerator(t, p)
@@ -4939,8 +4956,8 @@ func TestLabelLimits(t *testing.T) {
 func TestLabelNameLengthLimits(t *testing.T) {
 	for _, tc := range []struct {
 		version                      string
-		enforcedLabelNameLengthLimit int
-		labelNameLengthLimit         int
+		enforcedLabelNameLengthLimit int64
+		labelNameLengthLimit         int64
 		golden                       string
 	}{
 		{
@@ -4997,7 +5014,7 @@ func TestLabelNameLengthLimits(t *testing.T) {
 			p.Spec.CommonPrometheusFields.Version = tc.version
 
 			if tc.enforcedLabelNameLengthLimit >= 0 {
-				p.Spec.EnforcedLabelNameLengthLimit = new(uint64(tc.enforcedLabelNameLengthLimit))
+				p.Spec.EnforcedLabelNameLengthLimit = new(tc.enforcedLabelNameLengthLimit)
 			}
 
 			podMonitor := monitoringv1.PodMonitor{
@@ -5018,8 +5035,7 @@ func TestLabelNameLengthLimits(t *testing.T) {
 				},
 			}
 			if tc.labelNameLengthLimit >= 0 {
-				labelNameLengthLimit := uint64(tc.labelNameLengthLimit)
-				podMonitor.Spec.LabelNameLengthLimit = &labelNameLengthLimit
+				podMonitor.Spec.LabelNameLengthLimit = new(tc.labelNameLengthLimit)
 			}
 
 			cg := mustNewConfigGenerator(t, p)
@@ -5046,8 +5062,8 @@ func TestLabelNameLengthLimits(t *testing.T) {
 func TestLabelValueLengthLimits(t *testing.T) {
 	for _, tc := range []struct {
 		version                       string
-		enforcedLabelValueLengthLimit int
-		labelValueLengthLimit         int
+		enforcedLabelValueLengthLimit int64
+		labelValueLengthLimit         int64
 		golden                        string
 	}{
 		{
@@ -5104,7 +5120,7 @@ func TestLabelValueLengthLimits(t *testing.T) {
 			p.Spec.CommonPrometheusFields.Version = tc.version
 
 			if tc.enforcedLabelValueLengthLimit >= 0 {
-				p.Spec.EnforcedLabelValueLengthLimit = new(uint64(tc.enforcedLabelValueLengthLimit))
+				p.Spec.EnforcedLabelValueLengthLimit = new(tc.enforcedLabelValueLengthLimit)
 			}
 
 			probe := monitoringv1.Probe{
@@ -5151,8 +5167,7 @@ func TestLabelValueLengthLimits(t *testing.T) {
 				},
 			}
 			if tc.labelValueLengthLimit >= 0 {
-				labelValueLengthLimit := uint64(tc.labelValueLengthLimit)
-				probe.Spec.LabelValueLengthLimit = &labelValueLengthLimit
+				probe.Spec.LabelValueLengthLimit = new(tc.labelValueLengthLimit)
 			}
 
 			s := assets.NewTestStoreBuilder(
@@ -5191,26 +5206,26 @@ func TestLabelValueLengthLimits(t *testing.T) {
 func TestKeepDroppedTargets(t *testing.T) {
 	for _, tc := range []struct {
 		version                    string
-		enforcedKeepDroppedTargets *uint64
-		keepDroppedTargets         *uint64
+		enforcedKeepDroppedTargets *int64
+		keepDroppedTargets         *int64
 		golden                     string
 	}{
 		{
 			version:                    "v2.46.0",
-			enforcedKeepDroppedTargets: new(uint64(1000)),
-			keepDroppedTargets:         new(uint64(50)),
+			enforcedKeepDroppedTargets: new(int64(1000)),
+			keepDroppedTargets:         new(int64(50)),
 			golden:                     "KeepDroppedTargetsNotAddedInConfig.golden",
 		},
 		{
 			version:                    "v2.47.0",
-			enforcedKeepDroppedTargets: new(uint64(1000)),
-			keepDroppedTargets:         new(uint64(2000)),
+			enforcedKeepDroppedTargets: new(int64(1000)),
+			keepDroppedTargets:         new(int64(2000)),
 			golden:                     "KeepDroppedTargetsOverridedWithEnforcedValue.golden",
 		},
 		{
 			version:                    "v2.47.0",
-			enforcedKeepDroppedTargets: new(uint64(1000)),
-			keepDroppedTargets:         new(uint64(500)),
+			enforcedKeepDroppedTargets: new(int64(1000)),
+			keepDroppedTargets:         new(int64(500)),
 			golden:                     "KeepDroppedTargets.golden",
 		},
 	} {
@@ -5270,7 +5285,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 		{
 			version: "v3.0.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -5280,7 +5295,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 		{
 			version: "v2.54.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -5290,7 +5305,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 		{
 			version: "v2.46.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -5300,7 +5315,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 		{
 			version: "v2.44.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -5310,7 +5325,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 		{
 			version: "3.0.0-rc.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -5321,7 +5336,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 			version: "v3.8.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
 				ScrapeNativeHistograms:         new(true),
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -5332,7 +5347,7 @@ func TestNativeHistogramConfig(t *testing.T) {
 			version: "v3.7.0",
 			nativeHistogramConfig: monitoringv1.NativeHistogramConfig{
 				ScrapeNativeHistograms:         new(true),
-				NativeHistogramBucketLimit:     new(uint64(10)),
+				NativeHistogramBucketLimit:     new(int64(10)),
 				ScrapeClassicHistograms:        new(true),
 				NativeHistogramMinBucketFactor: new(resource.MustParse("12.124")),
 				ConvertClassicHistogramsToNHCB: new(true),
@@ -6020,12 +6035,13 @@ func TestStorageSettingMaxExemplars(t *testing.T) {
 
 func TestTSDBConfig(t *testing.T) {
 	for _, tc := range []struct {
-		name      string
-		p         *monitoringv1.Prometheus
-		version   string
-		tsdb      *monitoringv1.TSDBSpec
-		golden    string
-		expectErr bool
+		name           string
+		p              *monitoringv1.Prometheus
+		version        string
+		tsdb           *monitoringv1.TSDBSpec
+		enableFeatures []monitoringv1.EnableFeature
+		golden         string
+		expectErr      bool
 	}{
 		{
 			name:   "no TSDB config",
@@ -6077,6 +6093,58 @@ func TestTSDBConfig(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name:    "TSDB ChunkEncoding floats=xor < v3.13.0",
+			version: "v3.12.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor),
+				},
+			},
+			golden: "TSDB_ChunkEncoding_floats_xor_less_than_v3.13.0.golden",
+		},
+		{
+			name:    "TSDB ChunkEncoding floats=xor >= v3.13.0",
+			version: "v3.13.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor),
+				},
+			},
+			golden: "TSDB_ChunkEncoding_floats_xor_greater_than_or_equal_to_v3.13.0.golden",
+		},
+		{
+			name:    "TSDB ChunkEncoding floats=xor2 >= v3.13.0",
+			version: "v3.13.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor2),
+				},
+			},
+			golden: "TSDB_ChunkEncoding_floats_xor2_greater_than_or_equal_to_v3.13.0.golden",
+		},
+		{
+			name:    "TSDB ChunkEncoding floats=xor with st-storage feature - incompatible",
+			version: "v3.13.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor),
+				},
+			},
+			enableFeatures: []monitoringv1.EnableFeature{"st-storage"},
+			expectErr:      true,
+		},
+		{
+			name:    "TSDB ChunkEncoding floats=xor2 with st-storage feature - compatible",
+			version: "v3.13.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor2),
+				},
+			},
+			enableFeatures: []monitoringv1.EnableFeature{"st-storage"},
+			golden:         "TSDB_ChunkEncoding_floats_xor2_with_st_storage.golden",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			p := defaultPrometheus()
@@ -6086,11 +6154,16 @@ func TestTSDBConfig(t *testing.T) {
 			if tc.tsdb != nil {
 				p.Spec.TSDB = tc.tsdb
 			}
+			if len(tc.enableFeatures) > 0 {
+				p.Spec.CommonPrometheusFields.EnableFeatures = tc.enableFeatures
+			}
 
-			err := p.Spec.TSDB.Validate()
-			if tc.expectErr {
-				require.Error(t, err)
-				return
+			if err := p.Spec.TSDB.Validate(); err != nil {
+				if tc.expectErr {
+					require.Error(t, err)
+					return
+				}
+				t.Fatalf("unexpected TSDB.Validate() error: %v", err)
 			}
 
 			cg := mustNewConfigGenerator(t, p)
@@ -6106,6 +6179,10 @@ func TestTSDBConfig(t *testing.T) {
 				nil,
 				nil,
 			)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			golden.Assert(t, string(cfg), tc.golden)
 		})
@@ -6179,12 +6256,13 @@ func TestRetentionConfigFile(t *testing.T) {
 
 func TestTSDBConfigPrometheusAgent(t *testing.T) {
 	for _, tc := range []struct {
-		name      string
-		p         *monitoringv1.Prometheus
-		version   string
-		tsdb      *monitoringv1.TSDBSpec
-		golden    string
-		expectErr bool
+		name           string
+		p              *monitoringv1.Prometheus
+		version        string
+		tsdb           *monitoringv1.TSDBSpec
+		enableFeatures []monitoringv1.EnableFeature
+		golden         string
+		expectErr      bool
 	}{
 		{
 			name:   "PrometheusAgent no TSDB config",
@@ -6237,6 +6315,27 @@ func TestTSDBConfigPrometheusAgent(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name:    "PrometheusAgent TSDB ChunkEncoding floats=xor >= v3.13.0",
+			version: "v3.13.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor),
+				},
+			},
+			golden: "PrometheusAgent_TSDB_ChunkEncoding_floats_xor_greater_than_or_equal_to_v3.13.0.golden",
+		},
+		{
+			name:    "PrometheusAgent TSDB ChunkEncoding floats=xor with st-storage feature - incompatible",
+			version: "v3.13.0",
+			tsdb: &monitoringv1.TSDBSpec{
+				ChunkEncoding: &monitoringv1.ChunkEncodingSpec{
+					Floats: ptr.To(monitoringv1.ChunkEncodingFloatsXor),
+				},
+			},
+			enableFeatures: []monitoringv1.EnableFeature{"st-storage"},
+			expectErr:      true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			p := defaultPrometheus()
@@ -6246,11 +6345,16 @@ func TestTSDBConfigPrometheusAgent(t *testing.T) {
 			if tc.tsdb != nil {
 				p.Spec.TSDB = tc.tsdb
 			}
+			if len(tc.enableFeatures) > 0 {
+				p.Spec.CommonPrometheusFields.EnableFeatures = tc.enableFeatures
+			}
 
-			err := p.Spec.TSDB.Validate()
-			if tc.expectErr {
-				require.Error(t, err)
-				return
+			if err := p.Spec.TSDB.Validate(); err != nil {
+				if tc.expectErr {
+					require.Error(t, err)
+					return
+				}
+				t.Fatalf("unexpected TSDB.Validate() error: %v", err)
 			}
 
 			cg := mustNewConfigGenerator(t, p)
@@ -6262,6 +6366,10 @@ func TestTSDBConfigPrometheusAgent(t *testing.T) {
 				&assets.StoreBuilder{},
 				nil,
 			)
+			if tc.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			golden.Assert(t, string(cfg), tc.golden)
 		})
@@ -6956,11 +7064,11 @@ func TestScrapeConfigSpecConfig(t *testing.T) {
 		{
 			name: "limits",
 			scSpec: monitoringv1alpha1.ScrapeConfigSpec{
-				SampleLimit:           new(uint64(10000)),
-				TargetLimit:           new(uint64(1000)),
-				LabelLimit:            new(uint64(50)),
-				LabelNameLengthLimit:  new(uint64(40)),
-				LabelValueLengthLimit: new(uint64(30)),
+				SampleLimit:           new(int64(10000)),
+				TargetLimit:           new(int64(1000)),
+				LabelLimit:            new(int64(50)),
+				LabelNameLengthLimit:  new(int64(40)),
+				LabelValueLengthLimit: new(int64(30)),
 			},
 			golden: "ScrapeConfigSpecConfig_Limits.golden",
 		},

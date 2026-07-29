@@ -2286,19 +2286,7 @@ func TestGenerateConfig(t *testing.T) {
 	version24, err := semver.ParseTolerant("v0.24.0")
 	require.NoError(t, err)
 
-	version26, err := semver.ParseTolerant("v0.26.0")
-	require.NoError(t, err)
-
-	version27, err := semver.ParseTolerant("v0.27.0")
-	require.NoError(t, err)
-
 	version28, err := semver.ParseTolerant("v0.28.0")
-	require.NoError(t, err)
-
-	version31, err := semver.ParseTolerant("v0.31.0")
-	require.NoError(t, err)
-
-	version32, err := semver.ParseTolerant("v0.32.0")
 	require.NoError(t, err)
 
 	globalSlackAPIURL, err := url.Parse("http://slack.example.com")
@@ -2960,79 +2948,6 @@ func TestGenerateConfig(t *testing.T) {
 			golden: "CR_with_Pagerduty_Receiver.golden",
 		},
 		{
-			name: "CR with Webhook Receiver and custom http config (oauth2)",
-			kclient: fake.NewClientset(
-				&corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "webhook-client-id",
-						Namespace: "mynamespace",
-					},
-					Data: map[string]string{
-						"test": "clientID",
-					},
-				},
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "webhook-client-secret",
-						Namespace: "mynamespace",
-					},
-					Data: map[string][]byte{
-						"test": []byte("clientSecret"),
-					},
-				},
-			),
-			baseConfig: alertmanagerConfig{
-				Route: &route{
-					Receiver: "null",
-				},
-				Receivers: []*receiver{{Name: "null"}},
-			},
-			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
-				"mynamespace": {
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "myamc",
-						Namespace: "mynamespace",
-					},
-					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
-						Route: &monitoringv1alpha1.Route{
-							Receiver: "test",
-						},
-						Receivers: []monitoringv1alpha1.Receiver{{
-							Name: "test",
-							WebhookConfigs: []monitoringv1alpha1.WebhookConfig{{
-								URL: new("http://test.url"),
-								HTTPConfig: &monitoringv1alpha1.HTTPConfig{
-									OAuth2: &monitoringv1.OAuth2{
-										ClientID: monitoringv1.SecretOrConfigMap{
-											ConfigMap: &corev1.ConfigMapKeySelector{
-												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "webhook-client-id",
-												},
-												Key: "test",
-											},
-										},
-										ClientSecret: corev1.SecretKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "webhook-client-secret",
-											},
-											Key: "test",
-										},
-										TokenURL: "https://test.com",
-										Scopes:   []string{"any"},
-										EndpointParams: map[string]string{
-											"some": "value",
-										},
-									},
-									FollowRedirects: new(true),
-								},
-							}},
-						}},
-					},
-				},
-			},
-			golden: "CR_with_Webhook_Receiver_and_custom_http_config_oauth2.golden",
-		},
-		{
 			name: "CR with Opsgenie Receiver",
 			kclient: fake.NewClientset(
 				&corev1.Secret{
@@ -3498,6 +3413,65 @@ func TestGenerateConfig(t *testing.T) {
 			golden: "CR_with_Slack_Receiver_with_MessageText.golden",
 		},
 		{
+			name: "CR with Slack Receiver with UpdateMessage",
+			kclient: fake.NewClientset(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "slack-standard-api-url",
+						Namespace: "mynamespace",
+					},
+					Data: map[string][]byte{
+						"apiurl":   []byte("https://slack.com/api/chat.postMessage"),
+						"bottoken": []byte("abcdef123456"),
+					},
+				},
+			),
+			amVersion: &semver.Version{Major: 0, Minor: 32},
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{{
+							Name: "test",
+							SlackConfigs: []monitoringv1alpha1.SlackConfig{{
+								APIURL: &corev1.SecretKeySelector{
+									Key: "apiurl",
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "slack-standard-api-url",
+									},
+								},
+								HTTPConfig: &monitoringv1alpha1.HTTPConfig{
+									Authorization: &monitoringv1.SafeAuthorization{
+										Type: "Bearer",
+										Credentials: &corev1.SecretKeySelector{
+											Key: "bottoken",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "slack-standard-api-url",
+											},
+										},
+									},
+								},
+								UpdateMessage: new(true),
+							}},
+						}},
+					},
+				},
+			},
+			golden: "CR_with_Slack_Receiver_with_UpdateMessage.golden",
+		},
+		{
 			name: "CR with SNS Receiver with Access and Key",
 			kclient: fake.NewClientset(
 				&corev1.Secret{
@@ -3701,6 +3675,76 @@ func TestGenerateConfig(t *testing.T) {
 			golden: "CR_with_SNS_Receiver_with_roleARN_and_externalId_in_old_amVersion.golden",
 		},
 		{
+			name:      "CR with SNS Receiver with useAWSHTTPClient",
+			amVersion: &semver.Version{Major: 0, Minor: 33},
+			kclient:   fake.NewClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{{
+							Name: "test",
+							SNSConfigs: []monitoringv1alpha1.SNSConfig{
+								{
+									ApiURL:           new("https://sns.us-east-2.amazonaws.com"),
+									TopicARN:         new("test-topicARN"),
+									UseAWSHTTPClient: new(true),
+								},
+							},
+						}},
+					},
+				},
+			},
+			golden: "CR_with_SNS_Receiver_with_useAWSHTTPClient.golden",
+		},
+		{
+			name:      "CR with SNS Receiver with useAWSHTTPClient in old am version",
+			amVersion: &semver.Version{Major: 0, Minor: 31},
+			kclient:   fake.NewClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{{
+							Name: "test",
+							SNSConfigs: []monitoringv1alpha1.SNSConfig{
+								{
+									ApiURL:           new("https://sns.us-east-2.amazonaws.com"),
+									TopicARN:         new("test-topicARN"),
+									UseAWSHTTPClient: new(true),
+								},
+							},
+						}},
+					},
+				},
+			},
+			golden: "CR_with_SNS_Receiver_with_useAWSHTTPClient_in_old_amVersion.golden",
+		},
+		{
 			name:    "CR with Mute Time Intervals",
 			kclient: fake.NewClientset(),
 			baseConfig: alertmanagerConfig{
@@ -3862,6 +3906,167 @@ func TestGenerateConfig(t *testing.T) {
 			golden: "CR_with_Active_Time_Intervals.golden",
 		},
 		{
+			name:      "CR with MSTeamsV2 Receiver",
+			amVersion: &version28,
+			kclient: fake.NewClientset(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ms-teams-secret",
+						Namespace: "mynamespace",
+					},
+					Data: map[string][]byte{
+						"url": []byte("https://prod-108.westeurope.logic.azure.com:443/workflows/id"),
+					},
+				},
+			),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								MSTeamsV2Configs: []monitoringv1alpha1.MSTeamsV2Config{
+									{
+										WebhookURL: &corev1.SecretKeySelector{
+											Key: "url",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "ms-teams-secret",
+											},
+										},
+										Title: new("test title"),
+										Text:  new("test text"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_MSTeamsV2_Receiver.golden",
+		},
+		{
+			name:      "CR with MSTeamsV2 Receiver with Partial Conf",
+			amVersion: &version28,
+			kclient: fake.NewClientset(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "ms-teams-secret",
+						Namespace: "mynamespace",
+					},
+					Data: map[string][]byte{
+						"url": []byte("https://prod-108.westeurope.logic.azure.com:443/workflows/id"),
+					},
+				},
+			),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								MSTeamsV2Configs: []monitoringv1alpha1.MSTeamsV2Config{
+									{
+										WebhookURL: &corev1.SecretKeySelector{
+											Key: "url",
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "ms-teams-secret",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_MSTeamsV2_Receiver_Partial_Conf.golden",
+		},
+	}
+
+	logger := newNopLogger(t)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := assets.NewStoreBuilder(tc.kclient.CoreV1(), tc.kclient.CoreV1())
+
+			if tc.amVersion == nil {
+				version, err := semver.ParseTolerant("v0.22.2")
+				require.NoError(t, err)
+				tc.amVersion = &version
+			}
+
+			cb := NewConfigBuilder(logger, *tc.amVersion, store,
+				&monitoringv1.Alertmanager{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "alertmanager-namespace"},
+					Spec:       monitoringv1.AlertmanagerSpec{AlertmanagerConfigMatcherStrategy: tc.matcherStrategy},
+				},
+			)
+			cb.cfg = &tc.baseConfig
+
+			if tc.expectedError {
+				require.Error(t, cb.AddAlertmanagerConfigs(context.Background(), tc.amConfigs))
+				return
+			}
+			require.NoError(t, cb.AddAlertmanagerConfigs(context.Background(), tc.amConfigs))
+
+			cfgBytes, err := cb.MarshalJSON()
+			require.NoError(t, err)
+
+			// Verify the generated yaml is as expected
+			golden.Assert(t, string(cfgBytes), tc.golden)
+
+			// Verify the generated config is something that Alertmanager will be happy with
+			_, err = alertmanagerConfigFromBytes(cfgBytes)
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestGenerateConfigMSTeamsReceiver(t *testing.T) {
+	type testCase struct {
+		name            string
+		kclient         kubernetes.Interface
+		baseConfig      alertmanagerConfig
+		amVersion       *semver.Version
+		matcherStrategy monitoringv1.AlertmanagerConfigMatcherStrategy
+		amConfigs       map[string]*monitoringv1alpha1.AlertmanagerConfig
+		golden          string
+		expectedError   bool
+	}
+
+	version26, err := semver.ParseTolerant("v0.26.0")
+	require.NoError(t, err)
+
+	version27, err := semver.ParseTolerant("v0.27.0")
+	require.NoError(t, err)
+
+	testCases := []testCase{
+		{
 			name:      "CR with MSTeams Receiver",
 			amVersion: &version26,
 			kclient: fake.NewClientset(
@@ -4016,17 +4221,90 @@ func TestGenerateConfig(t *testing.T) {
 			},
 			golden: "CR_with_MSTeams_Receiver_Partial_Conf.golden",
 		},
+	}
+
+	logger := newNopLogger(t)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := assets.NewStoreBuilder(tc.kclient.CoreV1(), tc.kclient.CoreV1())
+
+			if tc.amVersion == nil {
+				version, err := semver.ParseTolerant("v0.22.2")
+				require.NoError(t, err)
+				tc.amVersion = &version
+			}
+
+			cb := NewConfigBuilder(logger, *tc.amVersion, store,
+				&monitoringv1.Alertmanager{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "alertmanager-namespace"},
+					Spec:       monitoringv1.AlertmanagerSpec{AlertmanagerConfigMatcherStrategy: tc.matcherStrategy},
+				},
+			)
+			cb.cfg = &tc.baseConfig
+
+			if tc.expectedError {
+				require.Error(t, cb.AddAlertmanagerConfigs(context.Background(), tc.amConfigs))
+				return
+			}
+			require.NoError(t, cb.AddAlertmanagerConfigs(context.Background(), tc.amConfigs))
+
+			cfgBytes, err := cb.MarshalJSON()
+			require.NoError(t, err)
+
+			// Verify the generated yaml is as expected
+			golden.Assert(t, string(cfgBytes), tc.golden)
+
+			// Verify the generated config is something that Alertmanager will be happy with
+			_, err = alertmanagerConfigFromBytes(cfgBytes)
+			require.NoError(t, err)
+		})
+	}
+}
+func TestGenerateConfigWebhookReceiver(t *testing.T) {
+	type testCase struct {
+		name            string
+		kclient         kubernetes.Interface
+		baseConfig      alertmanagerConfig
+		amVersion       *semver.Version
+		matcherStrategy monitoringv1.AlertmanagerConfigMatcherStrategy
+		amConfigs       map[string]*monitoringv1alpha1.AlertmanagerConfig
+		golden          string
+		expectedError   bool
+	}
+
+	version26, err := semver.ParseTolerant("v0.26.0")
+	require.NoError(t, err)
+
+	version28, err := semver.ParseTolerant("v0.28.0")
+	require.NoError(t, err)
+
+	version31, err := semver.ParseTolerant("v0.31.0")
+	require.NoError(t, err)
+
+	version32, err := semver.ParseTolerant("v0.32.0")
+	require.NoError(t, err)
+
+	testCases := []testCase{
+
 		{
-			name:      "CR with MSTeamsV2 Receiver",
-			amVersion: &version28,
+			name: "CR with Webhook Receiver and custom http config (oauth2)",
 			kclient: fake.NewClientset(
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "webhook-client-id",
+						Namespace: "mynamespace",
+					},
+					Data: map[string]string{
+						"test": "clientID",
+					},
+				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "ms-teams-secret",
+						Name:      "webhook-client-secret",
 						Namespace: "mynamespace",
 					},
 					Data: map[string][]byte{
-						"url": []byte("https://prod-108.westeurope.logic.azure.com:443/workflows/id"),
+						"test": []byte("clientSecret"),
 					},
 				},
 			),
@@ -4046,42 +4324,46 @@ func TestGenerateConfig(t *testing.T) {
 						Route: &monitoringv1alpha1.Route{
 							Receiver: "test",
 						},
-						Receivers: []monitoringv1alpha1.Receiver{
-							{
-								Name: "test",
-								MSTeamsV2Configs: []monitoringv1alpha1.MSTeamsV2Config{
-									{
-										WebhookURL: &corev1.SecretKeySelector{
-											Key: "url",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "ms-teams-secret",
+						Receivers: []monitoringv1alpha1.Receiver{{
+							Name: "test",
+							WebhookConfigs: []monitoringv1alpha1.WebhookConfig{{
+								URL: new("http://test.url"),
+								HTTPConfig: &monitoringv1alpha1.HTTPConfig{
+									OAuth2: &monitoringv1.OAuth2{
+										ClientID: monitoringv1.SecretOrConfigMap{
+											ConfigMap: &corev1.ConfigMapKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: "webhook-client-id",
+												},
+												Key: "test",
 											},
 										},
-										Title: new("test title"),
-										Text:  new("test text"),
+										ClientSecret: corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "webhook-client-secret",
+											},
+											Key: "test",
+										},
+										TokenURL: "https://test.com",
+										Scopes:   []string{"any"},
+										EndpointParams: map[string]string{
+											"some": "value",
+										},
 									},
+									FollowRedirects: new(true),
 								},
-							},
-						},
+							}},
+						}},
 					},
 				},
 			},
-			golden: "CR_with_MSTeamsV2_Receiver.golden",
+			golden: "CR_with_Webhook_Receiver_and_custom_http_config_oauth2.golden",
 		},
+
 		{
-			name:      "CR with MSTeamsV2 Receiver with Partial Conf",
+			name:      "CR with Webhook Receiver and Timeout Setup",
 			amVersion: &version28,
-			kclient: fake.NewClientset(
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "ms-teams-secret",
-						Namespace: "mynamespace",
-					},
-					Data: map[string][]byte{
-						"url": []byte("https://prod-108.westeurope.logic.azure.com:443/workflows/id"),
-					},
-				},
-			),
+			kclient:   fake.NewClientset(),
 			baseConfig: alertmanagerConfig{
 				Route: &route{
 					Receiver: "null",
@@ -4101,14 +4383,10 @@ func TestGenerateConfig(t *testing.T) {
 						Receivers: []monitoringv1alpha1.Receiver{
 							{
 								Name: "test",
-								MSTeamsV2Configs: []monitoringv1alpha1.MSTeamsV2Config{
+								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
 									{
-										WebhookURL: &corev1.SecretKeySelector{
-											Key: "url",
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "ms-teams-secret",
-											},
-										},
+										URL:     new("https://example.com/"),
+										Timeout: ptr.To(monitoringv1.Duration("5s")),
 									},
 								},
 							},
@@ -4116,8 +4394,175 @@ func TestGenerateConfig(t *testing.T) {
 					},
 				},
 			},
-			golden: "CR_with_MSTeamsV2_Receiver_Partial_Conf.golden",
+			golden: "CR_with_Webhook_Receiver_and_Timeout_Setup.golden",
 		},
+		{
+			name:      "CR with Webhook Receiver and Timeout Setup Older Version",
+			amVersion: &version26,
+			kclient:   fake.NewClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
+									{
+										URL:     new("https://example.com/"),
+										Timeout: ptr.To(monitoringv1.Duration("5s")),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_Webhook_Receiver_and_Timeout_Setup_Older_Version.golden",
+		},
+		{
+			name:      "CR with Webhook Receiver and Payload",
+			amVersion: &version32,
+			kclient:   fake.NewClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
+									{
+										URL:     new("https://example.com/"),
+										Payload: new("{\"foo\": \"bar\"}"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_Webhook_Receiver_and_Payload.golden",
+		},
+		{
+			name:      "CR with Webhook Receiver and Payload Unsupported Version",
+			amVersion: &version31,
+			kclient:   fake.NewClientset(),
+			baseConfig: alertmanagerConfig{
+				Route: &route{
+					Receiver: "null",
+				},
+				Receivers: []*receiver{{Name: "null"}},
+			},
+			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
+				"mynamespace": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "myamc",
+						Namespace: "mynamespace",
+					},
+					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
+						Route: &monitoringv1alpha1.Route{
+							Receiver: "test",
+						},
+						Receivers: []monitoringv1alpha1.Receiver{
+							{
+								Name: "test",
+								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
+									{
+										URL:     new("https://example.com/"),
+										Payload: new("{\"foo\": \"bar\"}"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			golden: "CR_with_Webhook_Receiver_and_Payload_Unsupported_Version.golden",
+		},
+	}
+
+	logger := newNopLogger(t)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := assets.NewStoreBuilder(tc.kclient.CoreV1(), tc.kclient.CoreV1())
+
+			if tc.amVersion == nil {
+				version, err := semver.ParseTolerant("v0.22.2")
+				require.NoError(t, err)
+				tc.amVersion = &version
+			}
+
+			cb := NewConfigBuilder(logger, *tc.amVersion, store,
+				&monitoringv1.Alertmanager{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "alertmanager-namespace"},
+					Spec:       monitoringv1.AlertmanagerSpec{AlertmanagerConfigMatcherStrategy: tc.matcherStrategy},
+				},
+			)
+			cb.cfg = &tc.baseConfig
+
+			if tc.expectedError {
+				require.Error(t, cb.AddAlertmanagerConfigs(context.Background(), tc.amConfigs))
+				return
+			}
+			require.NoError(t, cb.AddAlertmanagerConfigs(context.Background(), tc.amConfigs))
+
+			cfgBytes, err := cb.MarshalJSON()
+			require.NoError(t, err)
+
+			// Verify the generated yaml is as expected
+			golden.Assert(t, string(cfgBytes), tc.golden)
+
+			// Verify the generated config is something that Alertmanager will be happy with
+			_, err = alertmanagerConfigFromBytes(cfgBytes)
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestGenerateConfigEmailReceiver(t *testing.T) {
+	type testCase struct {
+		name            string
+		kclient         kubernetes.Interface
+		baseConfig      alertmanagerConfig
+		amVersion       *semver.Version
+		matcherStrategy monitoringv1.AlertmanagerConfigMatcherStrategy
+		amConfigs       map[string]*monitoringv1alpha1.AlertmanagerConfig
+		golden          string
+		expectedError   bool
+	}
+
+	version26, err := semver.ParseTolerant("v0.26.0")
+	require.NoError(t, err)
+
+	version31, err := semver.ParseTolerant("v0.31.0")
+	require.NoError(t, err)
+
+	testCases := []testCase{
 		{
 			name:      "CR with EmailConfig with Required Fields specified at Receiver level",
 			amVersion: &version26,
@@ -4346,150 +4791,6 @@ func TestGenerateConfig(t *testing.T) {
 				},
 			},
 			golden: "CR_with_EmailConfig_with_Threading.golden",
-		},
-		{
-			name:      "CR with WebhookConfig with Timeout Setup",
-			amVersion: &version28,
-			kclient:   fake.NewClientset(),
-			baseConfig: alertmanagerConfig{
-				Route: &route{
-					Receiver: "null",
-				},
-				Receivers: []*receiver{{Name: "null"}},
-			},
-			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
-				"mynamespace": {
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "myamc",
-						Namespace: "mynamespace",
-					},
-					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
-						Route: &monitoringv1alpha1.Route{
-							Receiver: "test",
-						},
-						Receivers: []monitoringv1alpha1.Receiver{
-							{
-								Name: "test",
-								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
-									{
-										URL:     new("https://example.com/"),
-										Timeout: ptr.To(monitoringv1.Duration("5s")),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			golden: "CR_with_WebhookConfig_with_Timeout_Setup.golden",
-		},
-		{
-			name:      "CR with WebhookConfig with Timeout Setup Older Version",
-			amVersion: &version26,
-			kclient:   fake.NewClientset(),
-			baseConfig: alertmanagerConfig{
-				Route: &route{
-					Receiver: "null",
-				},
-				Receivers: []*receiver{{Name: "null"}},
-			},
-			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
-				"mynamespace": {
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "myamc",
-						Namespace: "mynamespace",
-					},
-					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
-						Route: &monitoringv1alpha1.Route{
-							Receiver: "test",
-						},
-						Receivers: []monitoringv1alpha1.Receiver{
-							{
-								Name: "test",
-								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
-									{
-										URL:     new("https://example.com/"),
-										Timeout: ptr.To(monitoringv1.Duration("5s")),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			golden: "CR_with_WebhookConfig_with_Timeout_Setup_Older_Version.golden",
-		},
-		{
-			name:      "CR with WebhookConfig with Payload",
-			amVersion: &version32,
-			kclient:   fake.NewClientset(),
-			baseConfig: alertmanagerConfig{
-				Route: &route{
-					Receiver: "null",
-				},
-				Receivers: []*receiver{{Name: "null"}},
-			},
-			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
-				"mynamespace": {
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "myamc",
-						Namespace: "mynamespace",
-					},
-					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
-						Route: &monitoringv1alpha1.Route{
-							Receiver: "test",
-						},
-						Receivers: []monitoringv1alpha1.Receiver{
-							{
-								Name: "test",
-								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
-									{
-										URL:     new("https://example.com/"),
-										Payload: new("{\"foo\": \"bar\"}"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			golden: "CR_with_WebhookConfig_with_Payload.golden",
-		},
-		{
-			name:      "CR with WebhookConfig with Payload Unsupported Version",
-			amVersion: &version31,
-			kclient:   fake.NewClientset(),
-			baseConfig: alertmanagerConfig{
-				Route: &route{
-					Receiver: "null",
-				},
-				Receivers: []*receiver{{Name: "null"}},
-			},
-			amConfigs: map[string]*monitoringv1alpha1.AlertmanagerConfig{
-				"mynamespace": {
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "myamc",
-						Namespace: "mynamespace",
-					},
-					Spec: monitoringv1alpha1.AlertmanagerConfigSpec{
-						Route: &monitoringv1alpha1.Route{
-							Receiver: "test",
-						},
-						Receivers: []monitoringv1alpha1.Receiver{
-							{
-								Name: "test",
-								WebhookConfigs: []monitoringv1alpha1.WebhookConfig{
-									{
-										URL:     new("https://example.com/"),
-										Payload: new("{\"foo\": \"bar\"}"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			golden: "CR_with_WebhookConfig_with_Payload_Unsupported_Version.golden",
 		},
 	}
 
@@ -8666,6 +8967,42 @@ func TestSanitizeSNSConfig(t *testing.T) {
 				},
 			},
 			expectErr: true,
+		},
+		{
+			name:           "sns use_aws_http_client passes in support amVersion",
+			againstVersion: versionV33,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						SNSConfigs: []*snsConfig{
+							{
+								APIUrl:           "https://sns.us-east-1.amazonaws.com",
+								TopicARN:         "arn:aws:sns:us-east-1:123456789012:test",
+								UseAWSHTTPClient: true,
+							},
+						},
+					},
+				},
+			},
+			golden: "sns_valid_use_aws_http_client_passes_in_support_amVersion.golden",
+		},
+		{
+			name:           "sns use_aws_http_client passes in unsupport amVersion",
+			againstVersion: versionSNSAllowed,
+			in: &alertmanagerConfig{
+				Receivers: []*receiver{
+					{
+						SNSConfigs: []*snsConfig{
+							{
+								APIUrl:           "https://sns.us-east-1.amazonaws.com",
+								TopicARN:         "arn:aws:sns:us-east-1:123456789012:test",
+								UseAWSHTTPClient: true,
+							},
+						},
+					},
+				},
+			},
+			golden: "sns_valid_use_aws_http_client_passes_in_unsupport_amVersion.golden",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
