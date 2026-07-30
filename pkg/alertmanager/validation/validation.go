@@ -20,7 +20,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/prometheus/alertmanager/config"
+	"github.com/prometheus/alertmanager/config/common"
 	"k8s.io/utils/ptr"
 )
 
@@ -35,12 +35,12 @@ func ValidateURLPtr(url *string) error {
 	})
 }
 
-// ValidateURL against the config.URL
+// ValidateURL against the common.URL
 // This could potentially become a regex and be validated via OpenAPI
 // but right now, since we know we need to unmarshal into an upstream type
 // after conversion, we validate we don't error when doing so.
-func ValidateURL(url string) (*config.URL, error) {
-	var u config.URL
+func ValidateURL(url string) (*common.URL, error) {
+	var u common.URL
 	err := json.Unmarshal(fmt.Appendf(nil, `"%s"`, url), &u)
 	if err != nil {
 		return nil, fmt.Errorf("validate url from string failed for %s: %w", url, err)
@@ -56,7 +56,7 @@ func ValidateTemplateURLPtr(url *string) error {
 	return validateStringPtr(url, ValidateTemplateURL)
 }
 
-// ValidateTemplateURL validates a URL string against the config.URL.
+// ValidateTemplateURL validates a URL string against the common.URL.
 // If the value is a Go template then the function ensures that the template
 // definition is valid.
 func ValidateTemplateURL(url string) error {
@@ -80,11 +80,11 @@ func validateStringPtr(s *string, validFn func(string) error) error {
 	return validFn(*s)
 }
 
-// ValidateSecretURL against config.URL
+// ValidateSecretURL against common.URL
 // This is for URLs which are retrieved from secrets and should not
 // logged as part of the err.
 func ValidateSecretURL(url string) error {
-	var u config.SecretURL
+	var u common.SecretURL
 
 	err := u.UnmarshalJSON(fmt.Appendf(nil, `"%s"`, url))
 	if err != nil {
