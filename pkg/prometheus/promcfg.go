@@ -422,7 +422,7 @@ var (
 
 // AddLimitsToYAML appends the given limit key to the configuration if
 // supported by the Prometheus version.
-func (cg *ConfigGenerator) AddLimitsToYAML(cfg yaml.MapSlice, k limitKey, limit *uint64, enforcedLimit *uint64) yaml.MapSlice {
+func (cg *ConfigGenerator) AddLimitsToYAML(cfg yaml.MapSlice, k limitKey, limit *int64, enforcedLimit *int64) yaml.MapSlice {
 	finalLimit := cg.getLimit(limit, enforcedLimit)
 	if finalLimit == nil {
 		return cfg
@@ -1110,6 +1110,10 @@ func (cg *ConfigGenerator) appendStorageSettingsConfig(
 		return cfg, err
 	}
 
+	if err := validateChunkEncodingCompatibility(cg.prom.GetCommonPrometheusFields()); err != nil {
+		return cfg, err
+	}
+
 	if exemplars != nil && exemplars.MaxSize != nil {
 		storage = cgStorage.AppendMapItem(storage, "exemplars", yaml.MapSlice{
 			{
@@ -1126,6 +1130,12 @@ func (cg *ConfigGenerator) appendStorageSettingsConfig(
 
 		if tsdb.StaleSeriesCompactionThreshold != nil {
 			tsdbSlice = cg.WithMinimumVersion("3.10.0").AppendMapItem(tsdbSlice, "stale_series_compaction_threshold", tsdb.StaleSeriesCompactionThreshold.AsApproximateFloat64())
+		}
+
+		if tsdb.ChunkEncoding != nil && tsdb.ChunkEncoding.Floats != nil {
+			tsdbSlice = cg.WithMinimumVersion("3.13.0").AppendMapItem(tsdbSlice, "chunk_encoding", yaml.MapSlice{
+				{Key: "floats", Value: strings.ToLower(string(*tsdb.ChunkEncoding.Floats))},
+			})
 		}
 	}
 
@@ -1263,9 +1273,13 @@ func (cg *ConfigGenerator) BuildCommonPrometheusArgs() []monitoringv1.Argument {
 		}
 	}
 
-	// Since metadata-wal-records is in the process of being deprecated as part of remote write v2 stabilization as described in issue.
-	// Also seems to be cause some increase in resource usage overall, will stop being automatically added on prometheus 3.4.0 onwards.
-	// For more context see https://github.com/prometheus-operator/prometheus-operator/issues/7889
+	// metadata-wal-records is in the process of being deprecated as part of
+	// remote write v2 stabilization: it causes some increase in resource usage
+	// overall. The feature used to be automatically enabled in older Prometheus
+	// versions but it isn't anymore since v3.4.0.
+	// For more context, see:
+	// https://github.com/prometheus-operator/prometheus-operator/issues/7889
+	// https://github.com/prometheus/prometheus/issues/16944.
 	for _, rw := range cpf.RemoteWrite {
 		if ptr.Deref(rw.MessageVersion, monitoringv1.RemoteWriteMessageVersion1_0) == monitoringv1.RemoteWriteMessageVersion2_0 {
 			cg = cg.WithMinimumVersion("2.54.0")
@@ -1291,6 +1305,20 @@ func (cg *ConfigGenerator) BuildCommonPrometheusArgs() []monitoringv1.Argument {
 			efs[i] = string(cpf.EnableFeatures[i])
 		}
 		promArgs = cg.WithMinimumVersion("2.25.0").AppendCommandlineArgument(promArgs, monitoringv1.Argument{Name: "enable-feature", Value: strings.Join(efs, ",")})
+	}
+
+	// Auto-enable xor2-encoding feature flag when chunk encoding is set to xor2.
+	if cpf.TSDB != nil && cpf.TSDB.ChunkEncoding != nil && cpf.TSDB.ChunkEncoding.Floats != nil && *cpf.TSDB.ChunkEncoding.Floats == monitoringv1.ChunkEncodingFloatsXor2 {
+		hasXOR2 := false
+		for _, f := range cpf.EnableFeatures {
+			if string(f) == "xor2-encoding" {
+				hasXOR2 = true
+				break
+			}
+		}
+		if !hasXOR2 {
+			promArgs = cg.WithMinimumVersion("3.13.0").AppendCommandlineArgument(promArgs, monitoringv1.Argument{Name: "enable-feature", Value: "xor2-encoding"})
+		}
 	}
 
 	if cpf.ExternalURL != "" {
@@ -2219,7 +2247,7 @@ func generateRunningFilter() yaml.MapSlice {
 	}
 }
 
-func (cg *ConfigGenerator) getLimit(user *uint64, enforced *uint64) *uint64 {
+func (cg *ConfigGenerator) getLimit(user *int64, enforced *int64) *int64 {
 	if ptr.Deref(enforced, 0) == 0 {
 		return user
 	}
@@ -2387,7 +2415,7 @@ func generateRelabelConfig(rc []monitoringv1.RelabelConfig) []yaml.MapSlice {
 			relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
 		}
 
-		if c.Modulus != uint64(0) {
+		if c.Modulus != 0 {
 			relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
 		}
 
@@ -2898,7 +2926,7 @@ func (cg *ConfigGenerator) GenerateRemoteWriteConfig(rws []monitoringv1.RemoteWr
 				relabeling = append(relabeling, yaml.MapItem{Key: "regex", Value: c.Regex})
 			}
 
-			if c.Modulus != uint64(0) {
+			if c.Modulus != 0 {
 				relabeling = append(relabeling, yaml.MapItem{Key: "modulus", Value: c.Modulus})
 			}
 
@@ -3049,7 +3077,13 @@ func (cg *ConfigGenerator) GenerateRemoteWriteConfig(rws []monitoringv1.RemoteWr
 		}
 
 		if spec.MetadataConfig != nil {
-			metadataConfig := append(yaml.MapSlice{}, yaml.MapItem{Key: "send", Value: spec.MetadataConfig.Send})
+			var metadataConfig yaml.MapSlice
+			if ptr.Deref(spec.MessageVersion, "") == monitoringv1.RemoteWriteMessageVersion2_0 {
+				// Prometheus automatically turns off metadata sending when remote-write v2 is used.
+				metadataConfig = append(metadataConfig, yaml.MapItem{Key: "send", Value: false})
+			} else {
+				metadataConfig = append(metadataConfig, yaml.MapItem{Key: "send", Value: spec.MetadataConfig.Send})
+			}
 			if spec.MetadataConfig.SendInterval != "" {
 				metadataConfig = append(metadataConfig, yaml.MapItem{Key: "send_interval", Value: spec.MetadataConfig.SendInterval})
 			}
@@ -3108,7 +3142,7 @@ func (cg *ConfigGenerator) appendEvaluationInterval(slice yaml.MapSlice, evaluat
 	return append(slice, yaml.MapItem{Key: "evaluation_interval", Value: evaluationInterval})
 }
 
-func (cg *ConfigGenerator) appendGlobalLimits(slice yaml.MapSlice, limitKey string, limit *uint64, enforcedLimit *uint64) yaml.MapSlice {
+func (cg *ConfigGenerator) appendGlobalLimits(slice yaml.MapSlice, limitKey string, limit *int64, enforcedLimit *int64) yaml.MapSlice {
 	if ptr.Deref(limit, 0) > 0 {
 		if ptr.Deref(enforcedLimit, 0) > 0 && *limit > *enforcedLimit {
 			cg.logger.Warn(fmt.Sprintf("%q is greater than the enforced limit, using enforced limit", limitKey), "limit", *limit, "enforced_limit", *enforcedLimit)
@@ -3328,6 +3362,10 @@ func (cg *ConfigGenerator) GenerateAgentConfiguration(
 		return nil, err
 	}
 
+	if err := validateChunkEncodingCompatibility(cpf); err != nil {
+		return nil, err
+	}
+
 	if tsdb != nil {
 		if tsdb.OutOfOrderTimeWindow != nil {
 			var storage yaml.MapSlice
@@ -3349,6 +3387,19 @@ func (cg *ConfigGenerator) GenerateAgentConfiguration(
 				},
 			})
 			cfg = cg.WithMinimumVersion("3.10.0").AppendMapItem(cfg, "storage", storage)
+		}
+
+		if tsdb.ChunkEncoding != nil && tsdb.ChunkEncoding.Floats != nil {
+			var storage yaml.MapSlice
+			storage = cg.AppendMapItem(storage, "tsdb", yaml.MapSlice{
+				{
+					Key: "chunk_encoding",
+					Value: yaml.MapSlice{
+						{Key: "floats", Value: strings.ToLower(string(*tsdb.ChunkEncoding.Floats))},
+					},
+				},
+			})
+			cfg = cg.WithMinimumVersion("3.13.0").AppendMapItem(cfg, "storage", storage)
 		}
 	}
 
@@ -5439,4 +5490,24 @@ func (cg *ConfigGenerator) mergeAttachMetadataForTopology(amc *attachMetadataCon
 			Node: new(true),
 		},
 	}
+}
+
+// validateChunkEncodingCompatibility validates that the chunk encoding settings
+// are compatible with the enabled feature flags.
+func validateChunkEncodingCompatibility(cpf monitoringv1.CommonPrometheusFields) error {
+	if cpf.TSDB == nil || cpf.TSDB.ChunkEncoding == nil || cpf.TSDB.ChunkEncoding.Floats == nil {
+		return nil
+	}
+
+	// Setting "Xor" is incompatible with --enable-feature=st-storage
+	// (XOR chunks do not store start timestamps).
+	if *cpf.TSDB.ChunkEncoding.Floats == monitoringv1.ChunkEncodingFloatsXor {
+		for _, f := range cpf.EnableFeatures {
+			if string(f) == "st-storage" {
+				return fmt.Errorf("chunk encoding \"Xor\" is incompatible with --enable-feature=st-storage (XOR chunks do not store start timestamps)")
+			}
+		}
+	}
+
+	return nil
 }
