@@ -14,7 +14,7 @@ require (
 	github.com/go-openapi/swag v0.22.3
 	github.com/go-test/deep v1.0.8
 	github.com/gogo/protobuf v1.3.2
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/oklog/run v1.1.0
@@ -29,7 +29,7 @@ require (
 	github.com/prometheus/prometheus v1.99.0
 	github.com/stretchr/testify v1.8.0
 	github.com/thanos-io/thanos v0.28.0
-	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
+	golang.org/x/sync v0.11.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
@@ -45,7 +45,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.1.2
-	golang.org/x/net v0.17.0
+	golang.org/x/net v0.25.0
 )
 
 require (
@@ -106,9 +106,9 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/term v0.13.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.0.0-20220920022843-2ce7c2934d45 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220920201722-2b89144ce006 // indirect
@@ -128,3 +128,5 @@ replace (
 	github.com/prometheus/prometheus => github.com/prometheus/prometheus v0.38.1-0.20221005044927-6d7f26c46ff7
 	k8s.io/klog/v2 => github.com/simonpasquier/klog-gokit/v3 v3.1.0
 )
+
+replace golang.org/x/net => github.com/openshift-sustaining/net v0.35.0-sec.4
