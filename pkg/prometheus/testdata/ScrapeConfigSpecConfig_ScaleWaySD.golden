@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 30s
+  external_labels:
+    prometheus: default/test
+    prometheus_replica: $(POD_NAME)
+  evaluation_interval: 30s
+scrape_configs:
+- job_name: scrapeConfig/default/testscrapeconfig1
+  scaleway_sd_configs:
+  - access_key: SCWABCDEFGH123456789
+    secret_key: 00000000-0000-0000-0000-000000000000
+    project_id: 00000000-0000-0000-0000-000000000001
+    role: instance
+    port: 23456
+    api_url: https://api.scaleway.com
+    zone: fr-par-1
+    name_filter: name
+    tags_filter:
+    - aa
+    - bb
+    refresh_interval: 30s
+    proxy_url: http://no-proxy.com
+    no_proxy: 0.0.0.0
+    proxy_from_environment: false
+    proxy_connect_header:
+      header:
+      - value
+    follow_redirects: true
+    enable_http2: true
+  relabel_configs:
+  - source_labels:
+    - job
+    target_label: __tmp_prometheus_job_name

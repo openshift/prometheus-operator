@@ -1,0 +1,17 @@
+version: 1
+timeout: "1m"
+parallelism: 10
+random_delay: 1s
+
+explicitLocalValidators: true
+
+validators:
+  # Ignore all external URLs because of rate-limiting protections which make the tests very flaky.
+  - regex: '^http(s)?://.+'
+    type: "ignore"
+  # Ignore links to /img/ because the generated content will resolve them correctly.
+  - regex: '/img/.+'
+    type: ignore
+  # Ignore anchor links pointing to the API documentation which are HTML <a> tags and not supported by mdox.
+  - regex: 'api\.md#monitoring\.coreos\.com/v1\.(BasicAuth|PrometheusSpec|StorageSpec)$'
+    type: ignore

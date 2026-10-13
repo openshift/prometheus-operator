@@ -1,0 +1,9 @@
+# Individual exclusions have also been configured in the Snyk UI:
+# - Improper Certificate Validation for cmd/prometheus-config-reloader/main.go:233
+exclude:
+  global:
+    - vendor/**
+    - '**/*_test.go'
+    - test/**
+    - cmd/po-lint/**
+    - cmd/po-rule-migration/**

@@ -1,0 +1,237 @@
+// Copyright 2020 The prometheus-operator Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package framework
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
+
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	"github.com/prometheus-operator/prometheus-operator/pkg/operator"
+)
+
+func (f *Framework) MakeBlackBoxExporterService(ns, name string) *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Selector: map[string]string{
+				operator.ApplicationNameLabelKey: "blackbox-exporter",
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Port:       9115,
+					TargetPort: intstr.FromInt(9115),
+				},
+			},
+		},
+	}
+}
+
+func (f *Framework) createBlackBoxExporterConfigMapAndWaitExists(ctx context.Context, ns, name string) error {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Data: map[string]string{
+			"blackbox.yml": `modules:
+  http_2xx:
+    http:
+      no_follow_redirects: false
+      preferred_ip_protocol: ip4
+      valid_http_versions:
+      - HTTP/1.1
+      - HTTP/2
+    prober: http
+`,
+		},
+	}
+	if _, err := f.KubeClient.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+
+	if _, err := f.WaitForConfigMapExist(ctx, ns, name); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *Framework) createBlackBoxExporterDeploymentAndWaitReady(ctx context.Context, ns, name string, replicas int32) error {
+	deploy := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					operator.ApplicationNameLabelKey: "blackbox-exporter",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						operator.ApplicationNameLabelKey: "blackbox-exporter",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "blackbox-exporter",
+							Image: "prom/blackbox-exporter:v0.17.0",
+							Args: []string{
+								"--config.file=/config/blackbox.yml",
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 9115,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "config",
+									MountPath: "/config",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "config",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: name,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	deploymentInterface := f.KubeClient.AppsV1().Deployments(ns)
+	if _, err := deploymentInterface.Create(ctx, deploy, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+
+	return wait.PollUntilContextTimeout(ctx, 2*time.Second, f.DefaultTimeout, false, func(ctx context.Context) (bool, error) {
+		blackbox, err := deploymentInterface.Get(ctx, name, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+
+		if blackbox.Status.ReadyReplicas != *blackbox.Spec.Replicas {
+			return false, nil
+		}
+
+		return true, nil
+	})
+}
+
+func (f *Framework) CreateBlackBoxExporterAndWaitUntilReady(ctx context.Context, ns, name string) error {
+	if err := f.createBlackBoxExporterConfigMapAndWaitExists(ctx, ns, name); err != nil {
+		return err
+	}
+
+	return f.createBlackBoxExporterDeploymentAndWaitReady(ctx, ns, name, 1)
+}
+
+func (f *Framework) MakeBasicStaticProbe(name, url string, targets []string) *monitoringv1.Probe {
+	return &monitoringv1.Probe{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Labels: map[string]string{
+				"group": name,
+			},
+		},
+		Spec: monitoringv1.ProbeSpec{
+			Interval: "15s",
+			Module:   "http_2xx",
+			ProberSpec: monitoringv1.ProberSpec{
+				URL: url,
+			},
+			Targets: monitoringv1.ProbeTargets{
+				StaticConfig: &monitoringv1.ProbeTargetStaticConfig{
+					Targets: targets,
+				},
+			},
+		},
+	}
+}
+
+func (f *Framework) WaitForProbeCondition(ctx context.Context, bm *monitoringv1.Probe, workload metav1.Object, resource string, conditionType monitoringv1.ConditionType, conditionStatus monitoringv1.ConditionStatus, timeout time.Duration) (*monitoringv1.Probe, error) {
+	var current *monitoringv1.Probe
+
+	if err := f.WaitForConfigResourceCondition(
+		ctx,
+		func(ctx context.Context) ([]monitoringv1.WorkloadBinding, error) {
+			var err error
+			current, err = f.MonClientV1.Probes(bm.Namespace).Get(ctx, bm.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return current.Status.Bindings, nil
+		},
+		workload,
+		resource,
+		conditionType,
+		conditionStatus,
+		timeout,
+	); err != nil {
+		return nil, fmt.Errorf("probe status %v/%v failed to reach expected condition: %w", bm.Namespace, bm.Name, err)
+	}
+	return current, nil
+}
+
+func (f *Framework) WaitForProbeWorkloadBindingCleanup(ctx context.Context, bm *monitoringv1.Probe, workload metav1.Object, resource string, timeout time.Duration) (*monitoringv1.Probe, error) {
+	var current *monitoringv1.Probe
+
+	if err := f.WaitForConfigResWorkloadBindingCleanup(
+		ctx,
+		func(ctx context.Context) ([]monitoringv1.WorkloadBinding, error) {
+			var err error
+			current, err = f.MonClientV1.Probes(bm.Namespace).Get(ctx, bm.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return current.Status.Bindings, nil
+		},
+		workload,
+		resource,
+		timeout,
+	); err != nil {
+		return nil, fmt.Errorf("probe status %v/%v failed to reach expected condition: %w", bm.Namespace, bm.Name, err)
+	}
+	return current, nil
+}

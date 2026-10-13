@@ -1,0 +1,107 @@
+version: "2"
+run:
+  go: "1.25"
+  timeout: 10m
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+linters:
+  enable:
+    - depguard
+    - exptostd
+    - godot
+    - godoclint
+    - iface
+    - importas
+    - iotamixing
+    - modernize
+    - nilnesserr
+    - recvcheck
+    - revive
+    - sloglint
+    - testifylint
+    - unconvert
+  settings:
+    depguard:
+      rules:
+        forbid-pkg-errors:
+          deny:
+            - pkg: github.com/pkg/errors
+              desc: Should be replaced with standard lib errors or fmt.Errorf
+            - pkg: sort
+              desc: Should be replaced with slices package
+    errcheck:
+      exclude-functions:
+        # Any error in HTTP handlers is handled by the server itself.
+        - (net/http.ResponseWriter).Write
+    importas:
+      alias:
+        # Kubernetes
+        - pkg: k8s.io/api/core/v1
+          alias: corev1
+        - pkg: k8s.io/api/apps/v1
+          alias: appsv1
+        - pkg: k8s.io/api/discovery/v1
+          alias: discoveryv1
+        - pkg: k8s.io/api/events/v1
+          alias: eventsv1
+        - pkg: k8s.io/api/storage/v1
+          alias: storagev1
+        - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+          alias: apiextensionsv1
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
+        - pkg: k8s.io/apimachinery/pkg/api/errors
+          alias: apierrors
+        - pkg: k8s.io/apimachinery/pkg/util/errors
+          alias: kerrors
+        - pkg: k8s.io/component-base/logs/api/v1
+          alias: logsv1
+        - pkg: k8s.io/client-go/kubernetes/typed/core/v1
+          alias: typedcorev1
+        - pkg: k8s.io/client-go/kubernetes/typed/authorization/v1
+          alias: typedauthv1
+        # Controller Runtime
+        - pkg: sigs.k8s.io/controller-runtime
+          alias: ctrl
+        # Prometheus Operator
+        - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1
+          alias: monitoringv1
+        - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1
+          alias: monitoringv1alpha1
+        - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1beta1
+          alias: monitoringv1beta1
+    modernize:
+      disable:
+        - omitzero
+  exclusions:
+    generated: strict
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # Disable errcheck linter for test files.
+      - linters:
+          - errcheck
+          - staticcheck
+          - testifylint
+          - revive
+        path: _test.go
+    paths:
+      - zz_generated.*\.go$
+      - examples$
+formatters:
+  enable:
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/prometheus-operator/prometheus-operator)
+  exclusions:
+    generated: strict
+    paths:
+      - zz_generated.*\.go$
+      - examples$
