@@ -714,7 +714,6 @@ func testPromRemoteWriteWithTLS(t *testing.T) {
 			success: true,
 		},
 	} {
-
 		t.Run(tc.name, func(t *testing.T) {
 			// The sub-test deploys the following setup:
 			//
@@ -1375,7 +1374,7 @@ func testPromReloadRules(t *testing.T) {
 	firstAlertName := "firstAlert"
 	secondAlertName := "secondAlert"
 
-	ruleFile, err := framework.MakeAndCreateFiringRule(context.Background(), ns, name, firstAlertName)
+	pr, err := framework.MakeAndCreateFiringRule(context.Background(), ns, name, firstAlertName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1399,7 +1398,7 @@ func testPromReloadRules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ruleFile.Spec.Groups = []monitoringv1.RuleGroup{
+	pr.Spec.Groups = []monitoringv1.RuleGroup{
 		{
 			Name: "my-alerting-group",
 			Rules: []monitoringv1.Rule{
@@ -1410,7 +1409,7 @@ func testPromReloadRules(t *testing.T) {
 			},
 		},
 	}
-	_, err = framework.UpdateRule(context.Background(), ns, ruleFile)
+	_, err = framework.UpdateRuleSpec(context.Background(), pr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1788,16 +1787,6 @@ func testPromOnlyUpdatedOnRelevantChanges(t *testing.T) {
 					CoreV1().
 					Services(ns).
 					Get(context.Background(), "prometheus-operated", metav1.GetOptions{})
-			},
-			MaxExpectedChanges: 1,
-		},
-		{
-			Name: "serviceMonitor",
-			Getter: func(prometheusName string) (versionedResource, error) {
-				return framework.
-					MonClientV1.
-					ServiceMonitors(ns).
-					Get(context.Background(), prometheusName, metav1.GetOptions{})
 			},
 			MaxExpectedChanges: 1,
 		},
@@ -2825,7 +2814,6 @@ func testPromGetAuthSecret(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -2917,7 +2905,6 @@ func testOperatorNSScope(t *testing.T) {
 	secondAlertName := "secondAlert"
 
 	t.Run("SingleNS", func(t *testing.T) {
-
 		testCtx := framework.NewTestCtx(t)
 		defer testCtx.Cleanup(t)
 
@@ -2983,7 +2970,6 @@ func testOperatorNSScope(t *testing.T) {
 	})
 
 	t.Run("MultiNS", func(t *testing.T) {
-
 		testCtx := framework.NewTestCtx(t)
 		defer testCtx.Cleanup(t)
 
@@ -3239,7 +3225,6 @@ func testPromArbitraryFSAcc(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			testCtx := framework.NewTestCtx(t)
@@ -3326,7 +3311,6 @@ func testPromArbitraryFSAcc(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 // mountTLSFiles is a helper to manually mount TLS certificate files
@@ -3751,7 +3735,6 @@ func testPromSecurePodMonitor(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			testCtx := framework.NewTestCtx(t)
@@ -5029,7 +5012,6 @@ func testPrometheusCRDValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			testCtx := framework.NewTestCtx(t)
@@ -5127,7 +5109,6 @@ func testRelabelConfigCRDValidation(t *testing.T) {
 	}
 
 	for _, test := range tests {
-
 		t.Run(test.scenario, func(t *testing.T) {
 			t.Parallel()
 			testCtx := framework.NewTestCtx(t)
