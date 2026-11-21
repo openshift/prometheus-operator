@@ -166,14 +166,6 @@ func WithoutUnmanagedConfiguration() ControllerOption {
 	}
 }
 
-// WithConfigResourceStatus tells that the controller can manage the status of
-// configuration resources.
-func WithConfigResourceStatus() ControllerOption {
-	return func(o *Operator) {
-		o.configResourcesStatusEnabled = true
-	}
-}
-
 // WithPodTopologyLabels tells that the cluster runs K8s >= 1.35 where
 // PodTopologyLabelsAdmission automatically injects topology labels onto pods.
 // When set, the operator uses pod label SD meta labels for zone detection in
@@ -231,11 +223,12 @@ func New(ctx context.Context, restConfig *rest.Config, c operator.Config, logger
 		metrics:         operator.NewMetrics(r),
 		reconciliations: &operator.ReconciliationTracker{},
 
-		controllerID:             c.ControllerID,
-		newEventRecorder:         c.EventRecorderFactory(client, controllerName),
-		retentionPoliciesEnabled: c.Gates.Enabled(operator.PrometheusShardRetentionPolicyFeature),
-		topologyShardingEnabled:  c.Gates.Enabled(operator.PrometheusTopologyShardingFeature),
-		finalizerSyncer:          operator.NewNoopFinalizerSyncer(),
+		controllerID:                 c.ControllerID,
+		newEventRecorder:             c.EventRecorderFactory(client, controllerName),
+		retentionPoliciesEnabled:     c.Gates.Enabled(operator.PrometheusShardRetentionPolicyFeature),
+		topologyShardingEnabled:      c.Gates.Enabled(operator.PrometheusTopologyShardingFeature),
+		configResourcesStatusEnabled: c.Gates.Enabled(operator.StatusForConfigurationResourcesFeature),
+		finalizerSyncer:              operator.NewNoopFinalizerSyncer(),
 	}
 	for _, opt := range opts {
 		opt(o)
@@ -825,7 +818,6 @@ func (c *Operator) enqueueForNamespace(gbk operator.GetByKeyer, nsName string) {
 			"err", err,
 		)
 	}
-
 }
 
 func (c *Operator) handleMonitorNamespaceUpdate(oldo, curo any) {
@@ -855,7 +847,6 @@ func (c *Operator) handleMonitorNamespaceUpdate(oldo, curo any) {
 			"ScrapeConfigs":   p.Spec.ScrapeConfigNamespaceSelector,
 			"ServiceMonitors": p.Spec.ServiceMonitorNamespaceSelector,
 		} {
-
 			sync, err := k8s.LabelSelectionHasChanged(old.Labels, cur.Labels, selector)
 			if err != nil {
 				c.logger.Error(
@@ -939,6 +930,13 @@ func (c *Operator) sync(ctx context.Context, key string) (func(context.Context) 
 	}
 
 	c.recordDeprecatedFields(key, logger, p)
+
+	if c.topologyShardingEnabled {
+		if ok, msg := prompkg.UnbalancedTopologyShardingMessage(p); ok {
+			logger.Warn(msg)
+			c.reconciliations.SetReasonAndMessage(key, operator.UnbalancedTopologyShardingReason, msg)
+		}
+	}
 
 	if err := operator.CheckStorageClass(ctx, c.canReadStorageClass, c.kclient, p.Spec.Storage); err != nil {
 		return closure, err
@@ -1558,7 +1556,6 @@ func (c *Operator) createOrUpdateConfigurationSecret(ctx context.Context, logger
 	// wants to manage configuration themselves. Let's create an empty Secret
 	// if it doesn't exist.
 	if c.unmanagedPrometheusConfiguration(p) {
-
 		s, err := prompkg.MakeConfigurationSecret(p, c.config, nil)
 		if err != nil {
 			return fmt.Errorf("failed to generate empty configuration secret: %w", err)
