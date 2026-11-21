@@ -58,12 +58,6 @@ func (t transportConfig) Registered(t1 *http.Transport) {
 	t.t.lazyt1 = t1
 }
 
-// GetClientConnStateFunc is called to provide us with a function
-// which may be used to fetch additional state from a ClientConn.
-func (t transportConfig) GetClientConnStateFunc(f func(*http.ClientConn) any) {
-	t.t.getCCState = f
-}
-
 func (t transportConfig) DisableCompression() bool {
 	return t.t.DisableCompression
 }
@@ -135,9 +129,8 @@ func (t transportConfig) DialFromContext(ctx context.Context, network, address s
 }
 
 type transportInternal struct {
-	initOnce   sync.Once
-	lazyt1     *http.Transport
-	getCCState func(*http.ClientConn) any
+	initOnce sync.Once
+	lazyt1   *http.Transport
 
 	dialMu sync.Mutex
 	dials  map[string]*transportDialState
@@ -532,32 +525,10 @@ func (cc *ClientConn) state() ClientConnState {
 	cc.mu.Lock()
 	defer cc.mu.Unlock()
 	cc.updateStateLocked()
-	var gotStats bool
-	var streamsActive int
-	if cc.tr.getCCState != nil {
-		stats, ok := cc.tr.getCCState(cc.cc).(interface {
-			StreamsActive() int
-			MaxConcurrentStreams() int
-		})
-		if ok {
-			gotStats = true
-			streamsActive = stats.StreamsActive()
-			cc.maxConcurrent = stats.MaxConcurrentStreams()
-		}
-	}
-	if !gotStats {
-		streamsActive = cc.cc.InFlight() - cc.reserved
-		if !cc.closed {
-			// This is slightly racy (a request could start or finish in between
-			// the Available and InFlight calls), but the best we can do given that
-			// the net/http ClientConn API doesn't expose the conn's max concurrency.
-			cc.maxConcurrent = cc.cc.Available() + cc.cc.InFlight()
-		}
-	}
 	return ClientConnState{
 		Closed:               cc.closed,
 		Closing:              cc.closing,
-		StreamsActive:        streamsActive,
+		StreamsActive:        cc.cc.InFlight() - cc.reserved,
 		StreamsReserved:      cc.reserved,
 		StreamsPending:       cc.pending,
 		MaxConcurrentStreams: uint32(min(int64(cc.maxConcurrent), math.MaxUint32)),
@@ -584,6 +555,12 @@ func (cc *ClientConn) updateStateLocked() {
 	}
 	if cc.cc.InFlight() == 0 && cc.roundTrips > 0 && cc.starting == 0 {
 		cc.lastIdle = time.Now()
+	}
+	if !cc.closed {
+		// This is slightly racy (a request could start or finish in between
+		// the Available and InFlight calls), but the best we can do given that
+		// the net/http ClientConn API doesn't expose the conn's max concurrency.
+		cc.maxConcurrent = cc.cc.Available() + cc.cc.InFlight()
 	}
 	if cc.shutdownc != nil && cc.cc.InFlight()+cc.starting == 0 {
 		close(cc.shutdownc)
