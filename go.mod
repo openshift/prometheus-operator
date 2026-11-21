@@ -129,3 +129,5 @@ replace (
 	golang.org/x/net => github.com/openshift-sustaining/net v0.35.0-sec.4
 	k8s.io/klog/v2 => github.com/simonpasquier/klog-gokit/v3 v3.1.0
 )
+
+replace golang.org/x/net => github.com/openshift-sustaining/net v0.35.0-sec.4
