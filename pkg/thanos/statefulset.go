@@ -58,7 +58,6 @@ var (
 )
 
 func makeStatefulSet(tr *monitoringv1.ThanosRuler, config Config, ruleConfigMapNames []string, inputHash string, tlsSecrets *operator.ShardedSecret) (*appsv1.StatefulSet, error) {
-
 	if tr.Spec.Resources.Requests == nil {
 		tr.Spec.Resources.Requests = corev1.ResourceList{}
 	}
@@ -415,6 +414,7 @@ func makeStatefulSetSpec(tr *monitoringv1.ThanosRuler, config Config, ruleConfig
 				operator.WatchedDirectories(watchedDirectories),
 				operator.VolumeMounts(configReloaderVolumeMounts),
 				operator.Shard(-1),
+				operator.ImagePullPolicy(tr.Spec.ImagePullPolicy),
 			),
 		)
 	}
